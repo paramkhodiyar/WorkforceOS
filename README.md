@@ -1,88 +1,61 @@
 # WorkforceOS
 
-WorkforceOS is a production-grade, modular workforce operating system designed for managing modern organizations. It features a complete monorepo layout containing a Next.js frontend and a Node.js + Express + Prisma + PostgreSQL + Redis backend.
+WorkforceOS is a production-grade, modular workforce operating system designed to manage enterprise operations. Built on a monorepo architecture, the platform couples a Next.js frontend with a robust Node.js, Express, Prisma ORM, PostgreSQL, and Redis backend.
 
-## Project Structure
-
-*   `backend/`: Express-based REST API built with TypeScript, Prisma ORM, PostgreSQL database, and Redis cache.
-*   `frontend/`: Next.js web application.
+Architected and developed by Param Khodiyar.
 
 ---
 
-## Key Features
+## Architecture Overview
 
-1.  **Modular Abstraction Layer**: Built around 11 business modules with complete separation of concerns (Routers, Controllers, Services, and Validations).
-    *   *Audit Logs*: Auto-logs all write actions with IP and agent details.
-    *   *Notifications*: Scoped alerts for tasks, leaves, and approvals.
-    *   *Auth*: Secure login, logout, password updates, and token rotation.
-    *   *Organization*: Multi-tenant organization settings.
-    *   *Employees*: Profile management, employee sequential IDs, and S3 document uploads.
-    *   *Attendance*: Clock-in, clock-out, break start/end, and monthly aggregates. Supports WFO (Work From Office) and WFM (Work From Mobile) tracking.
-    *   *Leave*: Balance allocation, application submission, approvals, and carry-forwards.
-    *   *Tasks*: State-machine tracking, comment mentions, assignee binding, and attachments.
-    *   *Performance*: Review score compiling, task completion metrics, and organization leaderboards.
-    *   *Payroll*: Custom salary bands, HRA/PF/Tax computations, monthly payslips, and stipend calculations for Interns (INR / Rupees).
-    *   *Expenses*: Claim submissions, receipt attachments, manager/finance approvals, and payouts.
-    *   *Assets*: Inventory check-outs, returns logs, and assignment history.
-    *   *Knowledge Base*: Version-controlled article publishing and drafting.
-2.  **3-Layer Scope-Aware RBAC Matrix**:
-    *   Permissions are scoped at `ORG`, `DEPARTMENT`, or `TEAM` boundaries.
-    *   Default templates: `SUPER_ADMIN`, `ORG_ADMIN`, `HR_MANAGER`, `FINANCE_MANAGER`, `DEPARTMENT_HEAD`, `TEAM_MANAGER`, `EMPLOYEE`, `AUDITOR`, and `INTERN`.
-3.  **Super Admin Module Controls**:
-    *   System features can be toggled on/off dynamically for any organization via `PATCH /api/v1/organization/:orgId/features`.
-4.  **SQL Injection Protection**:
-    *   All raw database queries are fully parameterized via Prisma's `$queryRaw` tagged templates.
-5.  **Strict Confidentiality**:
-    *   Standard employees are strictly locked out of viewing other users' payroll records or paystubs.
+The system is designed with strict boundaries to ensure high scalability, maintenance ease, and security:
+*   **Separation of Concerns**: Each module is self-contained with its own validation schema (Zod), router, controller, and service layers. Controllers process incoming requests and format outgoing API envelopes, while services handle transactional business logic and database queries.
+*   **Database Isolation & Soft Deletes**: Intercepts queries programmatically to filter out soft-deleted records by default. Slow queries (exceeding 500ms) are logged dynamically.
+*   **SQL Injection Prevention**: All raw database access is strictly parameterized using Prisma's tagged templates to enforce compile-time query safety.
 
 ---
 
-## Environment Configuration
+## Core System Features
 
-Create a `.env` file in the `backend/` directory based on `backend/.env.example`:
+### 1. Scope-Aware Role-Based Access Control (RBAC)
+A three-layer permission matrix that restricts user access based on organizational level (Organization, Department, Team).
+*   **Templates and Overrides**: Supported through predefined role templates (including HR Manager, Finance Manager, Team Lead, and Intern).
+*   **Bypass Rules**: System roles like SUPER_ADMIN and ORG_ADMIN bypass permission matrix lookups automatically in code. Other users' permissions are cached in Redis with a 300-second time-to-live (TTL) to limit database hits.
 
-```env
-DATABASE_URL="postgresql://<username>:<password>@<host>:<port>/<db>?sslmode=require"
-REDIS_URL="redis://localhost:6379"
-JWT_ACCESS_SECRET="your-access-secret"
-JWT_REFRESH_SECRET="your-refresh-secret"
-JWT_ACCESS_EXPIRY="15m"
-JWT_REFRESH_EXPIRY="7d"
-PORT=4000
-NODE_ENV="development"
-AWS_BUCKET="your-s3-bucket"
-AWS_REGION="us-east-1"
-AWS_ACCESS_KEY_ID="your-aws-access-key-id"
-AWS_SECRET_ACCESS_KEY="your-aws-secret-access-key"
-S3_BASE_URL="https://your-s3-bucket.s3.amazonaws.com"
-CORS_ORIGINS="http://localhost:3000,http://localhost:5173"
-```
+### 2. Super Admin Module Controls
+*   Provides granular administrative control to enable or disable individual platform features (such as assets, knowledge base, performance, payroll) on a per-organization basis.
+*   Enforced globally via custom Express middleware checking organization-level metadata on incoming requests.
 
----
+### 3. Strict Payroll and Paystub Security
+*   Implements strict boundary validation to prevent cross-tenant and cross-employee payroll leaks.
+*   Standard employees are isolated and can retrieve only their own payroll records, while access for managers, finance, and human resources is confined strictly to their active organization ID.
 
-## Getting Started
+### 4. Attendance Management with WFO and WFM Tracking
+*   Enables employees to register check-in and check-out logs, request manual adjustments, and toggle breaks.
+*   Supports work status options: Work From Office (WFO) and Work From Mobile (WFM).
+*   Integrates geo-coordinate (GPS) and IP address logging for audit trails.
 
-### 1. Database Setup (Backend)
-Navigate to the backend directory, install packages, and synchronize your database:
-```bash
-cd backend
-npm install
-npx prisma db push --force-reset
-npx prisma db seed
-```
+### 5. Intern Handling and Stipend Payroll
+*   Introduces dedicated system roles and access rules for Interns.
+*   Applies distinct payroll calculations: Intern compensation is computed as a flat stipend (expressed in Rupees) with allowances, HRA, PF, and tax deductions set to zero.
 
-### 2. Run the Backend API
-Start the server in development mode:
-```bash
-npm run dev
-```
-The server will start on port `4000` (or the configured `PORT`) and connect to Redis.
+### 6. Tasks and State-Machine Workflow
+*   Enforces state-machine transition validation for task progression (Draft, Assigned, Accepted, In Progress, Submitted, In Review, Changes Requested, Approved, Closed).
+*   Allows comment threads with user mention parsing, task dependencies, labels, and file attachments.
 
-### 3. Run the Frontend App
-Navigate to the frontend directory, install dependencies, and start Next.js:
-```bash
-cd ../frontend
-npm install
-npm run dev
-```
-The frontend application will boot on port `3000`.
+### 7. Leave Management
+*   Allocates leave balances per policy and tracks allocations, usage, pending approvals, and remaining days.
+*   Provides multi-level approvals (Manager and HR approved) and calendar synchronization.
+
+### 8. Expense Claims
+*   Manages expense drafts, receipt uploads, submissions, and workflow states (Submitted, Manager Approved, Finance Approved, Paid, Rejected).
+
+### 9. Asset Management
+*   Tracks hardware and software inventory allocations, returns logs, assignment histories, and device damage statuses.
+
+### 10. Knowledge Base
+*   Provides draft creation, version control, change histories, and publishing rules for organizational documentation.
+
+### 11. Notifications and Audit Logs
+*   **Notifications**: Internal service to issue real-time and persisted database notifications triggered by workflow actions.
+*   **Audit Trail**: Automatically records all write operations, tracking the actor, module, action type, changes (previous and updated values), IP address, and user agent.

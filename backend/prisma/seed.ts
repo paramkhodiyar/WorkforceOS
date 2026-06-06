@@ -1,18 +1,9 @@
 import { PrismaClient, UserStatus, SystemRole, LeaveType, RoleScope } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import process from "process";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const existingOrg = await prisma.organization.findUnique({
-    where: { slug: "acme" }
-  });
-
-  if (existingOrg) {
-    return;
-  }
-
   const passwordHash = await bcrypt.hash("Password123!", 10);
 
   const org = await prisma.organization.create({

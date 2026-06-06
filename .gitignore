@@ -28,4 +28,3 @@ backend/uploads/
 *.db
 *.db-journal
 *.sqlite
-frontend/

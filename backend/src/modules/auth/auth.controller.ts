@@ -1,0 +1,88 @@
+import { Request, Response } from "express";
+import { AuthService } from "./auth.service";
+import { sendSuccess } from "../../utils/response.util";
+import { prisma } from "../../config/database";
+import { asyncHandler } from "../../utils/asyncHandler.util";
+import { AppError } from "../../utils/errors.util";
+
+export const login = asyncHandler(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  const result = await AuthService.login(email, password, req);
+  return sendSuccess(res, result);
+});
+
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+  const result = await AuthService.refresh(refreshToken);
+  return sendSuccess(res, result);
+});
+
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+  const userId = req.user!.id;
+  const orgId = req.org!.id;
+  await AuthService.logout(refreshToken, userId, orgId, req);
+  return sendSuccess(res, null, "Logged out successfully");
+});
+
+export const getMe = asyncHandler(async (req: Request, res: Response) => {
+  const user = await prisma.user.findFirst({
+    where: { id: req.user!.id, isDeleted: false },
+    include: {
+      department: true,
+      manager: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          avatarUrl: true
+        }
+      },
+      roles: {
+        include: {
+          role: true
+        }
+      }
+    }
+  });
+
+  if (!user) {
+    throw AppError.notFound("User not found");
+  }
+
+  const formattedRoles = user.roles.map((ur) => ({
+    roleId: ur.roleId,
+    roleName: ur.role.name,
+    scopeType: ur.scopeType,
+    scopeId: ur.scopeId
+  }));
+
+  const userProfile = {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    avatarUrl: user.avatarUrl,
+    employeeId: user.employeeId,
+    designation: user.designation,
+    salaryBand: user.salaryBand,
+    joinDate: user.joinDate,
+    status: user.status,
+    systemRole: user.systemRole,
+    department: user.department,
+    manager: user.manager,
+    roles: formattedRoles
+  };
+
+  return sendSuccess(res, userProfile);
+});
+
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const orgId = req.org!.id;
+  const { oldPassword, newPassword } = req.body;
+  await AuthService.changePassword(userId, orgId, oldPassword, newPassword, req);
+  return sendSuccess(res, null, "Password updated successfully");
+});

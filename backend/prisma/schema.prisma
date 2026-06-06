@@ -1,0 +1,676 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SystemRole {
+  SUPER_ADMIN
+  ORG_ADMIN
+  HR
+  FINANCE
+  DEPARTMENT_HEAD
+  MANAGER
+  EMPLOYEE
+  AUDITOR
+  INTERN
+}
+
+enum TaskStatus {
+  DRAFT
+  ASSIGNED
+  ACCEPTED
+  IN_PROGRESS
+  SUBMITTED
+  IN_REVIEW
+  CHANGES_REQUESTED
+  RESUBMITTED
+  APPROVED
+  CLOSED
+}
+
+enum TaskPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum LeaveType {
+  SICK
+  CASUAL
+  EARNED
+  WFH
+  HALF_DAY
+}
+
+enum LeaveStatus {
+  PENDING
+  MANAGER_APPROVED
+  HR_APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  ON_LEAVE
+}
+
+enum WorkMode {
+  WFO
+  WFM
+}
+
+enum PayrollStatus {
+  DRAFT
+  GENERATED
+  APPROVED
+  PAID
+}
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  MANAGER_APPROVED
+  FINANCE_APPROVED
+  PAID
+  REJECTED
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  DAMAGED
+  RETIRED
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_STATUS_CHANGED
+  LEAVE_APPLIED
+  LEAVE_APPROVED
+  LEAVE_REJECTED
+  SALARY_GENERATED
+  EXPENSE_APPROVED
+  ASSET_ASSIGNED
+  REVIEW_DUE
+  SYSTEM
+}
+
+enum AuditAction {
+  CREATED
+  UPDATED
+  DELETED
+  APPROVED
+  REJECTED
+  STATUS_CHANGED
+  LOGIN
+  LOGOUT
+  PERMISSION_DENIED
+}
+
+enum RoleScope {
+  ORG
+  DEPARTMENT
+  TEAM
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  isActive    Boolean  @default(true)
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
+  enabledFeatures String[] @default(["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "notifications", "audit"])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  departments  Department[]
+  users        User[]
+  roles        Role[]
+  leavePolicy  LeavePolicy[]
+  payrollRuns  PayrollRun[]
+  assets       Asset[]
+  auditLogs    AuditLog[]
+  permissions  RolePermission[]
+}
+
+model Department {
+  id             String       @id @default(cuid())
+  name           String
+  organizationId String
+  headId         String?
+  isDeleted      Boolean      @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  head           User?        @relation("DepartmentHead", fields: [headId], references: [id])
+  employees      User[]       @relation("DepartmentMembers")
+  teams          Team[]
+}
+
+model Team {
+  id           String     @id @default(cuid())
+  name         String
+  departmentId String
+  leadId       String?
+  isDeleted    Boolean    @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  department   Department @relation(fields: [departmentId], references: [id])
+  lead         User?      @relation("TeamLead", fields: [leadId], references: [id])
+  members      User[]     @relation("TeamMembers")
+}
+
+model User {
+  id               String     @id @default(cuid())
+  email            String     @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  phone            String?
+  avatarUrl        String?
+  employeeId       String?    @unique
+  designation      String?
+  organizationId   String
+  departmentId     String?
+  managerId        String?
+  systemRole       SystemRole @default(EMPLOYEE)
+  salaryBand       String?
+  joinDate         DateTime?
+  status           UserStatus @default(ACTIVE)
+  isDeleted        Boolean    @default(false)
+  deletedAt        DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  organization       Organization     @relation(fields: [organizationId], references: [id])
+  department         Department?      @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  manager            User?            @relation("ManagerReports", fields: [managerId], references: [id])
+  reports            User[]           @relation("ManagerReports")
+  departmentHead     Department[]     @relation("DepartmentHead")
+  teamLead           Team[]           @relation("TeamLead")
+  teams              Team[]           @relation("TeamMembers")
+  refreshTokens      RefreshToken[]
+  attendances        Attendance[]
+  leaveRequests      LeaveRequest[]
+  leaveApprovals     LeaveApproval[]
+  tasksCreated       Task[]           @relation("TaskCreator")
+  tasksAssigned      Task[]           @relation("TaskAssignee")
+  taskReviews        TaskReview[]
+  taskComments       TaskComment[]
+  payrollRecords     PayrollRecord[]
+  expenseClaims      ExpenseClaim[]
+  assetAssignments   AssetAssignment[]
+  notifications      Notification[]
+  knowledgeArticles  KnowledgeArticle[]
+  auditLogs          AuditLog[]
+  performanceReviews PerformanceReview[] @relation("ReviewSubject")
+  reviewsGiven       PerformanceReview[] @relation("Reviewer")
+  documents          EmployeeDocument[]
+  leaveBalances      LeaveBalance[]
+  roles              UserRole[]
+}
+
+model UserRole {
+  id        String    @id @default(cuid())
+  userId    String
+  roleId    String
+  scopeType RoleScope
+  scopeId   String
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  role      Role      @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId, scopeType, scopeId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Role {
+  id             String       @id @default(cuid())
+  name           String
+  organizationId String
+  isSystem       Boolean      @default(false)
+  isTemplate     Boolean      @default(false)
+  isDeleted      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  permissions    RolePermission[]
+  userRoles      UserRole[]
+}
+
+model RolePermission {
+  id             String       @id @default(cuid())
+  roleId         String
+  organizationId String
+  resource       String
+  action         String
+  createdAt      DateTime     @default(now())
+
+  role           Role         @relation(fields: [roleId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([roleId, resource, action])
+}
+
+model Attendance {
+  id            String           @id @default(cuid())
+  userId        String
+  date          DateTime         @db.Date
+  checkIn       DateTime?
+  checkOut      DateTime?
+  breakStart    DateTime?
+  breakEnd      DateTime?
+  lunchStart    DateTime?
+  lunchEnd      DateTime?
+  totalHours    Float?
+  status        AttendanceStatus @default(PRESENT)
+  workMode      WorkMode         @default(WFO)
+  ipAddress     String?
+  gpsLat        Float?
+  gpsLng        Float?
+  notes         String?
+  isManualEntry Boolean          @default(false)
+  adjustedBy    String?
+  isDeleted     Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user          User             @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+}
+
+model LeavePolicy {
+  id             String      @id @default(cuid())
+  organizationId String
+  leaveType      LeaveType
+  daysAllowed    Int
+  carryForward   Boolean     @default(false)
+  maxCarryForward Int        @default(0)
+  isDeleted      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, leaveType])
+}
+
+model LeaveBalance {
+  id          String    @id @default(cuid())
+  userId      String
+  leaveType   LeaveType
+  year        Int
+  allocated   Int
+  used        Int       @default(0)
+  pending     Int       @default(0)
+  remaining   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, leaveType, year])
+}
+
+model LeaveRequest {
+  id          String      @id @default(cuid())
+  userId      String
+  leaveType   LeaveType
+  startDate   DateTime    @db.Date
+  endDate     DateTime    @db.Date
+  days        Float
+  reason      String
+  status      LeaveStatus @default(PENDING)
+  isDeleted   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id])
+  approvals   LeaveApproval[]
+  attachments LeaveAttachment[]
+}
+
+model LeaveApproval {
+  id             String      @id @default(cuid())
+  leaveRequestId String
+  approverId     String
+  action         String
+  comment        String?
+  createdAt      DateTime    @default(now())
+
+  leaveRequest   LeaveRequest @relation(fields: [leaveRequestId], references: [id])
+  approver       User         @relation(fields: [approverId], references: [id])
+}
+
+model LeaveAttachment {
+  id             String      @id @default(cuid())
+  leaveRequestId String
+  fileUrl        String
+  fileName       String
+  createdAt      DateTime    @default(now())
+
+  leaveRequest   LeaveRequest @relation(fields: [leaveRequestId], references: [id])
+}
+
+model Task {
+  id           String       @id @default(cuid())
+  taskId       String       @unique
+  title        String
+  description  String?
+  creatorId    String
+  assigneeId   String?
+  status       TaskStatus   @default(DRAFT)
+  priority     TaskPriority @default(MEDIUM)
+  dueDate      DateTime?
+  parentTaskId String?
+  isDeleted    Boolean      @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  creator      User         @relation("TaskCreator", fields: [creatorId], references: [id])
+  assignee     User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  parentTask   Task?        @relation("Subtasks", fields: [parentTaskId], references: [id])
+  subtasks     Task[]       @relation("Subtasks")
+  reviews      TaskReview[]
+  comments     TaskComment[]
+  attachments  TaskAttachment[]
+  dependencies TaskDependency[] @relation("DependentTask")
+  dependents   TaskDependency[] @relation("DependencyTask")
+  labels       TaskLabel[]
+}
+
+model TaskReview {
+  id          String   @id @default(cuid())
+  taskId      String
+  reviewerId  String
+  score       Int?
+  comment     String?
+  action      String
+  createdAt   DateTime @default(now())
+
+  task        Task     @relation(fields: [taskId], references: [id])
+  reviewer    User     @relation(fields: [reviewerId], references: [id])
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  body      String
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task      Task     @relation(fields: [taskId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model TaskAttachment {
+  id        String   @id @default(cuid())
+  taskId    String
+  uploadedBy String
+  fileUrl   String
+  fileName  String
+  fileSize  Int
+  createdAt DateTime @default(now())
+
+  task      Task     @relation(fields: [taskId], references: [id])
+}
+
+model TaskDependency {
+  id            String @id @default(cuid())
+  dependentId   String
+  dependencyId  String
+
+  dependentTask  Task  @relation("DependentTask", fields: [dependentId], references: [id])
+  dependencyTask Task  @relation("DependencyTask", fields: [dependencyId], references: [id])
+
+  @@unique([dependentId, dependencyId])
+}
+
+model TaskLabel {
+  id      String @id @default(cuid())
+  taskId  String
+  label   String
+
+  task    Task   @relation(fields: [taskId], references: [id])
+}
+
+model PerformanceReview {
+  id           String   @id @default(cuid())
+  subjectId    String
+  reviewerId   String
+  period       String
+  periodType   String
+  score        Float?
+  comments     String?
+  completionRate Float?
+  deadlinesMet Float?
+  reworkCount  Int?
+  attendancePct Float?
+  isDeleted    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subject      User     @relation("ReviewSubject", fields: [subjectId], references: [id])
+  reviewer     User     @relation("Reviewer", fields: [reviewerId], references: [id])
+}
+
+model PayrollRun {
+  id             String        @id @default(cuid())
+  organizationId String
+  month          Int
+  year           Int
+  status         PayrollStatus @default(DRAFT)
+  generatedBy    String?
+  approvedBy     String?
+  paidBy         String?
+  generatedAt    DateTime?
+  approvedAt     DateTime?
+  paidAt         DateTime?
+  isDeleted      Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  records        PayrollRecord[]
+
+  @@unique([organizationId, month, year])
+}
+
+model PayrollRecord {
+  id            String     @id @default(cuid())
+  payrollRunId  String
+  userId        String
+  basicSalary   Float
+  hra           Float      @default(0)
+  allowances    Float      @default(0)
+  bonus         Float      @default(0)
+  grossSalary   Float
+  pf            Float      @default(0)
+  tax           Float      @default(0)
+  otherDeductions Float    @default(0)
+  totalDeductions Float
+  netSalary     Float
+  isDeleted     Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  payrollRun    PayrollRun @relation(fields: [payrollRunId], references: [id])
+  user          User       @relation(fields: [userId], references: [id])
+}
+
+model ExpenseClaim {
+  id          String        @id @default(cuid())
+  userId      String
+  title       String
+  category    String
+  amount      Float
+  currency    String        @default("INR")
+  incurredOn  DateTime      @db.Date
+  description String?
+  status      ExpenseStatus @default(DRAFT)
+  isDeleted   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id])
+  attachments ExpenseAttachment[]
+  approvals   ExpenseApproval[]
+}
+
+model ExpenseAttachment {
+  id             String       @id @default(cuid())
+  expenseClaimId String
+  fileUrl        String
+  fileName       String
+  createdAt      DateTime     @default(now())
+
+  expenseClaim   ExpenseClaim @relation(fields: [expenseClaimId], references: [id])
+}
+
+model ExpenseApproval {
+  id             String       @id @default(cuid())
+  expenseClaimId String
+  approverId     String
+  action         String
+  comment        String?
+  createdAt      DateTime     @default(now())
+
+  expenseClaim   ExpenseClaim @relation(fields: [expenseClaimId], references: [id])
+}
+
+model Asset {
+  id             String      @id @default(cuid())
+  organizationId String
+  name           String
+  category       String
+  serialNumber   String?     @unique
+  status         AssetStatus @default(AVAILABLE)
+  isDeleted      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  assignments    AssetAssignment[]
+}
+
+model AssetAssignment {
+  id          String    @id @default(cuid())
+  assetId     String
+  userId      String
+  assignedAt  DateTime  @default(now())
+  returnedAt  DateTime?
+  notes       String?
+  isActive    Boolean   @default(true)
+
+  asset       Asset     @relation(fields: [assetId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model KnowledgeArticle {
+  id          String    @id @default(cuid())
+  title       String
+  body        String
+  authorId    String
+  category    String
+  tags        String[]
+  isPublished Boolean   @default(false)
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  author      User      @relation(fields: [authorId], references: [id])
+  versions    KnowledgeVersion[]
+}
+
+model KnowledgeVersion {
+  id         String           @id @default(cuid())
+  articleId  String
+  body       String
+  editedBy   String
+  createdAt  DateTime         @default(now())
+
+  article    KnowledgeArticle @relation(fields: [articleId], references: [id])
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType
+  title      String
+  body       String
+  isRead     Boolean          @default(false)
+  readAt     DateTime?
+  meta       Json?
+  createdAt  DateTime         @default(now())
+
+  user       User             @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id             String      @id @default(cuid())
+  organizationId String
+  actorId        String
+  action         AuditAction
+  module         String
+  targetId       String?
+  targetType     String?
+  oldValue       Json?
+  newValue       Json?
+  ipAddress      String?
+  userAgent      String?
+  sessionId      String?
+  createdAt      DateTime    @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  actor          User         @relation(fields: [actorId], references: [id])
+}
+
+model EmployeeDocument {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  fileUrl    String
+  fileType   String
+  uploadedBy String
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+}

@@ -1,0 +1,34 @@
+import { Request, Response } from "express";
+import { OrganizationService } from "./organization.service";
+import { sendSuccess } from "../../utils/response.util";
+import { asyncHandler } from "../../utils/asyncHandler.util";
+import { AppError } from "../../utils/errors.util";
+
+export const getOrgMetadata = asyncHandler(async (req: Request, res: Response) => {
+  const org = await OrganizationService.getById(req.org!.id);
+  if (!org) {
+    throw AppError.notFound("Organization not found");
+  }
+  return sendSuccess(res, org);
+});
+
+export const getOrgBySlug = asyncHandler(async (req: Request, res: Response) => {
+  const { slug } = req.params;
+  const org = await OrganizationService.getBySlug(slug);
+  if (!org) {
+    throw AppError.notFound("Organization not found");
+  }
+  return sendSuccess(res, org);
+});
+
+export const updateOrgFeatures = asyncHandler(async (req: Request, res: Response) => {
+  if (req.user!.systemRole !== "SUPER_ADMIN") {
+    throw AppError.forbidden("Only super admins are authorized to configure features");
+  }
+
+  const { orgId } = req.params;
+  const { enabledFeatures } = req.body;
+
+  const updated = await OrganizationService.updateFeatures(orgId, enabledFeatures, req.user!.id, req);
+  return sendSuccess(res, updated, "Organization features configured successfully");
+});

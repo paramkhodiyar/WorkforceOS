@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WorkforceOS | Employee Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed": "#360f00",
+                      "tertiary-fixed": "#ffdbcd",
+                      "surface-container-high": "#e7e7f3",
+                      "surface-tint": "#0053db",
+                      "on-secondary": "#ffffff",
+                      "surface": "#faf8ff",
+                      "on-primary": "#ffffff",
+                      "primary": "#004ac6",
+                      "on-tertiary-container": "#ffede6",
+                      "on-tertiary": "#ffffff",
+                      "surface-bright": "#faf8ff",
+                      "on-secondary-fixed": "#1b1b1e",
+                      "surface-container": "#ededf9",
+                      "inverse-surface": "#2e3039",
+                      "secondary-container": "#e4e1e6",
+                      "on-secondary-fixed-variant": "#47464a",
+                      "on-primary-fixed-variant": "#003ea8",
+                      "on-surface-variant": "#434655",
+                      "surface-container-low": "#f3f3fe",
+                      "outline-variant": "#c3c6d7",
+                      "on-primary-fixed": "#00174b",
+                      "on-surface": "#191b23",
+                      "on-secondary-container": "#656467",
+                      "secondary-fixed-dim": "#c8c5ca",
+                      "on-background": "#191b23",
+                      "primary-fixed": "#dbe1ff",
+                      "surface-dim": "#d9d9e5",
+                      "background": "#faf8ff",
+                      "inverse-on-surface": "#f0f0fb",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed-dim": "#ffb596",
+                      "on-error": "#ffffff",
+                      "tertiary-container": "#bc4800",
+                      "surface-variant": "#e1e2ed",
+                      "inverse-primary": "#b4c5ff",
+                      "on-primary-container": "#eeefff",
+                      "primary-container": "#2563eb",
+                      "outline": "#737686",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary": "#943700",
+                      "on-tertiary-fixed-variant": "#7d2d00",
+                      "primary-fixed-dim": "#b4c5ff",
+                      "secondary": "#5f5e61",
+                      "surface-container-highest": "#e1e2ed",
+                      "error-container": "#ffdad6",
+                      "on-error-container": "#93000a",
+                      "secondary-fixed": "#e4e1e6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "card-padding": "24px",
+                      "component-gap": "12px",
+                      "container-margin": "32px",
+                      "stack-sm": "8px",
+                      "section-gap": "20px"
+              },
+              "fontFamily": {
+                      "body-base": ["Inter"],
+                      "headline-sm": ["Inter"],
+                      "section-cap": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "label-md": ["Inter"],
+                      "label-sm": ["Inter"]
+              },
+              "fontSize": {
+                      "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-sm": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                      "section-cap": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                      "headline-lg": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for side nav */
+        #side-nav::-webkit-scrollbar { width: 4px; }
+        #side-nav::-webkit-scrollbar-thumb { background: #c3c6d7; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-zinc-50 text-on-surface">
+<!-- SideNavBar (Standardized) -->
+<aside class="fixed left-0 top-0 h-full w-[240px] border-r border-outline-variant bg-surface dark:bg-surface-container-low flex flex-col py-4 px-3 overflow-y-auto" id="side-nav">
+<div class="mb-8 px-1">
+<h1 class="text-headline-sm font-headline-sm font-semibold text-primary dark:text-primary-fixed">WorkforceOS</h1>
+<p class="text-label-md font-label-md text-on-surface-variant">Management Suite</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 bg-primary-container text-on-primary-container rounded-lg active:scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md font-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-label-md font-label-md">Employees</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">schedule</span>
+<span class="text-label-md font-label-md">Attendance</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">event_busy</span>
+<span class="text-label-md font-label-md">Leave</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="text-label-md font-label-md">Tasks</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="text-label-md font-label-md">Performance</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-label-md font-label-md">Payroll</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="text-label-md font-label-md">Expenses</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-label-md font-label-md">Assets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-label-md font-label-md">Knowledge</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="text-label-md font-label-md">Notifications</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-label-md font-label-md">Audit</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-outline-variant space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-md font-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-label-md font-label-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar (Standardized) -->
+<header class="fixed top-0 right-0 h-16 w-[calc(100%-240px)] flex justify-between items-center px-6 bg-surface dark:bg-surface-container-low border-b border-outline-variant z-10">
+<div class="flex items-center bg-surface-container px-4 py-2 rounded-lg w-96 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-outline mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm w-full outline-none" placeholder="Search tasks, docs, or people..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-primary font-semibold border-b-2 border-primary pb-4 active:opacity-80 transition-opacity translate-y-2" href="#">Dashboard</a>
+</nav>
+<div class="flex items-center gap-4 border-l border-outline-variant pl-4">
+<button class="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-label-md font-label-md text-on-surface">Alex Rivera</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Product Designer</p>
+</div>
+<img alt="User Avatar" class="w-10 h-10 rounded-full object-cover border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm_ZyxFqujVcxe3G7sQ5tccVL9fydGmcyiQRBnbMpdq-alW5pg1nCv4_nO58KdaSACk-WPnxRmA8qWIB-frXnJG6HrwomZUTbAqSs9YF-i8u457kel_eF71BzHZ7z-sUPpb4NmuHlsMT1_Lbnzolo5X5YspZt8eOwHz4cCxiqa3hEqnmERy7vlJ6ZN2WzUVbUP1X0WQlRqc7MR5GqxadEVAJv8sLSz7pT65qE0EKCmt3R0_TUwWJG6LZ2C3L9uWNYmZq3MwVsTX5Q"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[240px] pt-16 min-h-screen">
+<div class="p-container-margin max-w-7xl mx-auto space-y-section-gap">
+<!-- Row 1: Check-in Card & Timeline -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-section-gap">
+<div class="lg:col-span-8 bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex items-center gap-5">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined !text-4xl" style="font-variation-settings: 'FILL' 1;">timer</span>
+</div>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Attendance Status</h2>
+<div class="flex items-center gap-2 mt-1">
+<span class="w-2.5 h-2.5 rounded-full bg-outline"></span>
+<span class="text-body-base font-medium text-on-surface-variant">Checked Out</span>
+</div>
+</div>
+</div>
+<button class="bg-primary hover:bg-primary-container hover:text-on-primary-container text-white px-8 py-3 rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-2 h-[48px]">
+<span class="material-symbols-outlined">login</span>
+                            Check In
+                        </button>
+</div>
+<div class="mt-10">
+<p class="text-section-cap font-section-cap text-outline uppercase mb-6">Today's Timeline</p>
+<div class="relative">
+<div class="absolute left-2 top-0 bottom-0 w-0.5 bg-outline-variant"></div>
+<div class="space-y-8 relative">
+<div class="flex items-start gap-4">
+<div class="w-4 h-4 rounded-full bg-outline-variant border-2 border-surface-container-lowest z-10 mt-1.5"></div>
+<div class="flex-1 pb-4 border-b border-zinc-100 italic text-on-surface-variant text-body-sm">
+                                        No events recorded for today yet.
+                                    </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="lg:col-span-4 bg-primary text-white rounded-xl p-6 shadow-sm flex flex-col justify-between overflow-hidden relative">
+<!-- Atmospheric Background Element -->
+<div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+<div>
+<p class="text-label-md font-label-md opacity-80">Monday, Oct 23</p>
+<h3 class="text-[42px] font-bold tracking-tight mt-1" id="clock">09:00 AM</h3>
+</div>
+<div class="mt-8 space-y-4">
+<div class="bg-white/10 rounded-lg p-4 backdrop-blur-sm border border-white/10">
+<p class="text-label-sm font-label-sm opacity-80 uppercase tracking-wider">Working Hours</p>
+<p class="text-headline-sm font-headline-sm mt-1">0h 00m</p>
+</div>
+<p class="text-body-sm leading-relaxed opacity-90">
+                            Good morning, Alex! Ready to tackle your active tasks for today?
+                        </p>
+</div>
+</div>
+</section>
+<!-- Row 2: Leave Balance Cards -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-section-gap">
+<!-- Casual Leave -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm hover:border-zinc-300 transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary-fixed text-on-primary-fixed-variant rounded-lg">
+<span class="material-symbols-outlined">beach_access</span>
+</div>
+<button class="text-primary hover:bg-surface-container px-3 py-1 rounded-md text-label-sm font-label-sm transition-colors border border-transparent hover:border-outline-variant">Apply Leave</button>
+</div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Casual Leave</h3>
+<div class="mt-4 flex items-baseline gap-1">
+<span class="text-headline-md font-bold text-on-surface">12</span>
+<span class="text-on-surface-variant text-label-md">days remaining</span>
+</div>
+<div class="mt-6 space-y-2">
+<div class="flex justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">3 of 15 used</span>
+<span class="text-on-surface">20%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[20%]"></div>
+</div>
+</div>
+</div>
+<!-- Sick Leave -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm hover:border-zinc-300 transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-error-container text-on-error-container rounded-lg">
+<span class="material-symbols-outlined">medical_services</span>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container px-3 py-1 rounded-md text-label-sm font-label-sm transition-colors">Details</button>
+</div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Sick Leave</h3>
+<div class="mt-4 flex items-baseline gap-1">
+<span class="text-headline-md font-bold text-on-surface">8</span>
+<span class="text-on-surface-variant text-label-md">days remaining</span>
+</div>
+<div class="mt-6 space-y-2">
+<div class="flex justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">2 of 10 used</span>
+<span class="text-on-surface">20%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full w-[20%]"></div>
+</div>
+</div>
+</div>
+<!-- Earned Leave -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm hover:border-zinc-300 transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-lg">
+<span class="material-symbols-outlined">savings</span>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container px-3 py-1 rounded-md text-label-sm font-label-sm transition-colors">Details</button>
+</div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Earned Leave</h3>
+<div class="mt-4 flex items-baseline gap-1">
+<span class="text-headline-md font-bold text-on-surface">20</span>
+<span class="text-on-surface-variant text-label-md">days remaining</span>
+</div>
+<div class="mt-6 space-y-2">
+<div class="flex justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">5 of 25 used</span>
+<span class="text-on-surface">20%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-container rounded-full w-[20%]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Row 3: My active tasks -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex items-center justify-between">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">My active tasks</h2>
+<p class="text-body-sm text-on-surface-variant">Tasks currently assigned or in progress</p>
+</div>
+<a class="text-primary font-medium text-label-md hover:underline" href="#">View all tasks</a>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-zinc-50">
+<tr>
+<th class="px-6 py-4 text-section-cap font-section-cap text-outline uppercase">Task ID</th>
+<th class="px-6 py-4 text-section-cap font-section-cap text-outline uppercase">Title</th>
+<th class="px-6 py-4 text-section-cap font-section-cap text-outline uppercase">Status</th>
+<th class="px-6 py-4 text-section-cap font-section-cap text-outline uppercase">Priority</th>
+<th class="px-6 py-4 text-section-cap font-section-cap text-outline uppercase">Due Date</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-zinc-100">
+<tr class="hover:bg-zinc-50 transition-colors group">
+<td class="px-6 py-4 font-mono text-body-sm text-on-surface-variant">#TASK-8241</td>
+<td class="px-6 py-4 text-body-base font-medium text-on-surface">Quarterly UI component audit and style documentation</td>
+<td class="px-6 py-4">
+<span class="bg-orange-50 text-orange-600 px-2 py-1 rounded-lg text-label-sm font-medium border border-orange-100">In Progress</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-red-600"></span>
+<span class="text-label-sm">Critical</span>
+</div>
+</td>
+<td class="px-6 py-4 text-error font-medium text-label-md">Oct 20, 2023</td>
+</tr>
+<tr class="hover:bg-zinc-50 transition-colors group">
+<td class="px-6 py-4 font-mono text-body-sm text-on-surface-variant">#TASK-9102</td>
+<td class="px-6 py-4 text-body-base font-medium text-on-surface">Employee onboarding flow redesign for mobile</td>
+<td class="px-6 py-4">
+<span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-label-sm font-medium border border-blue-100">Assigned</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span>
+<span class="text-label-sm">High</span>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant text-label-md">Oct 25, 2023</td>
+</tr>
+<tr class="hover:bg-zinc-50 transition-colors group">
+<td class="px-6 py-4 font-mono text-body-sm text-on-surface-variant">#TASK-7855</td>
+<td class="px-6 py-4 text-body-base font-medium text-on-surface">Integration test for payroll module endpoints</td>
+<td class="px-6 py-4">
+<span class="bg-orange-50 text-orange-600 px-2 py-1 rounded-lg text-label-sm font-medium border border-orange-100">In Progress</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+<span class="text-label-sm">Medium</span>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant text-label-md">Oct 28, 2023</td>
+</tr>
+<tr class="hover:bg-zinc-50 transition-colors group">
+<td class="px-6 py-4 font-mono text-body-sm text-on-surface-variant">#TASK-6421</td>
+<td class="px-6 py-4 text-body-base font-medium text-on-surface">Weekly sync with engineering on design debt</td>
+<td class="px-6 py-4">
+<span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-label-sm font-medium border border-blue-100">Assigned</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-slate-400"></span>
+<span class="text-label-sm">Low</span>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant text-label-md">Oct 30, 2023</td>
+</tr>
+<tr class="hover:bg-zinc-50 transition-colors group">
+<td class="px-6 py-4 font-mono text-body-sm text-on-surface-variant">#TASK-1120</td>
+<td class="px-6 py-4 text-body-base font-medium text-on-surface">Design system token update for high-contrast accessibility</td>
+<td class="px-6 py-4">
+<span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-label-sm font-medium border border-blue-100">Assigned</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span>
+<span class="text-label-sm">High</span>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant text-label-md">Nov 02, 2023</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</main>
+<script>
+        // Simple Real-time Clock
+        function updateClock() {
+            const now = new Date();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+            const displayHours = now.getHours() % 12 || 12;
+            document.getElementById('clock').textContent = `${String(displayHours).padStart(2, '0')}:${minutes} ${ampm}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body></html>

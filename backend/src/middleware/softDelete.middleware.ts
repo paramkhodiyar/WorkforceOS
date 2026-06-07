@@ -20,11 +20,32 @@ const modelsWithSoftDelete = [
   "EmployeeDocument"
 ];
 
+const compoundKeys = [
+  "userId_roleId_scopeType_scopeId",
+  "userId_date",
+  "organizationId_leaveType",
+  "userId_leaveType_year",
+  "dependentId_dependencyId",
+  "organizationId_month_year"
+];
+
+function flattenCompoundKeys(where: any) {
+  if (!where) return;
+  for (const key of compoundKeys) {
+    if (where[key] && typeof where[key] === "object") {
+      const val = where[key];
+      delete where[key];
+      Object.assign(where, val);
+    }
+  }
+}
+
 export const softDeleteMiddleware: Prisma.Middleware = async (params, next) => {
   if (params.model && modelsWithSoftDelete.includes(params.model)) {
     if (params.action === "findUnique" || params.action === "findFirst") {
       params.action = "findFirst";
       params.args.where = params.args.where || {};
+      flattenCompoundKeys(params.args.where);
       params.args.where.isDeleted = false;
     } else if (params.action === "findMany" || params.action === "count") {
       params.args.where = params.args.where || {};

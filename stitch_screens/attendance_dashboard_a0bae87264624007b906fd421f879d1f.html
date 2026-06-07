@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#ededf9",
+                        "on-tertiary-fixed": "#360f00",
+                        "on-background": "#191b23",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#00174b",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "on-surface": "#191b23",
+                        "surface-container-highest": "#e1e2ed",
+                        "surface-tint": "#0053db",
+                        "secondary-fixed-dim": "#c8c5ca",
+                        "outline": "#737686",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#faf8ff",
+                        "inverse-surface": "#2e3039",
+                        "error-container": "#ffdad6",
+                        "surface": "#faf8ff",
+                        "inverse-on-surface": "#f0f0fb",
+                        "secondary-container": "#e4e1e6",
+                        "primary-fixed": "#dbe1ff",
+                        "on-secondary-fixed": "#1b1b1e",
+                        "background": "#faf8ff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "primary": "#004ac6",
+                        "outline-variant": "#c3c6d7",
+                        "surface-container-high": "#e7e7f3",
+                        "inverse-primary": "#b4c5ff",
+                        "on-tertiary-container": "#ffede6",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "on-secondary-container": "#656467",
+                        "on-primary-container": "#eeefff",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#ffdbcd",
+                        "secondary": "#5f5e61",
+                        "secondary-fixed": "#e4e1e6",
+                        "surface-container-low": "#f3f3fe",
+                        "tertiary": "#943700",
+                        "surface-dim": "#d9d9e5",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#2563eb",
+                        "surface-variant": "#e1e2ed",
+                        "on-surface-variant": "#434655",
+                        "tertiary-container": "#bc4800",
+                        "on-secondary-fixed-variant": "#47464a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-padding": "24px",
+                        "section-gap": "20px",
+                        "container-margin": "32px",
+                        "component-gap": "12px",
+                        "stack-sm": "8px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "section-cap": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-base": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "section-cap": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-sm": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-[240px] border-r border-outline-variant bg-surface-container-lowest dark:bg-surface-container-low flex flex-col p-4 overflow-y-auto z-50">
+<div class="mb-8 px-2 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-sm">corporate_fare</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-headline-sm font-bold text-primary dark:text-inverse-primary leading-none">WorkforceOS</h1>
+<p class="text-label-sm font-label-sm text-on-surface-variant opacity-70">Enterprise Admin</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">dashboard</span>
+<span class="text-label-md font-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">badge</span>
+<span class="text-label-md font-label-md">Employees</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-3 bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container px-4 py-2 rounded-lg opacity-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="text-label-md font-label-md">Attendance</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">event_busy</span>
+<span class="text-label-md font-label-md">Leave</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">assignment</span>
+<span class="text-label-md font-label-md">Tasks</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">trending_up</span>
+<span class="text-label-md font-label-md">Performance</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">payments</span>
+<span class="text-label-md font-label-md">Payroll</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">receipt_long</span>
+<span class="text-label-md font-label-md">Expenses</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">inventory_2</span>
+<span class="text-label-md font-label-md">Assets</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-outline-variant space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-md font-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-on-surface-variant px-4 py-2 hover:bg-surface-container dark:hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="text-label-md font-label-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-[240px] h-16 border-b border-outline-variant bg-surface-container-lowest dark:bg-surface-container-low flex items-center justify-between px-card-padding z-40">
+<div class="flex items-center flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-4 py-2 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="Search attendance records..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container dark:hover:bg-surface-container-high p-2 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-8 w-px bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="text-right">
+<p class="text-label-md font-label-md leading-none">Sarah Jenkins</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">HR Director</p>
+</div>
+<img alt="Profile" class="w-10 h-10 rounded-full border border-outline-variant object-cover" data-alt="A professional headshot of a mature woman with a warm, confident expression in a bright, modern corporate environment. The lighting is soft and even, highlighting her professional attire against a blurred architectural office background. The overall aesthetic is clean, high-fidelity, and trustworthy, perfectly aligning with a premium enterprise software interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMpO_l7miNiOffiTL4W2QEkUGageof2Wy586Dckr66W1ZQjwryiLyEK0jO1H5sor32rZI-EuH6VF9rSQ5CBKEB4lblCYujoItioBPFAQPjQwWs5r15AyyPA2XW5bYJDiqb-DW7Ftm_61Fwvi55qWs5IHv_Plm--qjDS_7vMIqb1r7bvREmSnkZPxIgZQXZI-CzvMpMhZKcxHcErFGhsHPq7sAiXDPoiN92k6IsPQfTkUxvWG7aG5nLqFGPfS5fyBTDAtQAD3aJW5Y"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-[240px] pt-16 p-container-margin min-h-screen">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-section-gap">
+<div>
+<h2 class="text-headline-md font-headline-md text-on-surface">Attendance Overview</h2>
+<p class="text-body-sm text-on-surface-variant">Daily snapshot and historical tracking for October 2023</p>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 border border-outline-variant rounded-lg text-label-md hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-base">filter_list</span>
+                    Filter
+                </button>
+<button class="px-4 py-2 bg-primary text-white rounded-lg text-label-md hover:opacity-90 transition-opacity flex items-center gap-2">
+<span class="material-symbols-outlined text-base">file_download</span>
+                    Export Report
+                </button>
+</div>
+</div>
+<!-- Metric Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-component-gap mb-section-gap">
+<!-- Present -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:border-outline transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-green-50 rounded-lg">
+<span class="material-symbols-outlined text-green-600">how_to_reg</span>
+</div>
+<span class="text-label-sm text-green-600 font-semibold bg-green-50 px-2 py-1 rounded">88% Capacity</span>
+</div>
+<h3 class="text-label-md font-label-md text-on-surface-variant">Present</h3>
+<p class="text-headline-lg font-headline-lg text-on-surface">1,240</p>
+<p class="text-label-sm text-on-surface-variant mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-green-600">arrow_upward</span>
+<span class="text-green-600 font-medium">12%</span> vs last month
+                </p>
+</div>
+<!-- Absent -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:border-outline transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-error-container/20 rounded-lg">
+<span class="material-symbols-outlined text-error">person_off</span>
+</div>
+<span class="text-label-sm text-error font-semibold bg-error-container/10 px-2 py-1 rounded">Critical</span>
+</div>
+<h3 class="text-label-md font-label-md text-on-surface-variant">Absent</h3>
+<p class="text-headline-lg font-headline-lg text-on-surface">42</p>
+<p class="text-label-sm text-on-surface-variant mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-error">arrow_upward</span>
+<span class="text-error font-medium">4.1%</span> vs last week
+                </p>
+</div>
+<!-- Late -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:border-outline transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-orange-50 rounded-lg">
+<span class="material-symbols-outlined text-orange-600">schedule</span>
+</div>
+<span class="text-label-sm text-orange-600 font-semibold bg-orange-50 px-2 py-1 rounded">Attention Needed</span>
+</div>
+<h3 class="text-label-md font-label-md text-on-surface-variant">Late</h3>
+<p class="text-headline-lg font-headline-lg text-on-surface">118</p>
+<p class="text-label-sm text-on-surface-variant mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-green-600">arrow_downward</span>
+<span class="text-green-600 font-medium">8.4%</span> vs yesterday
+                </p>
+</div>
+<!-- On Leave -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:border-outline transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-blue-50 rounded-lg">
+<span class="material-symbols-outlined text-primary">beach_access</span>
+</div>
+<span class="text-label-sm text-primary font-semibold bg-blue-50 px-2 py-1 rounded">Scheduled</span>
+</div>
+<h3 class="text-label-md font-label-md text-on-surface-variant">On Leave</h3>
+<p class="text-headline-lg font-headline-lg text-on-surface">65</p>
+<p class="text-label-sm text-on-surface-variant mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_flat</span>
+<span class="font-medium">Stable</span> vs average
+                </p>
+</div>
+</div>
+<!-- Monthly Grid Calendar Section -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm mb-section-gap overflow-hidden">
+<div class="p-card-padding border-b border-outline-variant flex justify-between items-center">
+<h3 class="text-headline-sm font-headline-sm">Attendance Calendar</h3>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-4 text-label-sm">
+<div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-green-500"></div> Present</div>
+<div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-red-500"></div> Absent</div>
+<div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-orange-400"></div> Late</div>
+<div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-blue-500"></div> Leave</div>
+<div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-zinc-300"></div> Holiday</div>
+</div>
+<div class="flex border border-outline-variant rounded-lg overflow-hidden">
+<button class="p-1 px-3 bg-surface-container text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-base">chevron_left</span></button>
+<div class="px-4 py-1 flex items-center text-label-md font-medium">October 2023</div>
+<button class="p-1 px-3 hover:bg-surface-container transition-colors border-l border-outline-variant"><span class="material-symbols-outlined text-base">chevron_right</span></button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-7 border-collapse">
+<!-- Day Headers -->
+<div class="py-3 text-center text-section-cap text-on-surface-variant border-r border-b border-outline-variant">Mon</div>
+<div class="py-3 text-center text-section-cap text-on-surface-variant border-r border-b border-outline-variant">Tue</div>
+<div class="py-3 text-center text-section-cap text-on-surface-variant border-r border-b border-outline-variant">Wed</div>
+<div class="py-3 text-center text-section-cap text-on-surface-variant border-r border-b border-outline-variant">Thu</div>
+<div class="py-3 text-center text-section-cap text-on-surface-variant border-r border-b border-outline-variant">Fri</div>
+<div class="py-3 text-center text-section-cap text-on-surface-variant border-r border-b border-outline-variant">Sat</div>
+<div class="py-3 text-center text-section-cap text-on-surface-variant border-b border-outline-variant">Sun</div>
+<!-- Calendar Cells (Simplified demo for October) -->
+<!-- First row padding -->
+<div class="h-28 bg-surface-container-low border-r border-b border-outline-variant opacity-30"></div>
+<div class="h-28 bg-surface-container-low border-r border-b border-outline-variant opacity-30"></div>
+<div class="h-28 bg-surface-container-low border-r border-b border-outline-variant opacity-30"></div>
+<div class="h-28 bg-surface-container-low border-r border-b border-outline-variant opacity-30"></div>
+<div class="h-28 bg-surface-container-low border-r border-b border-outline-variant opacity-30"></div>
+<div class="h-28 bg-zinc-50 border-r border-b border-outline-variant p-2 group hover:bg-zinc-100 transition-colors">
+<span class="text-label-sm text-on-surface-variant">1</span>
+<div class="flex justify-center mt-2"><div class="w-2.5 h-2.5 rounded-full bg-zinc-300"></div></div>
+</div>
+<div class="h-28 bg-zinc-50 border-b border-outline-variant p-2 group hover:bg-zinc-100 transition-colors">
+<span class="text-label-sm text-on-surface-variant">2</span>
+<div class="flex justify-center mt-2"><div class="w-2.5 h-2.5 rounded-full bg-zinc-300"></div></div>
+</div>
+<!-- Actual Week Data -->
+<div class="h-28 border-r border-b border-outline-variant p-2 hover:bg-surface-container transition-colors relative cursor-pointer">
+<span class="text-label-sm font-medium">3</span>
+<div class="flex justify-center mt-2"><div class="w-2.5 h-2.5 rounded-full bg-green-500"></div></div>
+<div class="mt-2 text-[10px] text-center text-on-surface-variant">98.5%</div>
+</div>
+<div class="h-28 border-r border-b border-outline-variant p-2 hover:bg-surface-container transition-colors relative">
+<span class="text-label-sm font-medium">4</span>
+<div class="flex justify-center mt-2"><div class="w-2.5 h-2.5 rounded-full bg-green-500"></div></div>
+<div class="mt-2 text-[10px] text-center text-on-surface-variant">97.2%</div>
+</div>
+<div class="h-28 border-r border-b border-outline-variant p-2 hover:bg-surface-container transition-colors relative">
+<span class="text-label-sm font-medium">5</span>
+<div class="flex justify-center mt-2"><div class="w-2.5 h-2.5 rounded-full bg-orange-400"></div></div>
+<div class="mt-2 text-[10px] text-center text-on-surface-variant">94.1%</div>
+</div>
+<div class="h-28 border-r border-b border-outline-variant p-2 bg-primary-container/5 hover:bg-surface-container transition-colors relative border-t-2 border-t-primary">
+<span class="text-label-sm font-bold text-primary">6</span>
+<div class="flex justify-center mt-2"><div class="w-3 h-3 rounded-full bg-green-500 ring-4 ring-white shadow-sm"></div></div>
+<div class="mt-2 text-[10px] text-center text-primary font-bold">Today</div>
+</div>
+<div class="h-28 border-r border-b border-outline-variant p-2 hover:bg-surface-container transition-colors relative">
+<span class="text-label-sm font-medium">7</span>
+<div class="flex justify-center mt-2"><div class="w-2.5 h-2.5 rounded-full bg-red-500"></div></div>
+<div class="mt-2 text-[10px] text-center text-on-surface-variant">89.8%</div>
+</div>
+<div class="h-28 bg-zinc-50 border-r border-b border-outline-variant p-2">
+<span class="text-label-sm text-on-surface-variant">8</span>
+<div class="flex justify-center mt-2"><div class="w-2.5 h-2.5 rounded-full bg-zinc-300"></div></div>
+</div>
+<div class="h-28 bg-zinc-50 border-b border-outline-variant p-2">
+<span class="text-label-sm text-on-surface-variant">9</span>
+<div class="flex justify-center mt-2"><div class="w-2.5 h-2.5 rounded-full bg-zinc-300"></div></div>
+</div>
+<!-- Future/Remaining cells omitted for brevity in UI sample -->
+<div class="h-28 border-r border-b border-outline-variant p-2"><span class="text-label-sm font-medium">10</span></div>
+<div class="h-28 border-r border-b border-outline-variant p-2"><span class="text-label-sm font-medium">11</span></div>
+<div class="h-28 border-r border-b border-outline-variant p-2"><span class="text-label-sm font-medium">12</span></div>
+<div class="h-28 border-r border-b border-outline-variant p-2"><span class="text-label-sm font-medium">13</span></div>
+<div class="h-28 border-r border-b border-outline-variant p-2"><span class="text-label-sm font-medium">14</span></div>
+<div class="h-28 bg-zinc-50 border-r border-b border-outline-variant p-2"><span class="text-label-sm text-on-surface-variant">15</span></div>
+<div class="h-28 bg-zinc-50 border-b border-outline-variant p-2"><span class="text-label-sm text-on-surface-variant">16</span></div>
+</div>
+</section>
+<!-- Attendance Exceptions Table -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden">
+<div class="p-card-padding border-b border-outline-variant">
+<h3 class="text-headline-sm font-headline-sm">Attendance Exceptions</h3>
+<p class="text-body-sm text-on-surface-variant">Review anomalies requiring administrative approval</p>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="px-6 py-3 text-section-cap text-on-surface-variant">Employee</th>
+<th class="px-6 py-3 text-section-cap text-on-surface-variant">Date</th>
+<th class="px-6 py-3 text-section-cap text-on-surface-variant">Type</th>
+<th class="px-6 py-3 text-section-cap text-on-surface-variant">Reason</th>
+<th class="px-6 py-3 text-section-cap text-on-surface-variant">Action Taken</th>
+<th class="px-6 py-3 text-section-cap text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">MW</div>
+<div>
+<p class="text-label-md font-label-md">Marcus Wright</p>
+<p class="text-[11px] text-on-surface-variant">Engineering Dept.</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-body-sm">Oct 05, 2023</td>
+<td class="px-6 py-4">
+<span class="bg-orange-50 text-orange-600 text-[11px] font-bold px-2 py-0.5 rounded-full border border-orange-200">Late</span>
+</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">Commute delay (Train)</td>
+<td class="px-6 py-4">
+<span class="text-label-sm text-on-surface-variant italic">Pending Review</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary text-label-md font-semibold hover:underline bg-primary/5 px-4 py-1.5 rounded-lg transition-all active:scale-95">Review</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="User" class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="A professional portrait of a male employee with a warm, friendly smile, dressed in business casual attire. The photography style is modern with a clean, well-lit office backdrop, maintaining a high-contrast and professional aesthetic that feels cohesive with a high-end enterprise interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrp9SM9bViA1DgdedEbTYAlNyLutyac-jU67RsZHju1ErxiFlYex-MY_xxsqp0Q9uImN-CBbIt9r3CDQtgoSBOIwtR4bkXt2cT13qpw5UPzPCN3_SpKTlrgLtZzAZu4nWfuvezwIB65sq-Apn9jCK7fDbpZ_eK9-JlEYFcOv6xDWXEtwCs28bXLoXuL2aR8C0fuwuiub8F2V0h3IiXoPErPHOJ6ExGnL_0rGNapA7DgaHH41iho7a9FZeEeeepwVT5GwJ14u6_PXo"/>
+<div>
+<p class="text-label-md font-label-md">Liam Henderson</p>
+<p class="text-[11px] text-on-surface-variant">Product Design</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-body-sm">Oct 04, 2023</td>
+<td class="px-6 py-4">
+<span class="bg-red-50 text-red-600 text-[11px] font-bold px-2 py-0.5 rounded-full border border-red-200">Missing Checkout</span>
+</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">Power outage at 5 PM</td>
+<td class="px-6 py-4">
+<span class="text-label-sm text-green-600 font-medium">Auto-adjusted</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary text-label-md font-semibold hover:underline bg-primary/5 px-4 py-1.5 rounded-lg transition-all active:scale-95">Review</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-primary font-bold text-xs">SC</div>
+<div>
+<p class="text-label-md font-label-md">Sofia Chen</p>
+<p class="text-[11px] text-on-surface-variant">HR Ops</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-body-sm">Oct 03, 2023</td>
+<td class="px-6 py-4">
+<span class="bg-blue-50 text-primary text-[11px] font-bold px-2 py-0.5 rounded-full border border-blue-200">Adjusted</span>
+</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">Medical emergency</td>
+<td class="px-6 py-4">
+<span class="text-label-sm text-on-surface-variant italic">Manual Entry</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary text-label-md font-semibold hover:underline bg-primary/5 px-4 py-1.5 rounded-lg transition-all active:scale-95">Review</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs">JR</div>
+<div>
+<p class="text-label-md font-label-md">James Rodriguez</p>
+<p class="text-[11px] text-on-surface-variant">Sales West</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-body-sm">Oct 03, 2023</td>
+<td class="px-6 py-4">
+<span class="bg-orange-50 text-orange-600 text-[11px] font-bold px-2 py-0.5 rounded-full border border-orange-200">Late</span>
+</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">Client meeting offsite</td>
+<td class="px-6 py-4">
+<span class="text-label-sm text-on-surface-variant italic">Pending Verification</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary text-label-md font-semibold hover:underline bg-primary/5 px-4 py-1.5 rounded-lg transition-all active:scale-95">Review</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 border-t border-outline-variant bg-surface-container-low flex justify-between items-center">
+<p class="text-label-sm text-on-surface-variant">Showing 4 of 28 exceptions</p>
+<div class="flex gap-2">
+<button class="px-3 py-1 text-label-sm border border-outline-variant rounded bg-white hover:bg-surface-container disabled:opacity-50" disabled="">Previous</button>
+<button class="px-3 py-1 text-label-sm border border-outline-variant rounded bg-white hover:bg-surface-container">Next</button>
+</div>
+</div>
+</section>
+</main>
+<script>
+        // Simple interactive effect for calendar cells
+        document.querySelectorAll('.h-28').forEach(cell => {
+            cell.addEventListener('click', () => {
+                if(!cell.classList.contains('bg-surface-container-low')) {
+                    cell.classList.add('ring-2', 'ring-primary', 'ring-inset');
+                    setTimeout(() => cell.classList.remove('ring-2', 'ring-primary', 'ring-inset'), 600);
+                }
+            });
+        });
+    </script>
+</body></html>

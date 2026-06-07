@@ -1,0 +1,219 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../lib/auth/AuthProvider';
+import { api } from '../../../lib/api/client';
+
+export default function ExpensesPage() {
+  const { user } = useAuth();
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('TRAVEL');
+  const [description, setDescription] = useState('');
+
+  const systemRole = user?.systemRole;
+  const userRoles = user?.roles || [];
+  const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
+  const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
+  const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
+  const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+
+  async function loadData() {
+    try {
+      const res = await api.expenses.list();
+      setExpenses(res.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await api.expenses.create({
+        amount: Number(amount),
+        category,
+        description
+      });
+      setAmount('');
+      setDescription('');
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to submit expense claim');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleApprove(id: string, status: string) {
+    try {
+      await api.expenses.approve(id, status);
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || 'Action failed');
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  const myClaims = expenses.filter(exp => exp.userId === user.id);
+  const pendingApprovals = expenses.filter(exp => exp.userId !== user.id && exp.status === 'PENDING');
+
+  return (
+    <div className="space-y-6 font-sans">
+      <div>
+        <h1 className="text-headline-md font-bold text-on-surface">Reimbursement & Expenses</h1>
+        <p className="text-body-sm text-outline">File reimbursement requests and review team expenses claims</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm h-fit">
+          <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">File Claim</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Amount ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Category</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+              >
+                <option value="TRAVEL">Travel</option>
+                <option value="MEALS">Meals & Food</option>
+                <option value="EQUIPMENT">Equipment & Tech</option>
+                <option value="EDUCATION">Education & Training</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Description</label>
+              <textarea
+                required
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50"
+            >
+              {submitting ? 'Filing Claim...' : 'File Expense Claim'}
+            </button>
+          </form>
+        </div>
+
+        <div className="md:col-span-2 space-y-6">
+          {(isAdmin || isFinance || isManager) && (
+            <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Pending Team Claims</h2>
+              {pendingApprovals.length === 0 ? (
+                <p className="text-body-sm text-outline py-4 text-center">No pending expense approvals.</p>
+              ) : (
+                <div className="divide-y divide-outline-variant">
+                  {pendingApprovals.map(exp => (
+                    <div key={exp.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <p className="text-label-md font-bold text-on-surface">{exp.user?.firstName} {exp.user?.lastName}</p>
+                        <p className="text-body-sm text-on-surface-variant font-semibold mt-0.5">
+                          ${exp.amount.toFixed(2)} - {exp.category}
+                        </p>
+                        <p className="text-body-sm text-outline italic mt-1">"{exp.description}"</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={() => handleApprove(exp.id, 'REJECTED')}
+                          className="px-3 py-1.5 border border-error-container text-error hover:bg-error/5 rounded-lg text-label-sm font-bold transition-colors"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          onClick={() => handleApprove(exp.id, 'APPROVED')}
+                          className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold shadow-sm transition-all"
+                        >
+                          Approve
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">My Expenses</h2>
+            {myClaims.length === 0 ? (
+              <p className="text-body-sm text-outline py-8 text-center">No expense claims filed yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-surface-container-low/50">
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Category</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Amount</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Description</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant text-body-sm">
+                    {myClaims.map(exp => (
+                      <tr key={exp.id} className="hover:bg-surface-container-low transition-colors">
+                        <td className="px-4 py-3 font-semibold text-on-surface">{exp.category}</td>
+                        <td className="px-4 py-3 text-on-surface-variant font-mono">
+                          ${exp.amount.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">{exp.description}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                            exp.status === 'APPROVED'
+                              ? 'bg-green-50 text-green-700 border-green-200'
+                              : exp.status === 'REJECTED'
+                              ? 'bg-red-50 text-red-700 border-red-200'
+                              : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                          }`}>
+                            {exp.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

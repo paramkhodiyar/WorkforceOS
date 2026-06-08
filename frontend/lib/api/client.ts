@@ -221,6 +221,7 @@ export const api = {
   },
   departments: {
     list: (): Promise<any> => request('/departments'),
+    get: (id: string): Promise<any> => request(`/departments/${id}`),
     create: (data: any): Promise<any> =>
       request('/departments', {
         method: 'POST',
@@ -238,6 +239,7 @@ export const api = {
   },
   teams: {
     list: (): Promise<any> => request('/teams'),
+    get: (id: string): Promise<any> => request(`/teams/${id}`),
     create: (data: any): Promise<any> =>
       request('/teams', {
         method: 'POST',

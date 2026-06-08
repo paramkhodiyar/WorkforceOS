@@ -7,5 +7,6 @@ export const createDepartmentSchema = z.object({
 
 export const updateDepartmentSchema = z.object({
   name: z.string().min(1).optional(),
-  headId: z.string().optional().nullable()
+  headId: z.string().optional().nullable(),
+  employeeIds: z.array(z.string()).optional()
 });

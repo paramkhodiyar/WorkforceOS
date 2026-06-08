@@ -44,6 +44,16 @@ export class DepartmentsService {
         },
         teams: {
           where: { isDeleted: false }
+        },
+        employees: {
+          where: { isDeleted: false },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            designation: true
+          }
         }
       }
     });
@@ -74,7 +84,7 @@ export class DepartmentsService {
     });
   }
 
-  static async updateDepartment(id: string, orgId: string, data: { name?: string; headId?: string | null }) {
+  static async updateDepartment(id: string, orgId: string, data: { name?: string; headId?: string | null; employeeIds?: string[] }) {
     const dept = await prisma.department.findFirst({
       where: { id, organizationId: orgId, isDeleted: false }
     });
@@ -96,7 +106,10 @@ export class DepartmentsService {
       where: { id },
       data: {
         name: data.name ?? dept.name,
-        headId: data.headId !== undefined ? data.headId : dept.headId
+        headId: data.headId !== undefined ? data.headId : dept.headId,
+        employees: data.employeeIds ? {
+          set: data.employeeIds.map((id) => ({ id }))
+        } : undefined
       }
     });
   }

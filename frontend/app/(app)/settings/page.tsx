@@ -22,11 +22,13 @@ export default function SettingsPage() {
   });
 
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
-  const [teamForm, setTeamForm] = useState<{ id?: string; name: string; departmentId: string; leadId: string | null }>({
+  const [teamForm, setTeamForm] = useState<{ id?: string; name: string; departmentId: string; leadId: string | null; memberIds: string[] }>({
     name: '',
     departmentId: '',
     leadId: null,
+    memberIds: [],
   });
+  const [memberSearch, setMemberSearch] = useState('');
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'department' | 'team'; id: string; name: string } | null>(null);
 
@@ -113,16 +115,19 @@ export default function SettingsPage() {
           name: teamForm.name,
           departmentId: teamForm.departmentId,
           leadId: teamForm.leadId || null,
+          memberIds: teamForm.memberIds,
         });
       } else {
         await api.teams.create({
           name: teamForm.name,
           departmentId: teamForm.departmentId,
           leadId: teamForm.leadId || null,
+          memberIds: teamForm.memberIds,
         });
       }
       setIsTeamModalOpen(false);
-      setTeamForm({ name: '', departmentId: '', leadId: null });
+      setTeamForm({ name: '', departmentId: '', leadId: null, memberIds: [] });
+      setMemberSearch('');
       loadData();
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to save team.');
@@ -184,7 +189,8 @@ export default function SettingsPage() {
           ) : (
             <button
               onClick={() => {
-                setTeamForm({ name: '', departmentId: departments[0]?.id || '', leadId: null });
+                setTeamForm({ name: '', departmentId: departments[0]?.id || '', leadId: null, memberIds: [] });
+                setMemberSearch('');
                 setIsTeamModalOpen(true);
               }}
               className="px-5 py-2.5 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-sm font-bold shadow-sm transition-all cursor-pointer"
@@ -310,14 +316,22 @@ export default function SettingsPage() {
                         <td className="px-6 py-4 text-center text-slate-600">{team._count?.members || 0}</td>
                         <td className="px-6 py-4 text-right space-x-2">
                           <button
-                            onClick={() => {
-                              setTeamForm({
-                                id: team.id,
-                                name: team.name,
-                                departmentId: team.departmentId,
-                                leadId: team.leadId,
-                              });
-                              setIsTeamModalOpen(true);
+                            onClick={async () => {
+                              try {
+                                const res = await api.teams.get(team.id);
+                                const fullTeam = res.data;
+                                setTeamForm({
+                                  id: fullTeam.id,
+                                  name: fullTeam.name,
+                                  departmentId: fullTeam.departmentId,
+                                  leadId: fullTeam.leadId,
+                                  memberIds: fullTeam.members?.map((m: any) => m.id) || [],
+                                });
+                                setMemberSearch('');
+                                setIsTeamModalOpen(true);
+                              } catch (err: any) {
+                                setErrorMessage(err.message || 'Failed to load team details');
+                              }
                             }}
                             className="text-primary hover:text-blue-700 font-bold text-label-xs cursor-pointer"
                           >
@@ -434,6 +448,42 @@ export default function SettingsPage() {
                   placeholder="Select a team lead..."
                   searchPlaceholder="Search employees..."
                 />
+              </div>
+              <div className="space-y-1">
+                <label className="text-label-xs font-bold text-slate-700 uppercase">Team Members</label>
+                <input
+                  type="text"
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  placeholder="Filter employees..."
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-sm transition-all outline-none font-medium mb-2"
+                />
+                <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 max-h-40 overflow-y-auto space-y-2">
+                  {employees.filter(emp =>
+                    `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(memberSearch.toLowerCase())
+                  ).map((emp) => (
+                    <label key={emp.id} className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={teamForm.memberIds?.includes(emp.id) || false}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const newMemberIds = checked
+                            ? [...(teamForm.memberIds || []), emp.id]
+                            : (teamForm.memberIds || []).filter(id => id !== emp.id);
+                          setTeamForm({ ...teamForm, memberIds: newMemberIds });
+                        }}
+                        className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                      />
+                      <span>{emp.firstName} {emp.lastName} ({emp.designation || 'Staff'})</span>
+                    </label>
+                  ))}
+                  {employees.filter(emp =>
+                    `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(memberSearch.toLowerCase())
+                  ).length === 0 && (
+                    <p className="text-xs text-slate-400 font-medium text-center py-2">No employees match your filter</p>
+                  )}
+                </div>
               </div>
               <div className="flex gap-3 justify-end pt-2">
                 <button

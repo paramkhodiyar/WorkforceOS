@@ -192,11 +192,21 @@ export class EmployeesService {
             email: true
           }
         },
-        teams: true,
+        teams: {
+          where: { isDeleted: false }
+        },
         documents: {
           where: { isDeleted: false }
         },
-        leaveBalances: true
+        leaveBalances: true,
+        departmentHead: {
+          where: { isDeleted: false },
+          select: { id: true, name: true }
+        },
+        teamLead: {
+          where: { isDeleted: false },
+          select: { id: true, name: true }
+        }
       }
     });
     if (!emp) {

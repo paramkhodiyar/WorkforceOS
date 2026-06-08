@@ -137,6 +137,16 @@ function ProfileContent() {
           <h2 className="text-title-lg font-bold text-on-surface">{profile.firstName} {profile.lastName}</h2>
           <p className="text-body-sm text-outline font-medium">{profile.designation || 'Staff Member'}</p>
           <p className="text-[11px] text-outline mt-0.5">{profile.department?.name || 'Operations'}</p>
+          {profile.departmentHead && profile.departmentHead.length > 0 && (
+            <div className="mt-2 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              Department Head: {profile.departmentHead.map((d: any) => d.name).join(', ')}
+            </div>
+          )}
+          {profile.teamLead && profile.teamLead.length > 0 && (
+            <div className="mt-2 px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              Team Lead: {profile.teamLead.map((t: any) => t.name).join(', ')}
+            </div>
+          )}
 
           <div className="w-full border-t border-slate-100 my-4"></div>
 

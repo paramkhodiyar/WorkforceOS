@@ -56,7 +56,8 @@ export class TeamsService {
         department: {
           select: {
             id: true,
-            name: true
+            name: true,
+            headId: true
           }
         },
         lead: {
@@ -86,7 +87,7 @@ export class TeamsService {
     return team;
   }
 
-  static async createTeam(orgId: string, data: { name: string; departmentId: string; leadId?: string | null }) {
+  static async createTeam(orgId: string, data: { name: string; departmentId: string; leadId?: string | null; memberIds?: string[] }) {
     const dept = await prisma.department.findFirst({
       where: { id: data.departmentId, organizationId: orgId, isDeleted: false }
     });
@@ -108,12 +109,15 @@ export class TeamsService {
       data: {
         name: data.name,
         departmentId: data.departmentId,
-        leadId: data.leadId || null
+        leadId: data.leadId || null,
+        members: data.memberIds ? {
+          connect: data.memberIds.map((id) => ({ id }))
+        } : undefined
       }
     });
   }
 
-  static async updateTeam(id: string, orgId: string, data: { name?: string; departmentId?: string; leadId?: string | null }) {
+  static async updateTeam(id: string, orgId: string, data: { name?: string; departmentId?: string; leadId?: string | null; memberIds?: string[] }) {
     const team = await prisma.team.findFirst({
       where: {
         id,
@@ -152,7 +156,10 @@ export class TeamsService {
       data: {
         name: data.name ?? team.name,
         departmentId: data.departmentId ?? team.departmentId,
-        leadId: data.leadId !== undefined ? data.leadId : team.leadId
+        leadId: data.leadId !== undefined ? data.leadId : team.leadId,
+        members: data.memberIds ? {
+          set: data.memberIds.map((id) => ({ id }))
+        } : undefined
       }
     });
   }

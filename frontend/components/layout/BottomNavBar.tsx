@@ -16,6 +16,11 @@ export default function BottomNavBar() {
   const userRoles = user.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
   const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
+  const hasTeamsOrDepts =
+    (user.departmentHead && user.departmentHead.length > 0) ||
+    (user.teamLead && user.teamLead.length > 0) ||
+    (user.teams && user.teams.length > 0) ||
+    user.departmentId !== null;
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
 
   const quickTabs = [
@@ -25,9 +30,10 @@ export default function BottomNavBar() {
   ].filter(tab => tab.show);
 
   const secondaryTabs = [
+    { label: 'My Team', icon: 'groups', href: '/my-team', show: isManager || hasTeamsOrDepts },
     { label: 'Leave Request', icon: 'event_busy', href: '/leave', show: features.includes('leave') },
     { label: 'Statuses Board', icon: 'wifi', href: '/statuses', show: features.includes('attendance') },
-    { label: 'Employee List', icon: 'badge', href: '/employees', show: (isAdmin || isHR || isManager) && features.includes('employees') },
+    { label: 'Employee List', icon: 'badge', href: '/employees', show: (isAdmin || isHR || isManager || hasTeamsOrDepts) && features.includes('employees') },
     { label: 'Compensation', icon: 'payments', href: '/payroll', show: features.includes('payroll') },
     { label: 'Expenses Claims', icon: 'receipt_long', href: '/expenses', show: features.includes('expenses') },
     { label: 'Assets Check-out', icon: 'inventory_2', href: '/assets', show: features.includes('assets') },

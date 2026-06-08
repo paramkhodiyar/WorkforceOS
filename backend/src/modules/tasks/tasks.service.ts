@@ -75,6 +75,7 @@ export class TasksService {
 
   static async listTasks(
     orgId: string,
+    user: any,
     filters: {
       status?: TaskStatus;
       assigneeId?: string;
@@ -93,6 +94,31 @@ export class TasksService {
       isDeleted: false,
       creator: { organizationId: orgId }
     };
+
+    const isSuperAdmin = user.systemRole === "SUPER_ADMIN";
+    const isOrgAdmin = user.systemRole === "ORG_ADMIN";
+    const isHR = user.roles && user.roles.some((r: any) => r.roleName === "HR_MANAGER");
+
+    if (!isSuperAdmin && !isOrgAdmin && !isHR) {
+      const headedDepts = await prisma.department.findMany({
+        where: { headId: user.id, isDeleted: false },
+        select: { id: true }
+      });
+      const deptIds = headedDepts.map((d) => d.id);
+
+      const ledTeams = await prisma.team.findMany({
+        where: { leadId: user.id, isDeleted: false },
+        select: { id: true }
+      });
+      const teamIds = ledTeams.map((t) => t.id);
+
+      where.OR = [
+        { creatorId: user.id },
+        { assigneeId: user.id },
+        ...(deptIds.length > 0 ? [{ assignee: { departmentId: { in: deptIds } } }] : []),
+        ...(teamIds.length > 0 ? [{ assignee: { teams: { some: { id: { in: teamIds } } } } }] : [])
+      ];
+    }
 
     if (filters.status) where.status = filters.status;
     if (filters.assigneeId) where.assigneeId = filters.assigneeId;
@@ -147,16 +173,41 @@ export class TasksService {
     return { tasks, total };
   }
 
-  static async getTaskById(id: string, orgId: string) {
+  static async getTaskById(id: string, orgId: string, user: any) {
     const task = await prisma.task.findFirst({
       where: { id, isDeleted: false, creator: { organizationId: orgId } },
       include: {
         creator: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-        assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        assignee: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            departmentId: true,
+            teams: {
+              select: { id: true }
+            }
+          }
+        },
         subtasks: { where: { isDeleted: false } },
-        comments: { where: { isDeleted: false } },
+        comments: {
+          where: { isDeleted: false },
+          include: {
+            user: {
+              select: { id: true, firstName: true, lastName: true, avatarUrl: true }
+            }
+          },
+          orderBy: { createdAt: "asc" }
+        },
         attachments: true,
-        reviews: true,
+        reviews: {
+          include: {
+            reviewer: {
+              select: { id: true, firstName: true, lastName: true }
+            }
+          }
+        },
         dependencies: { include: { dependencyTask: true } },
         dependents: { include: { dependentTask: true } }
       }
@@ -164,6 +215,34 @@ export class TasksService {
 
     if (!task) {
       throw AppError.notFound("Task not found");
+    }
+
+    const isSuperAdmin = user.systemRole === "SUPER_ADMIN";
+    const isOrgAdmin = user.systemRole === "ORG_ADMIN";
+    const isHR = user.roles && user.roles.some((r: any) => r.roleName === "HR_MANAGER");
+
+    if (!isSuperAdmin && !isOrgAdmin && !isHR) {
+      const isCreatorOrAssignee = task.creatorId === user.id || task.assigneeId === user.id;
+      if (!isCreatorOrAssignee) {
+        const headedDepts = await prisma.department.findMany({
+          where: { headId: user.id, isDeleted: false },
+          select: { id: true }
+        });
+        const deptIds = headedDepts.map(d => d.id);
+
+        const ledTeams = await prisma.team.findMany({
+          where: { leadId: user.id, isDeleted: false },
+          select: { id: true }
+        });
+        const teamIds = ledTeams.map(t => t.id);
+
+        const isDeptHeadOfAssignee = task.assignee?.departmentId && deptIds.includes(task.assignee.departmentId);
+        const isTeamLeadOfAssignee = task.assignee?.teams && task.assignee.teams.some(t => teamIds.includes(t.id));
+
+        if (!isDeptHeadOfAssignee && !isTeamLeadOfAssignee) {
+          throw AppError.forbidden("Access denied: you do not have permission to view this task");
+        }
+      }
     }
 
     return task;

@@ -43,6 +43,18 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
         include: {
           role: true
         }
+      },
+      departmentHead: {
+        where: { isDeleted: false },
+        select: { id: true, name: true }
+      },
+      teamLead: {
+        where: { isDeleted: false },
+        select: { id: true, name: true }
+      },
+      teams: {
+        where: { isDeleted: false },
+        select: { id: true, name: true }
       }
     }
   });
@@ -74,7 +86,10 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     department: user.department,
     manager: user.manager,
     organizationId: user.organizationId,
-    roles: formattedRoles
+    roles: formattedRoles,
+    departmentHead: user.departmentHead,
+    teamLead: user.teamLead,
+    teams: user.teams
   };
 
   return sendSuccess(res, userProfile);

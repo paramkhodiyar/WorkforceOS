@@ -21,7 +21,7 @@ router.use(authenticate);
 router.get("/", listDepartments);
 router.get("/:id", getDepartment);
 router.post("/", requirePermission("employee", "create"), validate(createDepartmentSchema), createDepartment);
-router.patch("/:id", requirePermission("employee", "update"), validate(updateDepartmentSchema), updateDepartment);
+router.patch("/:id", validate(updateDepartmentSchema), updateDepartment);
 router.delete("/:id", requirePermission("employee", "delete"), deleteDepartment);
 
 export const departmentsRouter = router;

@@ -29,7 +29,7 @@ export const listTasks = asyncHandler(async (req: Request, res: Response) => {
     teamId: req.query.teamId as string
   };
 
-  const result = await TasksService.listTasks(orgId, filters, page, limit);
+  const result = await TasksService.listTasks(orgId, req.user!, filters, page, limit);
 
   return sendPaginated(res, result.tasks, {
     page,
@@ -41,7 +41,7 @@ export const listTasks = asyncHandler(async (req: Request, res: Response) => {
 
 export const getTask = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
-  const task = await TasksService.getTaskById(req.params.id, orgId);
+  const task = await TasksService.getTaskById(req.params.id, orgId, req.user!);
   return sendSuccess(res, task);
 });
 

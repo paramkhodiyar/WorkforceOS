@@ -16,6 +16,11 @@ export default function SideNavBar() {
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
   const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
   const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
+  const hasTeamsOrDepts =
+    (user.departmentHead && user.departmentHead.length > 0) ||
+    (user.teamLead && user.teamLead.length > 0) ||
+    (user.teams && user.teams.length > 0) ||
+    user.departmentId !== null;
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
 
   const menuItems = [
@@ -26,10 +31,16 @@ export default function SideNavBar() {
       show: true
     },
     {
+      label: 'My Team',
+      icon: 'groups',
+      href: '/my-team',
+      show: isManager || hasTeamsOrDepts
+    },
+    {
       label: 'Employees',
       icon: 'badge',
       href: '/employees',
-      show: (isAdmin || isHR || isManager) && features.includes('employees')
+      show: (isAdmin || isHR || isManager || hasTeamsOrDepts) && features.includes('employees')
     },
     {
       label: 'Statuses',

@@ -21,7 +21,7 @@ router.use(authenticate);
 router.get("/", listTeams);
 router.get("/:id", getTeam);
 router.post("/", requirePermission("employee", "create"), validate(createTeamSchema), createTeam);
-router.patch("/:id", requirePermission("employee", "update"), validate(updateTeamSchema), updateTeam);
+router.patch("/:id", validate(updateTeamSchema), updateTeam);
 router.delete("/:id", requirePermission("employee", "delete"), deleteTeam);
 
 export const teamsRouter = router;

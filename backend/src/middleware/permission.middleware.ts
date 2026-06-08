@@ -17,7 +17,7 @@ export function requirePermission(resource: string, action: string) {
       const orgId = req.org.id;
       const roles = req.user.roles || [];
 
-      if ((resource === "attendance" && action === "read_team") || (resource === "employee" && action === "read")) {
+      if (resource === "employee" && action === "read" && req.params.id === req.user.id) {
         return next();
       }
 

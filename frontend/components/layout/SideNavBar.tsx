@@ -16,9 +16,10 @@ export default function SideNavBar() {
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
   const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
   const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
+  const isLeaderOrHead = (user.departmentHead && user.departmentHead.length > 0) || (user.teamLead && user.teamLead.length > 0);
+  const isActualManager = isManager || isLeaderOrHead;
   const hasTeamsOrDepts =
-    (user.departmentHead && user.departmentHead.length > 0) ||
-    (user.teamLead && user.teamLead.length > 0) ||
+    isLeaderOrHead ||
     (user.teams && user.teams.length > 0) ||
     user.departmentId !== null;
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
@@ -34,19 +35,19 @@ export default function SideNavBar() {
       label: 'My Team',
       icon: 'groups',
       href: '/my-team',
-      show: isManager || hasTeamsOrDepts
+      show: isAdmin || isHR || isActualManager || hasTeamsOrDepts
     },
     {
       label: 'Employees',
       icon: 'badge',
       href: '/employees',
-      show: (isAdmin || isHR || isManager || hasTeamsOrDepts) && features.includes('employees')
+      show: (isAdmin || isHR || isActualManager) && features.includes('employees')
     },
     {
       label: 'Statuses',
       icon: 'wifi',
       href: '/statuses',
-      show: features.includes('attendance')
+      show: (isAdmin || isHR || isActualManager) && features.includes('attendance')
     },
     {
       label: 'Attendance',

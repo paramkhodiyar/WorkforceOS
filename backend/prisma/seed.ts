@@ -78,13 +78,66 @@ async function main() {
   });
 
   const rolesData = [
-    { name: "HR_MANAGER", resources: ["employee", "leave"], actions: ["create", "read", "update", "delete", "approve", "hr_approve", "manage_policy"] },
-    { name: "FINANCE_MANAGER", resources: ["payroll", "expense"], actions: ["read", "generate", "approve", "mark_paid", "finance_approve"] },
-    { name: "DEPARTMENT_HEAD", resources: ["employee", "leave", "performance"], actions: ["read", "approve", "review", "leaderboard"] },
-    { name: "TEAM_MANAGER", resources: ["task", "leave", "attendance"], actions: ["create", "read", "update", "delete", "assign", "close", "review", "approve", "read_team"] },
-    { name: "EMPLOYEE", resources: ["task", "leave", "attendance", "expense", "knowledge"], actions: ["read", "accept", "submit", "resubmit", "comment", "attachment", "apply", "cancel", "check_in", "check_out", "break_start", "break_end", "create", "update"] },
-    { name: "AUDITOR", resources: ["audit", "payroll", "attendance", "task", "leave"], actions: ["read"] },
-    { name: "INTERN", resources: ["task", "knowledge", "attendance"], actions: ["read", "accept", "submit", "resubmit", "comment", "check_in", "check_out"] }
+    {
+      name: "HR_MANAGER",
+      permissions: [
+        { resource: "employee", actions: ["create", "read", "update", "delete", "approve"] },
+        { resource: "leave", actions: ["read", "approve", "hr_approve", "manage_policy"] }
+      ]
+    },
+    {
+      name: "FINANCE_MANAGER",
+      permissions: [
+        { resource: "payroll", actions: ["read", "generate", "approve", "mark_paid"] },
+        { resource: "expense", actions: ["read", "approve", "finance_approve"] }
+      ]
+    },
+    {
+      name: "DEPARTMENT_HEAD",
+      permissions: [
+        { resource: "employee", actions: ["read"] },
+        { resource: "leave", actions: ["read", "approve"] },
+        { resource: "performance", actions: ["read", "review", "leaderboard"] },
+        { resource: "attendance", actions: ["read_team"] }
+      ]
+    },
+    {
+      name: "TEAM_MANAGER",
+      permissions: [
+        { resource: "employee", actions: ["read"] },
+        { resource: "task", actions: ["create", "read", "update", "delete", "assign", "close", "review"] },
+        { resource: "leave", actions: ["read", "approve"] },
+        { resource: "attendance", actions: ["read_team"] }
+      ]
+    },
+    {
+      name: "EMPLOYEE",
+      permissions: [
+        { resource: "task", actions: ["read", "accept", "submit", "resubmit", "comment", "attachment", "create", "update"] },
+        { resource: "leave", actions: ["read", "apply", "cancel"] },
+        { resource: "attendance", actions: ["read", "check_in", "check_out", "break_start", "break_end"] },
+        { resource: "expense", actions: ["read", "create"] },
+        { resource: "knowledge", actions: ["read"] }
+      ]
+    },
+    {
+      name: "AUDITOR",
+      permissions: [
+        { resource: "audit", actions: ["read"] },
+        { resource: "payroll", actions: ["read"] },
+        { resource: "attendance", actions: ["read"] },
+        { resource: "task", actions: ["read"] },
+        { resource: "leave", actions: ["read"] }
+      ]
+    },
+    {
+      name: "INTERN",
+      permissions: [
+        { resource: "task", actions: ["read", "accept", "submit", "resubmit", "comment"] },
+        { resource: "knowledge", actions: ["read"] },
+        { resource: "attendance", actions: ["read", "check_in", "check_out"] }
+      ]
+    }
   ];
 
   const rolesMap: Record<string, string> = {};
@@ -100,13 +153,13 @@ async function main() {
     });
     rolesMap[roleData.name] = role.id;
 
-    for (const res of roleData.resources) {
-      for (const act of roleData.actions) {
+    for (const perm of roleData.permissions) {
+      for (const act of perm.actions) {
         await prisma.rolePermission.create({
           data: {
             roleId: role.id,
             organizationId: org.id,
-            resource: res,
+            resource: perm.resource,
             action: act
           }
         });

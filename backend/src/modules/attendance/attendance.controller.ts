@@ -4,6 +4,7 @@ import { sendSuccess, sendPaginated } from "../../utils/response.util";
 import { parsePagination } from "../../utils/pagination.util";
 import { asyncHandler } from "../../utils/asyncHandler.util";
 import { AppError } from "../../utils/errors.util";
+import { prisma } from "../../config/database";
 
 export const checkIn = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
@@ -87,6 +88,24 @@ export const getSummary = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.params.userId;
   const month = parseInt(req.query.month as string, 10);
   const year = parseInt(req.query.year as string, 10);
+
+  if (req.user!.id !== userId) {
+    const systemRole = req.user!.systemRole;
+    const isAdmin = systemRole === "SUPER_ADMIN" || systemRole === "ORG_ADMIN";
+    const userRoles = req.user!.roles || [];
+    const isHR = userRoles.some((r: any) => r.roleName === "HR_MANAGER");
+    const isManager = userRoles.some((r: any) => r.roleName === "TEAM_MANAGER" || r.roleName === "DEPARTMENT_HEAD");
+
+    const targetUser = await prisma.user.findFirst({
+      where: { id: userId, isDeleted: false }
+    });
+    const isTargetManager = targetUser?.managerId === req.user!.id;
+
+    if (!isAdmin && !isHR && !isManager && !isTargetManager) {
+      throw AppError.forbidden("Access denied: insufficient permissions to view other employee's attendance summary");
+    }
+  }
+
   const summary = await AttendanceService.getSummaryStats(userId, month, year);
   return sendSuccess(res, summary);
 });

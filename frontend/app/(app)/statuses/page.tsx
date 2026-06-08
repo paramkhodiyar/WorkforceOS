@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 
 export default function StatusesPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -26,6 +28,22 @@ export default function StatusesPage() {
   useEffect(() => {
     loadStatuses();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      const systemRole = user.systemRole;
+      const userRoles = user.roles || [];
+      const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
+      const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+      const isLeaderOrHead = (user.departmentHead && user.departmentHead.length > 0) || (user.teamLead && user.teamLead.length > 0);
+      const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
+      const isActualManager = isManager || isLeaderOrHead;
+
+      if (!isAdmin && !isHR && !isActualManager) {
+        router.push('/unauthorized');
+      }
+    }
+  }, [user, router]);
 
   const filtered = data.filter(member => {
     const fullName = `${member.firstName} ${member.lastName}`.toLowerCase();

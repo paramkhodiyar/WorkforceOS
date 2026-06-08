@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
@@ -8,6 +9,7 @@ import { CommentDialog } from '../../../components/ui/CommentDialog';
 
 export default function MyTeamPage() {
   const { user, refetchUser } = useAuth();
+  const router = useRouter();
   const [scopes, setScopes] = useState<any[]>([]);
   const [selectedScope, setSelectedScope] = useState<string>('');
   const [entityData, setEntityData] = useState<any>(null);
@@ -98,6 +100,8 @@ export default function MyTeamPage() {
       setScopes(list);
       if (list.length > 0) {
         setSelectedScope(list[0].value);
+      } else {
+        router.push('/unauthorized');
       }
       setErrorMessage('');
     } catch (err: any) {

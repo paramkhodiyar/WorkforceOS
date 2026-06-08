@@ -82,7 +82,12 @@ async function main() {
       name: "HR_MANAGER",
       permissions: [
         { resource: "employee", actions: ["create", "read", "update", "delete", "approve"] },
-        { resource: "leave", actions: ["read", "approve", "hr_approve", "manage_policy"] }
+        { resource: "leave", actions: ["read", "approve", "hr_approve", "manage_policy"] },
+        { resource: "attendance", actions: ["read", "read_team", "adjust", "exceptions"] },
+        { resource: "performance", actions: ["read", "review", "leaderboard"] },
+        { resource: "expense", actions: ["read", "approve"] },
+        { resource: "asset", actions: ["create", "read", "update", "delete", "assign"] },
+        { resource: "knowledge", actions: ["create", "read", "update", "delete", "publish"] }
       ]
     },
     {

@@ -50,6 +50,22 @@ export default function EmployeesPage() {
     loadEmployees();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      const systemRole = user.systemRole;
+      const userRoles = user.roles || [];
+      const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
+      const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+      const isLeaderOrHead = (user.departmentHead && user.departmentHead.length > 0) || (user.teamLead && user.teamLead.length > 0);
+      const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
+      const isActualManager = isManager || isLeaderOrHead;
+
+      if (!isAdmin && !isHR && !isActualManager) {
+        router.push('/unauthorized');
+      }
+    }
+  }, [user, router]);
+
   async function handleEnroll(e: React.FormEvent) {
     e.preventDefault();
     setEnrollResult(null);

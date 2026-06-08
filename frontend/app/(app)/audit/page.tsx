@@ -1,11 +1,25 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
+import { useAuth } from '../../../lib/auth/AuthProvider';
 
 export default function AuditPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      const systemRole = user.systemRole;
+      const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+      if (!isAdmin) {
+        router.push('/unauthorized');
+      }
+    }
+  }, [user, router]);
 
   useEffect(() => {
     async function loadLogs() {

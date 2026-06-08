@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 
 function ProfileContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const profileId = searchParams.get('id');
   
   const [profile, setProfile] = useState<any>(null);
@@ -55,6 +56,9 @@ function ProfileContent() {
       }
     } catch (err) {
       console.error(err);
+      if (!isOwnProfile) {
+        router.push('/unauthorized');
+      }
     } finally {
       setLoading(false);
     }

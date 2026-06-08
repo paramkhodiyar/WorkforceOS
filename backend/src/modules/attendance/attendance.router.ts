@@ -30,7 +30,7 @@ router.post("/break-end", breakEnd);
 router.get("/today", getToday);
 router.get("/history", validate(getHistorySchema, "query"), getHistory);
 router.get("/team", requirePermission("attendance", "read_team"), getTeam);
-router.get("/exceptions", getExceptions);
+router.get("/exceptions", requirePermission("attendance", "read_team"), getExceptions);
 router.post("/adjust/:id", requirePermission("attendance", "adjust"), validate(adjustSchema), adjust);
 router.get("/summary/:userId", validate(getSummarySchema, "query"), getSummary);
 

@@ -112,11 +112,21 @@ export class TasksService {
       });
       const teamIds = ledTeams.map((t) => t.id);
 
+      const userTeams = await prisma.team.findMany({
+        where: { members: { some: { id: user.id } }, isDeleted: false },
+        select: { id: true }
+      });
+      const memberTeamIds = userTeams.map((t) => t.id);
+
+      const userDeptId = user.departmentId;
+
       where.OR = [
         { creatorId: user.id },
         { assigneeId: user.id },
         ...(deptIds.length > 0 ? [{ assignee: { departmentId: { in: deptIds } } }] : []),
-        ...(teamIds.length > 0 ? [{ assignee: { teams: { some: { id: { in: teamIds } } } } }] : [])
+        ...(teamIds.length > 0 ? [{ assignee: { teams: { some: { id: { in: teamIds } } } } }] : []),
+        ...(filters.teamId && memberTeamIds.includes(filters.teamId) ? [{ assignee: { teams: { some: { id: filters.teamId } } } }] : []),
+        ...(filters.departmentId && userDeptId === filters.departmentId ? [{ assignee: { departmentId: filters.departmentId } }] : [])
       ];
     }
 

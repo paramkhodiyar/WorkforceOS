@@ -215,6 +215,55 @@ export class AttendanceService {
     });
   }
 
+  static async getAllAttendance(orgId: string) {
+    const today = this.getTodayDate();
+    return prisma.user.findMany({
+      where: {
+        organizationId: orgId,
+        isDeleted: false
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        avatarUrl: true,
+        attendances: {
+          where: { date: today }
+        }
+      }
+    });
+  }
+
+  static async getDepartmentAttendance(userId: string, orgId: string) {
+    const today = this.getTodayDate();
+    const depts = await prisma.department.findMany({
+      where: { headId: userId, organizationId: orgId }
+    });
+    const deptIds = depts.map(d => d.id);
+
+    return prisma.user.findMany({
+      where: {
+        OR: [
+          { managerId: userId },
+          { departmentId: { in: deptIds } }
+        ],
+        organizationId: orgId,
+        isDeleted: false
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        avatarUrl: true,
+        attendances: {
+          where: { date: today }
+        }
+      }
+    });
+  }
+
   static async getExceptionsList(orgId: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
     const records = await getAttendanceExceptions(orgId, limit, skip);

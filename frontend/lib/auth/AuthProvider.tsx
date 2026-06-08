@@ -24,6 +24,7 @@ export const SEED_USERS: SeedUser[] = [
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
+  const [features, setFeatures] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -31,6 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await api.auth.me();
       setUser(response.data);
+      try {
+        const orgRes = await api.organization.get();
+        setFeatures(orgRes.data.enabledFeatures || []);
+      } catch (err) {
+        console.error(err);
+      }
     } catch (err) {
       setUser(null);
       if (typeof window !== 'undefined') {
@@ -56,6 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await api.auth.login(email, password);
       localStorage.setItem('token', response.data.tokens.accessToken);
       setUser(response.data.user);
+      try {
+        const orgRes = await api.organization.get();
+        setFeatures(orgRes.data.enabledFeatures || []);
+      } catch (err) {
+        console.error(err);
+      }
+      setLoading(false);
       router.push('/dashboard');
     } catch (err) {
       setLoading(false);
@@ -70,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   function logout(): void {
     localStorage.removeItem('token');
     setUser(null);
+    setFeatures([]);
     router.push('/login');
   }
 
@@ -78,6 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         loading,
+        features,
+        setFeatures,
         login,
         quickLogin,
         logout,

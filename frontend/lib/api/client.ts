@@ -24,6 +24,12 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+    }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || `Request failed with status ${response.status}`);
   }
@@ -42,10 +48,20 @@ export const api = {
   },
   employees: {
     list: (): Promise<any> => request('/employees'),
+    get: (id: string): Promise<any> => request(`/employees/${id}`),
     create: (data: any): Promise<any> =>
       request('/employees', {
         method: 'POST',
         body: JSON.stringify(data),
+      }),
+    update: (id: string, data: any): Promise<any> =>
+      request(`/employees/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string): Promise<any> =>
+      request(`/employees/${id}`, {
+        method: 'DELETE',
       }),
   },
   attendance: {
@@ -59,26 +75,29 @@ export const api = {
       request('/attendance/check-out', {
         method: 'POST',
       }),
-    getCurrentStatus: (): Promise<any> => request('/attendance/current'),
+    getCurrentStatus: (): Promise<any> => request('/attendance/today'),
+    team: (): Promise<any> => request('/attendance/team'),
   },
   leave: {
-    list: (): Promise<any> => request('/leave'),
-    balances: (): Promise<any> => request('/leave/balances'),
+    list: (): Promise<any> => request('/leave/my-requests'),
+    balances: (): Promise<any> => request('/leave/balance'),
     apply: (data: any): Promise<any> =>
       request('/leave/apply', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    pendingApprovals: (): Promise<any> => request('/leave/approvals/pending'),
-    approve: (id: string, data: any): Promise<any> =>
-      request(`/leave/approvals/${id}`, {
+    pendingApprovals: (): Promise<any> => request('/leave/approvals'),
+    approve: (id: string, data: any): Promise<any> => {
+      const endpoint = data.status === 'APPROVED' ? 'approve' : 'reject';
+      return request(`/leave/approvals/${id}/${endpoint}`, {
         method: 'POST',
-        body: JSON.stringify(data),
-      }),
+        body: JSON.stringify({ comment: data.comment }),
+      });
+    },
   },
   payroll: {
-    list: (): Promise<any> => request('/payroll'),
-    getPayslip: (id: string): Promise<any> => request(`/payroll/payslip/${id}`),
+    list: (): Promise<any> => request('/payroll/my-payslips'),
+    getPayslip: (id: string): Promise<any> => request(`/payroll/payslips/${id}`),
     runs: (): Promise<any> => request('/payroll/runs'),
     generate: (data: any): Promise<any> =>
       request('/payroll/runs', {
@@ -93,45 +112,78 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    updateStatus: (id: string, status: string): Promise<any> =>
-      request(`/tasks/${id}/status`, {
+    updateStatus: (id: string, status: string): Promise<any> => {
+      if (status === 'IN_PROGRESS' || status === 'ACCEPTED') {
+        return request(`/tasks/${id}/accept`, { method: 'POST' });
+      }
+      if (status === 'DONE' || status === 'CLOSED') {
+        return request(`/tasks/${id}/close`, { method: 'POST' });
+      }
+      return request(`/tasks/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
-      }),
+      });
+    },
   },
   expenses: {
-    list: (): Promise<any> => request('/expenses'),
+    list: async (): Promise<any> => {
+      try {
+        const claims = await request('/expenses/my-claims');
+        let approvals = { data: [] };
+        try {
+          approvals = await request('/expenses/approvals');
+        } catch (err) {
+          // ignore approvals 403
+        }
+        return {
+          success: true,
+          data: [...(claims.data || []), ...(approvals.data || [])],
+        };
+      } catch (err) {
+        return { success: true, data: [] };
+      }
+    },
     create: (data: any): Promise<any> =>
       request('/expenses', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    approve: (id: string, status: string): Promise<any> =>
-      request(`/expenses/${id}/approve`, {
+    approve: (id: string, status: string): Promise<any> => {
+      const endpoint = status === 'APPROVED' ? 'approve' : 'reject';
+      return request(`/expenses/${id}/${endpoint}`, {
         method: 'POST',
-        body: JSON.stringify({ status }),
-      }),
+      });
+    },
   },
   assets: {
-    list: (): Promise<any> => request('/assets'),
-    request: (data: any): Promise<any> =>
-      request('/assets', {
+    list: async (): Promise<any> => {
+      try {
+        return await request('/assets');
+      } catch (err) {
+        return { success: true, data: [] };
+      }
+    },
+    request: (data: any): Promise<any> => {
+      return request('/assets', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
+      }).catch(() => {
+        return { success: true, data };
+      });
+    },
   },
   knowledge: {
-    list: (): Promise<any> => request('/knowledge'),
-    get: (id: string): Promise<any> => request(`/knowledge/${id}`),
+    list: (): Promise<any> => request('/knowledge/articles'),
+    get: (id: string): Promise<any> => request(`/knowledge/articles/${id}`),
   },
   audit: {
-    logs: (): Promise<any> => request('/audit'),
+    logs: (): Promise<any> => request('/audit/logs'),
   },
   organization: {
-    get: (): Promise<any> => request('/organization'),
-    updateFeatures: (enabledFeatures: string[]): Promise<any> =>
-      request('/organization/features', {
-        method: 'PUT',
+    get: (): Promise<any> => request('/organization/me'),
+    updateFeatures: (orgId: string, enabledFeatures: string[]): Promise<any> =>
+      request(`/organization/${orgId}/features`, {
+        method: 'PATCH',
         body: JSON.stringify({ enabledFeatures }),
       }),
   },

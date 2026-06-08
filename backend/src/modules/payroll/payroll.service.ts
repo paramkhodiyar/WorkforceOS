@@ -15,9 +15,24 @@ export class PayrollService {
       where.status = filters.status;
     }
 
-    return prisma.payrollRun.findMany({
+    const runs = await prisma.payrollRun.findMany({
       where,
+      include: {
+        records: {
+          where: { isDeleted: false }
+        }
+      },
       orderBy: { createdAt: "desc" }
+    });
+
+    return runs.map(run => {
+      const totalGross = run.records.reduce((sum, rec) => sum + rec.grossSalary, 0);
+      const totalDeductions = run.records.reduce((sum, rec) => sum + rec.totalDeductions, 0);
+      return {
+        ...run,
+        totalGross,
+        totalDeductions
+      };
     });
   }
 

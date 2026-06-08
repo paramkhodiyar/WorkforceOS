@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth, SEED_USERS } from '../../lib/auth/AuthProvider';
 import { api } from '../../lib/api/client';
 
@@ -68,7 +69,7 @@ export default function TopNavBar() {
   }
 
   return (
-    <header className="fixed top-0 right-0 left-0 md:left-60 h-16 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between px-6 z-30">
+    <header className="fixed top-0 right-0 left-0 md:left-64 h-16 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between px-6 z-30">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 md:hidden">
           <img src="/workforceoslogo.png" alt="Logo" className="h-6 w-6 object-contain rounded" />
@@ -185,11 +186,13 @@ export default function TopNavBar() {
         <div className="h-8 w-[1px] bg-outline-variant"></div>
 
         <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <p className="text-label-md font-bold text-on-surface">{user.firstName} {user.lastName}</p>
-            <p className="text-[10px] text-outline font-semibold uppercase tracking-wider">{user.designation || 'Staff'}</p>
-          </div>
-          <button onClick={logout} className="hover:bg-surface-container p-1.5 rounded-full transition-transform active:scale-95">
+          <Link href="/profile" className="flex items-center gap-3 hover:opacity-85 transition-opacity text-right">
+            <div className="hidden sm:block">
+              <p className="text-label-md font-bold text-on-surface leading-tight">{user.firstName} {user.lastName}</p>
+              <p className="text-[10px] text-outline font-semibold uppercase tracking-wider mt-0.5">{user.designation || 'Staff'}</p>
+            </div>
+          </Link>
+          <button onClick={logout} className="hover:bg-surface-container p-1.5 rounded-full transition-transform active:scale-95 cursor-pointer">
             <span className="material-symbols-outlined text-outline">logout</span>
           </button>
         </div>

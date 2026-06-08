@@ -5,17 +5,21 @@ import { api } from '../../../lib/api/client';
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
+  const [assigneeId, setAssigneeId] = useState('');
   const [selectedTask, setSelectedTask] = useState<any>(null);
 
   async function loadTasks() {
     try {
       const response = await api.tasks.list();
       setTasks(response.data || []);
+      const empRes = await api.employees.list();
+      setEmployees(empRes.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -33,12 +37,14 @@ export default function TasksPage() {
       await api.tasks.create({
         title,
         description,
-        priority
+        priority,
+        assigneeId: assigneeId || undefined
       });
       setShowModal(false);
       setTitle('');
       setDescription('');
       setPriority('MEDIUM');
+      setAssigneeId('');
       loadTasks();
     } catch (err: any) {
       alert(err.message || 'Failed to create task');
@@ -113,15 +119,25 @@ export default function TasksPage() {
                       </div>
                       
                       <div className="flex justify-between items-center">
-                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
-                          task.priority === 'HIGH'
-                            ? 'bg-red-50 text-red-700 border border-red-200'
-                            : task.priority === 'MEDIUM'
-                            ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                            : 'bg-zinc-50 text-zinc-700 border border-zinc-200'
-                        }`}>
-                          {task.priority}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
+                            task.priority === 'HIGH'
+                              ? 'bg-red-50 text-red-700 border border-red-200'
+                              : task.priority === 'MEDIUM'
+                              ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                              : 'bg-zinc-50 text-zinc-700 border border-zinc-200'
+                          }`}>
+                            {task.priority}
+                          </span>
+                          {task.assignee && (
+                            <span 
+                              title={`Assigned to ${task.assignee.firstName} ${task.assignee.lastName}`}
+                              className="h-5 w-5 rounded-full bg-blue-50 text-primary border border-blue-100 flex items-center justify-center font-extrabold text-[8px]"
+                            >
+                              {task.assignee.firstName[0]}{task.assignee.lastName[0]}
+                            </span>
+                          )}
+                        </div>
 
                         <div className="flex gap-1">
                           {statusKey === 'TODO' && (
@@ -203,6 +219,22 @@ export default function TasksPage() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Assignee</label>
+                <select
+                  value={assigneeId}
+                  onChange={(e) => setAssigneeId(e.target.value)}
+                  className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+                >
+                  <option value="">Unassigned</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.firstName} {emp.lastName} ({emp.designation || 'Staff'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="pt-4 border-t border-outline-variant flex gap-3">
                 <button
                   type="button"
@@ -263,6 +295,39 @@ export default function TasksPage() {
                   }`}>
                     {selectedTask.status}
                   </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <span className="text-[10px] text-outline font-bold uppercase block">Assignee</span>
+                  {selectedTask.assignee ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="h-6 w-6 rounded-full bg-blue-50 text-primary border border-blue-100 flex items-center justify-center font-bold text-[9px]">
+                        {selectedTask.assignee.firstName[0]}{selectedTask.assignee.lastName[0]}
+                      </span>
+                      <span className="text-body-sm font-semibold text-on-surface">
+                        {selectedTask.assignee.firstName} {selectedTask.assignee.lastName}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-body-sm text-outline mt-1 inline-block">Unassigned</span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-[10px] text-outline font-bold uppercase block">Created By</span>
+                  {selectedTask.creator ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="h-6 w-6 rounded-full bg-slate-50 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-[9px]">
+                        {selectedTask.creator.firstName[0]}{selectedTask.creator.lastName[0]}
+                      </span>
+                      <span className="text-body-sm font-semibold text-on-surface">
+                        {selectedTask.creator.firstName} {selectedTask.creator.lastName}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-body-sm text-outline mt-1 inline-block">N/A</span>
+                  )}
                 </div>
               </div>
             </div>

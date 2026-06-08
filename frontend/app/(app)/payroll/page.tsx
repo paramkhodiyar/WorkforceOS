@@ -14,6 +14,11 @@ export default function PayrollPage() {
   const [runMonth, setRunMonth] = useState(new Date().getMonth() + 1);
   const [runYear, setRunYear] = useState(new Date().getFullYear());
 
+  const [runSearch, setRunSearch] = useState('');
+  const [currentRunPage, setCurrentRunPage] = useState(1);
+  const [payslipSearch, setPayslipSearch] = useState('');
+  const [currentPayslipPage, setCurrentPayslipPage] = useState(1);
+
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
   const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
@@ -64,6 +69,43 @@ export default function PayrollPage() {
       alert(err.message || 'Failed to fetch payslip details');
     }
   }
+
+  const filteredRuns = runs.filter(run => {
+    const monthName = new Date(run.year, run.month - 1).toLocaleString('default', { month: 'long' }).toLowerCase();
+    const query = runSearch.toLowerCase();
+    return (
+      monthName.includes(query) ||
+      run.year.toString().includes(query) ||
+      run.status.toLowerCase().includes(query)
+    );
+  });
+
+  const runItemsPerPage = 8;
+  const totalRunPages = Math.ceil(filteredRuns.length / runItemsPerPage);
+  const paginatedRuns = filteredRuns.slice(
+    (currentRunPage - 1) * runItemsPerPage,
+    currentRunPage * runItemsPerPage
+  );
+
+  const filteredPayslips = payslips.filter(ps => {
+    const fullName = `${ps.user?.firstName} ${ps.user?.lastName}`.toLowerCase();
+    const monthName = new Date(ps.year, ps.month - 1).toLocaleString('default', { month: 'long' }).toLowerCase();
+    const query = payslipSearch.toLowerCase();
+    return (
+      fullName.includes(query) ||
+      (ps.user?.email || '').toLowerCase().includes(query) ||
+      monthName.includes(query) ||
+      ps.year.toString().includes(query) ||
+      ps.status.toLowerCase().includes(query)
+    );
+  });
+
+  const payslipItemsPerPage = 8;
+  const totalPayslipPages = Math.ceil(filteredPayslips.length / payslipItemsPerPage);
+  const paginatedPayslips = filteredPayslips.slice(
+    (currentPayslipPage - 1) * payslipItemsPerPage,
+    currentPayslipPage * payslipItemsPerPage
+  );
 
   if (loading) {
     return (
@@ -123,8 +165,24 @@ export default function PayrollPage() {
           </div>
 
           <div className="md:col-span-2 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Payroll Run Logs</h2>
-            {runs.length === 0 ? (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Payroll Run Logs</h2>
+              <div className="relative w-full sm:w-64">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>
+                <input
+                  type="text"
+                  placeholder="Search logs..."
+                  value={runSearch}
+                  onChange={(e) => {
+                    setRunSearch(e.target.value);
+                    setCurrentRunPage(1);
+                  }}
+                  className="w-full pl-9 pr-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary focus:border-primary"
+                />
+              </div>
+            </div>
+
+            {filteredRuns.length === 0 ? (
               <p className="text-body-sm text-outline py-8 text-center">No payroll runs executed yet.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -139,7 +197,7 @@ export default function PayrollPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant text-body-sm">
-                    {runs.map(run => (
+                    {paginatedRuns.map(run => (
                       <tr key={run.id} className="hover:bg-surface-container-low transition-colors">
                         <td className="px-4 py-3 font-semibold text-on-surface">
                           {new Date(run.runDate).toLocaleDateString()}
@@ -148,10 +206,10 @@ export default function PayrollPage() {
                           {new Date(run.year, run.month - 1).toLocaleString('default', { month: 'long' })} {run.year}
                         </td>
                         <td className="px-4 py-3 text-on-surface-variant font-mono">
-                          ${run.totalGross.toFixed(2)}
+                          ₹{(run.totalGross ?? 0).toFixed(2)}
                         </td>
                         <td className="px-4 py-3 text-error font-mono">
-                          ${run.totalDeductions.toFixed(2)}
+                          ₹{(run.totalDeductions ?? 0).toFixed(2)}
                         </td>
                         <td className="px-4 py-3">
                           <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-200">
@@ -162,6 +220,30 @@ export default function PayrollPage() {
                     ))}
                   </tbody>
                 </table>
+
+                {totalRunPages > 1 && (
+                  <div className="mt-4 pt-4 border-t border-outline-variant flex items-center justify-between">
+                    <span className="text-body-sm text-outline">
+                      Showing {(currentRunPage - 1) * runItemsPerPage + 1} to {Math.min(currentRunPage * runItemsPerPage, filteredRuns.length)} of {filteredRuns.length} runs
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={currentRunPage === 1}
+                        onClick={() => setCurrentRunPage(currentRunPage - 1)}
+                        className="px-3 py-1.5 border border-outline-variant rounded-lg text-body-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        disabled={currentRunPage === totalRunPages}
+                        onClick={() => setCurrentRunPage(currentRunPage + 1)}
+                        className="px-3 py-1.5 border border-outline-variant rounded-lg text-body-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -169,10 +251,26 @@ export default function PayrollPage() {
       )}
 
       <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-        <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">
-          {isAdmin || isFinance ? 'All Employee Payslips' : 'My Payslips'}
-        </h2>
-        {payslips.length === 0 ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">
+            {isAdmin || isFinance ? 'All Employee Payslips' : 'My Payslips'}
+          </h2>
+          <div className="relative w-full sm:w-64">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>
+            <input
+              type="text"
+              placeholder="Search payslips..."
+              value={payslipSearch}
+              onChange={(e) => {
+                setPayslipSearch(e.target.value);
+                setCurrentPayslipPage(1);
+              }}
+              className="w-full pl-9 pr-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary focus:border-primary"
+            />
+          </div>
+        </div>
+
+        {filteredPayslips.length === 0 ? (
           <p className="text-body-sm text-outline py-8 text-center">No payslip records found.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -187,7 +285,7 @@ export default function PayrollPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant text-body-sm">
-                {payslips.map(ps => (
+                {paginatedPayslips.map(ps => (
                   <tr key={ps.id} className="hover:bg-surface-container-low transition-colors">
                     <td className="px-4 py-3 font-semibold text-on-surface">
                       {ps.user?.firstName} {ps.user?.lastName}
@@ -196,7 +294,7 @@ export default function PayrollPage() {
                       {new Date(ps.year, ps.month - 1).toLocaleString('default', { month: 'long' })} {ps.year}
                     </td>
                     <td className="px-4 py-3 text-on-surface-variant font-mono text-right">
-                      ${ps.netPay.toFixed(2)}
+                      ₹{ps.netPay.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-200">
@@ -216,6 +314,30 @@ export default function PayrollPage() {
                 ))}
               </tbody>
             </table>
+
+            {totalPayslipPages > 1 && (
+              <div className="mt-4 pt-4 border-t border-outline-variant flex items-center justify-between">
+                <span className="text-body-sm text-outline">
+                  Showing {(currentPayslipPage - 1) * payslipItemsPerPage + 1} to {Math.min(currentPayslipPage * payslipItemsPerPage, filteredPayslips.length)} of {filteredPayslips.length} slips
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    disabled={currentPayslipPage === 1}
+                    onClick={() => setCurrentPayslipPage(currentPayslipPage - 1)}
+                    className="px-3 py-1.5 border border-outline-variant rounded-lg text-body-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    disabled={currentPayslipPage === totalPayslipPages}
+                    onClick={() => setCurrentPayslipPage(currentPayslipPage + 1)}
+                    className="px-3 py-1.5 border border-outline-variant rounded-lg text-body-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -241,27 +363,27 @@ export default function PayrollPage() {
             <div className="space-y-4">
               <div className="flex justify-between py-1.5 border-b border-outline-variant text-body-sm">
                 <span className="text-outline">Basic Salary</span>
-                <span className="font-semibold text-on-surface font-mono">${selectedPayslip.basic.toFixed(2)}</span>
+                <span className="font-semibold text-on-surface font-mono">₹{selectedPayslip.basic.toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-outline-variant text-body-sm">
                 <span className="text-outline">HRA</span>
-                <span className="font-semibold text-on-surface font-mono">${selectedPayslip.hra.toFixed(2)}</span>
+                <span className="font-semibold text-on-surface font-mono">₹{selectedPayslip.hra.toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-outline-variant text-body-sm">
                 <span className="text-outline">Allowances</span>
-                <span className="font-semibold text-on-surface font-mono">${selectedPayslip.allowances.toFixed(2)}</span>
+                <span className="font-semibold text-on-surface font-mono">₹{selectedPayslip.allowances.toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-outline-variant text-body-sm">
                 <span className="text-outline">Deductions</span>
-                <span className="font-semibold text-error font-mono">-${selectedPayslip.deductions.toFixed(2)}</span>
+                <span className="font-semibold text-error font-mono">-₹{selectedPayslip.deductions.toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-outline-variant text-body-sm">
                 <span className="text-outline">Tax Incurred</span>
-                <span className="font-semibold text-error font-mono">-${selectedPayslip.tax.toFixed(2)}</span>
+                <span className="font-semibold text-error font-mono">-₹{selectedPayslip.tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-3 bg-surface-container-low px-4 rounded-lg text-label-md font-bold">
                 <span className="text-on-surface">Net Take Home</span>
-                <span className="text-primary font-mono">${selectedPayslip.netPay.toFixed(2)}</span>
+                <span className="text-primary font-mono">₹{selectedPayslip.netPay.toFixed(2)}</span>
               </div>
             </div>
 

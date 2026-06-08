@@ -9,9 +9,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-surface text-on-surface">
       <SideNavBar />
-      <div className="flex-1 flex flex-col md:pl-60">
+      <div className="flex-1 flex flex-col md:pl-64">
         <TopNavBar />
-        <main className="flex-1 pt-16 pb-16 md:pb-0 min-h-screen px-6 py-6 overflow-x-hidden">
+        <main className="flex-1 pt-24 pb-16 md:pb-6 min-h-screen px-6 overflow-x-hidden">
           {children}
         </main>
       </div>

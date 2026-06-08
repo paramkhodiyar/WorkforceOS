@@ -1,4 +1,4 @@
-import { PrismaClient, UserStatus, SystemRole, LeaveType, RoleScope } from "@prisma/client";
+import { PrismaClient, UserStatus, SystemRole, LeaveType, RoleScope, TaskStatus, TaskPriority, PayrollStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -6,35 +6,74 @@ const prisma = new PrismaClient();
 async function main() {
   const passwordHash = await bcrypt.hash("Password123!", 10);
 
+  await prisma.refreshToken.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.knowledgeVersion.deleteMany();
+  await prisma.knowledgeArticle.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.performanceReview.deleteMany();
+  await prisma.employeeDocument.deleteMany();
+  await prisma.assetAssignment.deleteMany();
+  await prisma.asset.deleteMany();
+  await prisma.payrollRecord.deleteMany();
+  await prisma.payrollRun.deleteMany();
+  await prisma.expenseApproval.deleteMany();
+  await prisma.expenseAttachment.deleteMany();
+  await prisma.expenseClaim.deleteMany();
+  await prisma.leaveApproval.deleteMany();
+  await prisma.leaveAttachment.deleteMany();
+  await prisma.leaveRequest.deleteMany();
+  await prisma.leaveBalance.deleteMany();
+  await prisma.leavePolicy.deleteMany();
+  await prisma.taskDependency.deleteMany();
+  await prisma.taskComment.deleteMany();
+  await prisma.taskReview.deleteMany();
+  await prisma.taskAttachment.deleteMany();
+  await prisma.taskLabel.deleteMany();
+  await prisma.task.deleteMany();
+  await prisma.attendance.deleteMany();
+  await prisma.userRole.deleteMany();
+  await prisma.team.deleteMany();
+  await prisma.department.deleteMany();
+  await prisma.rolePermission.deleteMany();
+  await prisma.role.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.organization.deleteMany();
+
   const org = await prisma.organization.create({
     data: {
-      name: "Acme Corporation",
-      slug: "acme",
-      isActive: true
+      name: "Dunder Mifflin Paper Company",
+      slug: "dunder-mifflin",
+      isActive: true,
+      enabledFeatures: ["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge"]
     }
   });
 
-  await prisma.user.create({
+  const superAdmin = await prisma.user.create({
     data: {
       email: "superadmin@workforceos.com",
       passwordHash,
-      firstName: "Super",
-      lastName: "Admin",
+      firstName: "David",
+      lastName: "Wallace",
       systemRole: SystemRole.SUPER_ADMIN,
       organizationId: org.id,
       status: UserStatus.ACTIVE
     }
   });
 
-  await prisma.user.create({
+  const michael = await prisma.user.create({
     data: {
-      email: "orgadmin@acme.com",
+      email: "michael@dunder-mifflin.com",
       passwordHash,
-      firstName: "Alice",
-      lastName: "Smith",
+      firstName: "Michael",
+      lastName: "Scott",
       systemRole: SystemRole.ORG_ADMIN,
       organizationId: org.id,
-      status: UserStatus.ACTIVE
+      status: UserStatus.ACTIVE,
+      employeeId: "EMP-2026-1000",
+      designation: "Regional Manager",
+      salaryBand: "BAND_A",
+      joinDate: new Date("2010-01-01")
     }
   });
 
@@ -77,56 +116,64 @@ async function main() {
 
   const dept = await prisma.department.create({
     data: {
-      name: "Engineering",
+      name: "Sales & Admin",
       organizationId: org.id
     }
   });
 
   const team = await prisma.team.create({
     data: {
-      name: "Core Infrastructure",
+      name: "Scranton Branch",
       departmentId: dept.id
     }
   });
 
-  const hrUser = await prisma.user.create({
+  const toby = await prisma.user.create({
     data: {
-      email: "hr@acme.com",
+      email: "toby@dunder-mifflin.com",
       passwordHash,
-      firstName: "Bob",
-      lastName: "Jones",
+      firstName: "Toby",
+      lastName: "Flenderson",
       systemRole: SystemRole.EMPLOYEE,
       organizationId: org.id,
       departmentId: dept.id,
-      status: UserStatus.ACTIVE
+      status: UserStatus.ACTIVE,
+      employeeId: "EMP-2026-0010",
+      designation: "HR Representative",
+      salaryBand: "BAND_B",
+      joinDate: new Date("2015-06-01")
     }
   });
 
   await prisma.userRole.create({
     data: {
-      userId: hrUser.id,
+      userId: toby.id,
       roleId: rolesMap.HR_MANAGER,
       scopeType: RoleScope.ORG,
       scopeId: org.id
     }
   });
 
-  const manager1 = await prisma.user.create({
+  const jim = await prisma.user.create({
     data: {
-      email: "manager1@acme.com",
+      email: "jim@dunder-mifflin.com",
       passwordHash,
-      firstName: "Charlie",
-      lastName: "Brown",
+      firstName: "Jim",
+      lastName: "Halpert",
       systemRole: SystemRole.EMPLOYEE,
       organizationId: org.id,
       departmentId: dept.id,
-      status: UserStatus.ACTIVE
+      status: UserStatus.ACTIVE,
+      employeeId: "EMP-2026-0002",
+      designation: "Assistant Regional Manager",
+      salaryBand: "BAND_A",
+      joinDate: new Date("2018-02-15")
     }
   });
 
   await prisma.userRole.create({
     data: {
-      userId: manager1.id,
+      userId: jim.id,
       roleId: rolesMap.TEAM_MANAGER,
       scopeType: RoleScope.TEAM,
       scopeId: team.id
@@ -135,25 +182,29 @@ async function main() {
 
   await prisma.team.update({
     where: { id: team.id },
-    data: { leadId: manager1.id }
+    data: { leadId: jim.id }
   });
 
-  const manager2 = await prisma.user.create({
+  const dwight = await prisma.user.create({
     data: {
-      email: "manager2@acme.com",
+      email: "dwight@dunder-mifflin.com",
       passwordHash,
-      firstName: "Diana",
-      lastName: "Prince",
+      firstName: "Dwight",
+      lastName: "Schrute",
       systemRole: SystemRole.EMPLOYEE,
       organizationId: org.id,
       departmentId: dept.id,
-      status: UserStatus.ACTIVE
+      status: UserStatus.ACTIVE,
+      employeeId: "EMP-2026-0003",
+      designation: "Assistant to the Regional Manager",
+      salaryBand: "BAND_A",
+      joinDate: new Date("2016-03-12")
     }
   });
 
   await prisma.userRole.create({
     data: {
-      userId: manager2.id,
+      userId: dwight.id,
       roleId: rolesMap.DEPARTMENT_HEAD,
       scopeType: RoleScope.DEPARTMENT,
       scopeId: dept.id
@@ -162,25 +213,34 @@ async function main() {
 
   await prisma.department.update({
     where: { id: dept.id },
-    data: { headId: manager2.id }
+    data: { headId: dwight.id }
   });
 
-  const employeesList = [];
-  for (let i = 1; i <= 5; i++) {
+  const officeEmployees = [
+    { email: "pam@dunder-mifflin.com", firstName: "Pam", lastName: "Beesly", employeeId: "EMP-2026-0004", salaryBand: "BAND_B", designation: "Office Administrator", joinDate: new Date("2018-09-01") },
+    { email: "stanley@dunder-mifflin.com", firstName: "Stanley", lastName: "Hudson", employeeId: "EMP-2026-0005", salaryBand: "BAND_A", designation: "Sales Representative", joinDate: new Date("2012-04-10") },
+    { email: "angela@dunder-mifflin.com", firstName: "Angela", lastName: "Martin", employeeId: "EMP-2026-0006", salaryBand: "BAND_A", designation: "Head of Accounting", joinDate: new Date("2014-05-15") },
+    { email: "kevin@dunder-mifflin.com", firstName: "Kevin", lastName: "Malone", employeeId: "EMP-2026-0007", salaryBand: "BAND_C", designation: "Accountant", joinDate: new Date("2019-10-01") },
+    { email: "creed@dunder-mifflin.com", firstName: "Creed", lastName: "Bratton", employeeId: "EMP-2026-0008", salaryBand: "BAND_C", designation: "Quality Assurance", joinDate: new Date("2011-11-11") }
+  ];
+
+  const employeesList: any[] = [];
+  for (const empData of officeEmployees) {
     const emp = await prisma.user.create({
       data: {
-        email: `emp${i}@acme.com`,
+        email: empData.email,
         passwordHash,
-        firstName: "Employee",
-        lastName: `${i}`,
-        employeeId: `EMP-2026-000${i}`,
+        firstName: empData.firstName,
+        lastName: empData.lastName,
+        employeeId: empData.employeeId,
         systemRole: SystemRole.EMPLOYEE,
         organizationId: org.id,
         departmentId: dept.id,
-        managerId: manager1.id,
+        managerId: jim.id,
         status: UserStatus.ACTIVE,
-        salaryBand: "BAND_A",
-        joinDate: new Date("2026-01-01")
+        salaryBand: empData.salaryBand,
+        designation: empData.designation,
+        joinDate: empData.joinDate
       }
     });
     employeesList.push(emp);
@@ -195,26 +255,27 @@ async function main() {
     });
   }
 
-  const internUser = await prisma.user.create({
+  const ryan = await prisma.user.create({
     data: {
-      email: "intern@acme.com",
+      email: "ryan@dunder-mifflin.com",
       passwordHash,
-      firstName: "Ian",
-      lastName: "Intern",
+      firstName: "Ryan",
+      lastName: "Howard",
       employeeId: "EMP-2026-9999",
       systemRole: SystemRole.INTERN,
       organizationId: org.id,
       departmentId: dept.id,
-      managerId: manager1.id,
+      managerId: jim.id,
       status: UserStatus.ACTIVE,
       salaryBand: "20000",
+      designation: "Temp Intern",
       joinDate: new Date("2026-05-01")
     }
   });
 
   await prisma.userRole.create({
     data: {
-      userId: internUser.id,
+      userId: ryan.id,
       roleId: rolesMap.INTERN,
       scopeType: RoleScope.ORG,
       scopeId: org.id
@@ -239,7 +300,7 @@ async function main() {
     });
   }
 
-  const allUsers = [hrUser, manager1, manager2, internUser, ...employeesList];
+  const allUsers = [michael, toby, jim, dwight, ryan, ...employeesList];
   for (const u of allUsers) {
     for (const policy of leavePolicies) {
       await prisma.leaveBalance.create({
@@ -251,6 +312,111 @@ async function main() {
           used: 0,
           pending: 0,
           remaining: policy.daysAllowed
+        }
+      });
+    }
+  }
+
+  const taskData = [
+    { title: "Organize the 8th Annual Dundie Awards", description: "Book Chilli's party room, prepare Dundie trophies and plan Michael's opening set.", assigneeId: employeesList[0].id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS },
+    { title: "Audit Dwight's Beet Farm Travel claims", description: "Dwight claimed beet manure transport cost under business travel. Needs compliance audit.", assigneeId: employeesList[2].id, priority: TaskPriority.MEDIUM, status: TaskStatus.TODO },
+    { title: "Reconcile Scranton quarterly ledger", description: "Audit ledger sheet and make sure Keleven is not used as a number.", assigneeId: employeesList[3].id, priority: TaskPriority.HIGH, status: TaskStatus.TODO },
+    { title: "Perform watermark Quality Assurance on incoming shipments", description: "Ensure that watermarks do not contain offensive material.", assigneeId: employeesList[4].id, priority: TaskPriority.HIGH, status: TaskStatus.DONE },
+    { title: "Clean Michael's coffee maker", description: "Must scrub the inside of the coffee maker carefully.", assigneeId: ryan.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED },
+    { title: "Re-negotiate paper contract with Lackawanna County", description: "Prepare sales materials and client contract sheets.", assigneeId: jim.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS },
+    { title: "Water Dwight's desk beets", description: "Give beets exactly 200ml of water every morning.", assigneeId: ryan.id, priority: TaskPriority.LOW, status: TaskStatus.TODO },
+    { title: "Draft new corporate leave handbook", description: "Draft the leave guidelines and policies for the Scranton branch.", assigneeId: toby.id, priority: TaskPriority.MEDIUM, status: TaskStatus.DONE }
+  ];
+
+  for (let i = 0; i < taskData.length; i++) {
+    const t = taskData[i];
+    await prisma.task.create({
+      data: {
+        taskId: `TASK-${String(i + 1).padStart(4, "0")}`,
+        title: t.title,
+        description: t.description,
+        creatorId: michael.id,
+        assigneeId: t.assigneeId,
+        priority: t.priority,
+        status: t.status,
+        dueDate: new Date("2026-06-30")
+      }
+    });
+  }
+
+  await prisma.leaveRequest.create({
+    data: {
+      userId: dwight.id,
+      leaveType: LeaveType.CASUAL,
+      startDate: new Date("2026-06-15"),
+      endDate: new Date("2026-06-18"),
+      reason: "Emergency beet harvesting at Schrute Farms.",
+      status: "PENDING",
+      days: 4
+    }
+  });
+
+  await prisma.leaveRequest.create({
+    data: {
+      userId: jim.id,
+      leaveType: LeaveType.CASUAL,
+      startDate: new Date("2026-06-20"),
+      endDate: new Date("2026-06-20"),
+      reason: "Prank preparation and planning day.",
+      status: "PENDING",
+      days: 1
+    }
+  });
+
+  const salaryBandsMap: Record<string, number> = {
+    "BAND_A": 85000,
+    "BAND_B": 55000,
+    "BAND_C": 40000,
+    "20000": 20000
+  };
+
+  for (let month = 1; month <= 5; month++) {
+    const run = await prisma.payrollRun.create({
+      data: {
+        organizationId: org.id,
+        month,
+        year: 2026,
+        status: PayrollStatus.PAID,
+        generatedBy: superAdmin.id,
+        approvedBy: superAdmin.id,
+        paidBy: superAdmin.id,
+        generatedAt: new Date(2026, month - 1, 28),
+        approvedAt: new Date(2026, month - 1, 28),
+        paidAt: new Date(2026, month - 1, 28)
+      }
+    });
+
+    for (const user of allUsers) {
+      if (user.systemRole === SystemRole.SUPER_ADMIN) continue;
+
+      const baseSalary = salaryBandsMap[user.salaryBand || "BAND_C"] || 40000;
+      const hra = baseSalary * 0.4;
+      const allowances = baseSalary * 0.1;
+      const bonus = (month === 5 && (user.firstName === "Dwight" || user.firstName === "Jim")) ? 12000 : 0;
+      const grossSalary = baseSalary + hra + allowances + bonus;
+      const pf = baseSalary * 0.12;
+      const tax = grossSalary * 0.1;
+      const totalDeductions = pf + tax;
+      const netSalary = grossSalary - totalDeductions;
+
+      await prisma.payrollRecord.create({
+        data: {
+          payrollRunId: run.id,
+          userId: user.id,
+          basicSalary: baseSalary,
+          hra,
+          allowances,
+          bonus,
+          grossSalary,
+          pf,
+          tax,
+          totalDeductions,
+          netSalary
         }
       });
     }

@@ -7,7 +7,7 @@ import { useAuth } from '../../lib/auth/AuthProvider';
 
 export default function BottomNavBar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, features, logout } = useAuth();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   if (!user) return null;
@@ -19,20 +19,21 @@ export default function BottomNavBar() {
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
 
   const quickTabs = [
-    { label: 'Home', icon: 'dashboard', href: '/dashboard' },
-    { label: 'Tasks', icon: 'assignment', href: '/tasks' },
-    { label: 'Attendance', icon: 'event_available', href: '/attendance' }
-  ];
+    { label: 'Home', icon: 'dashboard', href: '/dashboard', show: true },
+    { label: 'Tasks', icon: 'assignment', href: '/tasks', show: features.includes('tasks') },
+    { label: 'Attendance', icon: 'event_available', href: '/attendance', show: features.includes('attendance') }
+  ].filter(tab => tab.show);
 
   const secondaryTabs = [
-    { label: 'Leave Request', icon: 'event_busy', href: '/leave' },
-    { label: 'Employee List', icon: 'badge', href: '/employees', show: isAdmin || isHR || isManager },
-    { label: 'Compensation', icon: 'payments', href: '/payroll' },
-    { label: 'Expenses Claims', icon: 'receipt_long', href: '/expenses' },
-    { label: 'Assets Check-out', icon: 'inventory_2', href: '/assets' },
-    { label: 'Knowledge Base', icon: 'menu_book', href: '/knowledge' },
-    { label: 'Audit Trail', icon: 'history', href: '/audit', show: isAdmin }
-  ];
+    { label: 'Leave Request', icon: 'event_busy', href: '/leave', show: features.includes('leave') },
+    { label: 'Statuses Board', icon: 'wifi', href: '/statuses', show: features.includes('attendance') },
+    { label: 'Employee List', icon: 'badge', href: '/employees', show: (isAdmin || isHR || isManager) && features.includes('employees') },
+    { label: 'Compensation', icon: 'payments', href: '/payroll', show: features.includes('payroll') },
+    { label: 'Expenses Claims', icon: 'receipt_long', href: '/expenses', show: features.includes('expenses') },
+    { label: 'Assets Check-out', icon: 'inventory_2', href: '/assets', show: features.includes('assets') },
+    { label: 'Knowledge Base', icon: 'menu_book', href: '/knowledge', show: features.includes('knowledge') },
+    { label: 'Audit Trail', icon: 'history', href: '/audit', show: isAdmin && features.includes('audit') }
+  ].filter(tab => tab.show);
 
   return (
     <>

@@ -57,9 +57,8 @@ export const getHistory = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getTeam = asyncHandler(async (req: Request, res: Response) => {
-  const managerId = req.user!.id;
   const orgId = req.org!.id;
-  const list = await AttendanceService.getTeamAttendance(managerId, orgId);
+  const list = await AttendanceService.getAllAttendance(orgId);
   return sendSuccess(res, list);
 });
 

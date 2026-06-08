@@ -22,11 +22,16 @@ export const getOrgBySlug = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const updateOrgFeatures = asyncHandler(async (req: Request, res: Response) => {
-  if (req.user!.systemRole !== "SUPER_ADMIN") {
-    throw AppError.forbidden("Only super admins are authorized to configure features");
+  if (req.user!.systemRole !== "SUPER_ADMIN" && req.user!.systemRole !== "ORG_ADMIN") {
+    throw AppError.forbidden("Only organization administrators are authorized to configure features");
   }
 
   const { orgId } = req.params;
+
+  if (req.user!.systemRole === "ORG_ADMIN" && req.user!.organizationId !== orgId) {
+    throw AppError.forbidden("You can only configure features for your own organization");
+  }
+
   const { enabledFeatures } = req.body;
 
   const updated = await OrganizationService.updateFeatures(orgId, enabledFeatures, req.user!.id, req);

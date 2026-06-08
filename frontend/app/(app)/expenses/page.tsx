@@ -12,6 +12,11 @@ export default function ExpensesPage() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('TRAVEL');
   const [description, setDescription] = useState('');
+  const [searchClaims, setSearchClaims] = useState('');
+  const [currentPageClaims, setCurrentPageClaims] = useState(1);
+  const [searchApproval, setSearchApproval] = useState('');
+  const [currentPageApproval, setCurrentPageApproval] = useState(1);
+  const itemsPerPage = 8;
 
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
@@ -71,8 +76,31 @@ export default function ExpensesPage() {
     );
   }
 
-  const myClaims = expenses.filter(exp => exp.userId === user.id);
-  const pendingApprovals = expenses.filter(exp => exp.userId !== user.id && exp.status === 'PENDING');
+  const filteredClaims = expenses.filter(exp => exp.userId === user.id).filter(exp => {
+    const category = exp.category?.toLowerCase() || '';
+    const description = exp.description?.toLowerCase() || '';
+    const status = exp.status?.toLowerCase() || '';
+    const q = searchClaims.toLowerCase();
+    return category.includes(q) || description.includes(q) || status.includes(q);
+  });
+  const totalPagesClaims = Math.ceil(filteredClaims.length / itemsPerPage);
+  const paginatedClaims = filteredClaims.slice(
+    (currentPageClaims - 1) * itemsPerPage,
+    currentPageClaims * itemsPerPage
+  );
+
+  const filteredApprovals = expenses.filter(exp => exp.userId !== user.id && exp.status === 'PENDING').filter(exp => {
+    const name = `${exp.user?.firstName} ${exp.user?.lastName}`.toLowerCase();
+    const category = exp.category?.toLowerCase() || '';
+    const description = exp.description?.toLowerCase() || '';
+    const q = searchApproval.toLowerCase();
+    return name.includes(q) || category.includes(q) || description.includes(q);
+  });
+  const totalPagesApprovals = Math.ceil(filteredApprovals.length / itemsPerPage);
+  const paginatedApprovals = filteredApprovals.slice(
+    (currentPageApproval - 1) * itemsPerPage,
+    currentPageApproval * itemsPerPage
+  );
 
   return (
     <div className="space-y-6 font-sans">
@@ -86,7 +114,7 @@ export default function ExpensesPage() {
           <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">File Claim</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Amount ($)</label>
+              <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Amount (₹)</label>
               <input
                 type="number"
                 step="0.01"
@@ -136,44 +164,102 @@ export default function ExpensesPage() {
         <div className="md:col-span-2 space-y-6">
           {(isAdmin || isFinance || isManager) && (
             <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Pending Team Claims</h2>
-              {pendingApprovals.length === 0 ? (
+              <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Pending Team Claims</h2>
+                <div className="relative w-48">
+                  <input
+                    type="text"
+                    placeholder="Search pending..."
+                    value={searchApproval}
+                    onChange={(e) => {
+                      setSearchApproval(e.target.value);
+                      setCurrentPageApproval(1);
+                    }}
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                  />
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+                </div>
+              </div>
+              
+              {paginatedApprovals.length === 0 ? (
                 <p className="text-body-sm text-outline py-4 text-center">No pending expense approvals.</p>
               ) : (
-                <div className="divide-y divide-outline-variant">
-                  {pendingApprovals.map(exp => (
-                    <div key={exp.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <p className="text-label-md font-bold text-on-surface">{exp.user?.firstName} {exp.user?.lastName}</p>
-                        <p className="text-body-sm text-on-surface-variant font-semibold mt-0.5">
-                          ${exp.amount.toFixed(2)} - {exp.category}
-                        </p>
-                        <p className="text-body-sm text-outline italic mt-1">"{exp.description}"</p>
+                <div>
+                  <div className="divide-y divide-outline-variant">
+                    {paginatedApprovals.map(exp => (
+                      <div key={exp.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <p className="text-label-md font-bold text-on-surface">{exp.user?.firstName} {exp.user?.lastName}</p>
+                          <p className="text-body-sm text-on-surface-variant font-semibold mt-0.5">
+                            ₹{exp.amount.toFixed(2)} - {exp.category}
+                          </p>
+                          <p className="text-body-sm text-outline italic mt-1">"{exp.description}"</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => handleApprove(exp.id, 'REJECTED')}
+                            className="px-3 py-1.5 border border-error-container text-error hover:bg-error/5 rounded-lg text-label-sm font-bold transition-colors"
+                          >
+                            Reject
+                          </button>
+                          <button
+                            onClick={() => handleApprove(exp.id, 'APPROVED')}
+                            className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold shadow-sm transition-all"
+                          >
+                            Approve
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                    ))}
+                  </div>
+                  
+                  {totalPagesApprovals > 1 && (
+                    <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
+                      <span className="text-[11px] text-outline">
+                        Showing {(currentPageApproval - 1) * itemsPerPage + 1} to {Math.min(currentPageApproval * itemsPerPage, filteredApprovals.length)} of {filteredApprovals.length} claims
+                      </span>
+                      <div className="flex gap-1">
                         <button
-                          onClick={() => handleApprove(exp.id, 'REJECTED')}
-                          className="px-3 py-1.5 border border-error-container text-error hover:bg-error/5 rounded-lg text-label-sm font-bold transition-colors"
+                          disabled={currentPageApproval === 1}
+                          onClick={() => setCurrentPageApproval(currentPageApproval - 1)}
+                          className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
                         >
-                          Reject
+                          Prev
                         </button>
                         <button
-                          onClick={() => handleApprove(exp.id, 'APPROVED')}
-                          className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold shadow-sm transition-all"
+                          disabled={currentPageApproval === totalPagesApprovals}
+                          onClick={() => setCurrentPageApproval(currentPageApproval + 1)}
+                          className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
                         >
-                          Approve
+                          Next
                         </button>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
           )}
 
           <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">My Expenses</h2>
-            {myClaims.length === 0 ? (
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">My Expenses</h2>
+              <div className="relative w-48">
+                <input
+                  type="text"
+                  placeholder="Search claims..."
+                  value={searchClaims}
+                  onChange={(e) => {
+                    setSearchClaims(e.target.value);
+                    setCurrentPageClaims(1);
+                  }}
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                />
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+              </div>
+            </div>
+            
+            {paginatedClaims.length === 0 ? (
               <p className="text-body-sm text-outline py-8 text-center">No expense claims filed yet.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -187,11 +273,11 @@ export default function ExpensesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant text-body-sm">
-                    {myClaims.map(exp => (
+                    {paginatedClaims.map(exp => (
                       <tr key={exp.id} className="hover:bg-surface-container-low transition-colors">
                         <td className="px-4 py-3 font-semibold text-on-surface">{exp.category}</td>
                         <td className="px-4 py-3 text-on-surface-variant font-mono">
-                          ${exp.amount.toFixed(2)}
+                          ₹{exp.amount.toFixed(2)}
                         </td>
                         <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">{exp.description}</td>
                         <td className="px-4 py-3">
@@ -209,6 +295,30 @@ export default function ExpensesPage() {
                     ))}
                   </tbody>
                 </table>
+                
+                {totalPagesClaims > 1 && (
+                  <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
+                    <span className="text-[11px] text-outline">
+                      Showing {(currentPageClaims - 1) * itemsPerPage + 1} to {Math.min(currentPageClaims * itemsPerPage, filteredClaims.length)} of {filteredClaims.length} claims
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        disabled={currentPageClaims === 1}
+                        onClick={() => setCurrentPageClaims(currentPageClaims - 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        disabled={currentPageClaims === totalPagesClaims}
+                        onClick={() => setCurrentPageClaims(currentPageClaims + 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

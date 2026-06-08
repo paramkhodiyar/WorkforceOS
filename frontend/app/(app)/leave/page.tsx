@@ -11,6 +11,11 @@ export default function LeavePage() {
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [searchHistory, setSearchHistory] = useState('');
+  const [currentPageHistory, setCurrentPageHistory] = useState(1);
+  const [searchApproval, setSearchApproval] = useState('');
+  const [currentPageApproval, setCurrentPageApproval] = useState(1);
+  const itemsPerPage = 8;
 
   const [leaveType, setLeaveType] = useState('SICK');
   const [startDate, setStartDate] = useState('');
@@ -74,6 +79,32 @@ export default function LeavePage() {
       alert(err.message || 'Approval action failed');
     }
   }
+
+  const filteredHistory = leaves.filter(req => {
+    const type = req.leaveType?.toLowerCase() || '';
+    const reason = req.reason?.toLowerCase() || '';
+    const status = req.status?.toLowerCase() || '';
+    const q = searchHistory.toLowerCase();
+    return type.includes(q) || reason.includes(q) || status.includes(q);
+  });
+  const totalPagesHistory = Math.ceil(filteredHistory.length / itemsPerPage);
+  const paginatedHistory = filteredHistory.slice(
+    (currentPageHistory - 1) * itemsPerPage,
+    currentPageHistory * itemsPerPage
+  );
+
+  const filteredApprovals = pendingApprovals.filter(req => {
+    const name = `${req.user?.firstName} ${req.user?.lastName}`.toLowerCase();
+    const type = req.leaveType?.toLowerCase() || '';
+    const reason = req.reason?.toLowerCase() || '';
+    const q = searchApproval.toLowerCase();
+    return name.includes(q) || type.includes(q) || reason.includes(q);
+  });
+  const totalPagesApprovals = Math.ceil(filteredApprovals.length / itemsPerPage);
+  const paginatedApprovals = filteredApprovals.slice(
+    (currentPageApproval - 1) * itemsPerPage,
+    currentPageApproval * itemsPerPage
+  );
 
   if (loading) {
     return (
@@ -169,44 +200,102 @@ export default function LeavePage() {
         <div className="md:col-span-2 space-y-6">
           {(isAdmin || isHR || isManager) && (
             <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Approvals Inbox</h2>
-              {pendingApprovals.length === 0 ? (
+              <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Approvals Inbox</h2>
+                <div className="relative w-48">
+                  <input
+                    type="text"
+                    placeholder="Search inbox..."
+                    value={searchApproval}
+                    onChange={(e) => {
+                      setSearchApproval(e.target.value);
+                      setCurrentPageApproval(1);
+                    }}
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                  />
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+                </div>
+              </div>
+              
+              {paginatedApprovals.length === 0 ? (
                 <p className="text-body-sm text-outline py-4 text-center">No pending approval requests.</p>
               ) : (
-                <div className="divide-y divide-outline-variant">
-                  {pendingApprovals.map(req => (
-                    <div key={req.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <p className="text-label-md font-bold text-on-surface">{req.user?.firstName} {req.user?.lastName}</p>
-                        <p className="text-body-sm text-on-surface-variant font-semibold mt-0.5">
-                          {req.leaveType} ({new Date(req.startDate).toLocaleDateString()} to {new Date(req.endDate).toLocaleDateString()})
-                        </p>
-                        <p className="text-body-sm text-outline italic mt-1">"{req.reason}"</p>
+                <div>
+                  <div className="divide-y divide-outline-variant">
+                    {paginatedApprovals.map(req => (
+                      <div key={req.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <p className="text-label-md font-bold text-on-surface">{req.user?.firstName} {req.user?.lastName}</p>
+                          <p className="text-body-sm text-on-surface-variant font-semibold mt-0.5">
+                            {req.leaveType} ({new Date(req.startDate).toLocaleDateString()} to {new Date(req.endDate).toLocaleDateString()})
+                          </p>
+                          <p className="text-body-sm text-outline italic mt-1">"{req.reason}"</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => handleApproval(req.id, 'REJECTED')}
+                            className="px-3 py-1.5 border border-error-container text-error hover:bg-error/5 rounded-lg text-label-sm font-bold transition-colors"
+                          >
+                            Reject
+                          </button>
+                          <button
+                            onClick={() => handleApproval(req.id, 'APPROVED')}
+                            className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold shadow-sm transition-all"
+                          >
+                            Approve
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                    ))}
+                  </div>
+                  
+                  {totalPagesApprovals > 1 && (
+                    <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
+                      <span className="text-[11px] text-outline">
+                        Showing {(currentPageApproval - 1) * itemsPerPage + 1} to {Math.min(currentPageApproval * itemsPerPage, filteredApprovals.length)} of {filteredApprovals.length} requests
+                      </span>
+                      <div className="flex gap-1">
                         <button
-                          onClick={() => handleApproval(req.id, 'REJECTED')}
-                          className="px-3 py-1.5 border border-error-container text-error hover:bg-error/5 rounded-lg text-label-sm font-bold transition-colors"
+                          disabled={currentPageApproval === 1}
+                          onClick={() => setCurrentPageApproval(currentPageApproval - 1)}
+                          className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
                         >
-                          Reject
+                          Prev
                         </button>
                         <button
-                          onClick={() => handleApproval(req.id, 'APPROVED')}
-                          className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold shadow-sm transition-all"
+                          disabled={currentPageApproval === totalPagesApprovals}
+                          onClick={() => setCurrentPageApproval(currentPageApproval + 1)}
+                          className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
                         >
-                          Approve
+                          Next
                         </button>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
           )}
 
           <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">My Requests History</h2>
-            {leaves.length === 0 ? (
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">My Requests History</h2>
+              <div className="relative w-48">
+                <input
+                  type="text"
+                  placeholder="Search history..."
+                  value={searchHistory}
+                  onChange={(e) => {
+                    setSearchHistory(e.target.value);
+                    setCurrentPageHistory(1);
+                  }}
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                />
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+              </div>
+            </div>
+            
+            {paginatedHistory.length === 0 ? (
               <p className="text-body-sm text-outline py-8 text-center">No leave requests filed yet.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -220,7 +309,7 @@ export default function LeavePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant">
-                    {leaves.map(req => (
+                    {paginatedHistory.map(req => (
                       <tr key={req.id} className="hover:bg-surface-container-low transition-colors text-body-sm">
                         <td className="px-4 py-3 font-semibold text-on-surface">{req.leaveType}</td>
                         <td className="px-4 py-3 text-on-surface-variant">
@@ -242,6 +331,30 @@ export default function LeavePage() {
                     ))}
                   </tbody>
                 </table>
+                
+                {totalPagesHistory > 1 && (
+                  <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
+                    <span className="text-[11px] text-outline">
+                      Showing {(currentPageHistory - 1) * itemsPerPage + 1} to {Math.min(currentPageHistory * itemsPerPage, filteredHistory.length)} of {filteredHistory.length} requests
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        disabled={currentPageHistory === 1}
+                        onClick={() => setCurrentPageHistory(currentPageHistory - 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        disabled={currentPageHistory === totalPagesHistory}
+                        onClick={() => setCurrentPageHistory(currentPageHistory + 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

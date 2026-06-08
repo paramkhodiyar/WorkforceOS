@@ -73,6 +73,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     systemRole: user.systemRole,
     department: user.department,
     manager: user.manager,
+    organizationId: user.organizationId,
     roles: formattedRoles
   };
 

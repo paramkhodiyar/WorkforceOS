@@ -72,6 +72,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         systemRole: user.systemRole,
+        organizationId: user.organizationId,
         roles: formattedRoles
       }
     };

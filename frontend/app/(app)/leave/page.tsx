@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
+import { CommentDialog } from '../../../components/ui/CommentDialog';
 
 export default function LeavePage() {
   const { user } = useAuth();
@@ -16,6 +17,11 @@ export default function LeavePage() {
   const [searchApproval, setSearchApproval] = useState('');
   const [currentPageApproval, setCurrentPageApproval] = useState(1);
   const itemsPerPage = 8;
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogDefaultValue, setDialogDefaultValue] = useState('');
+  const [dialogParams, setDialogParams] = useState<{ id: string; status: string; currentStatus: string } | null>(null);
 
   const [leaveType, setLeaveType] = useState('SICK');
   const [startDate, setStartDate] = useState('');
@@ -71,9 +77,24 @@ export default function LeavePage() {
     }
   }
 
-  async function handleApproval(id: string, status: string) {
+  function handleApproval(id: string, status: string, currentStatus: string) {
+    const actionText = status === 'APPROVED' ? 'approve' : 'reject';
+    setDialogTitle(`Enter a comment/reason to ${actionText} this leave request:`);
+    setDialogDefaultValue(status === 'APPROVED' ? 'Approved' : 'Rejected');
+    setDialogParams({ id, status, currentStatus });
+    setDialogOpen(true);
+  }
+
+  async function handleDialogConfirm(comment: string) {
+    if (!dialogParams) return;
+    const { id, status, currentStatus } = dialogParams;
+    setDialogOpen(false);
     try {
-      await api.leave.approve(id, { status, comment: 'Processed via operations dashboard' });
+      await api.leave.approve(id, { 
+        status, 
+        currentStatus, 
+        comment: comment.trim() || `${status === 'APPROVED' ? 'Approved' : 'Rejected'} via operations dashboard` 
+      });
       await loadData();
     } catch (err: any) {
       alert(err.message || 'Approval action failed');
@@ -233,13 +254,13 @@ export default function LeavePage() {
                         </div>
                         <div className="flex gap-2 shrink-0">
                           <button
-                            onClick={() => handleApproval(req.id, 'REJECTED')}
+                            onClick={() => handleApproval(req.id, 'REJECTED', req.status)}
                             className="px-3 py-1.5 border border-error-container text-error hover:bg-error/5 rounded-lg text-label-sm font-bold transition-colors"
                           >
                             Reject
                           </button>
                           <button
-                            onClick={() => handleApproval(req.id, 'APPROVED')}
+                            onClick={() => handleApproval(req.id, 'APPROVED', req.status)}
                             className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold shadow-sm transition-all"
                           >
                             Approve
@@ -360,6 +381,15 @@ export default function LeavePage() {
           </div>
         </div>
       </div>
+      {dialogOpen && (
+        <CommentDialog
+          isOpen={dialogOpen}
+          title={dialogTitle}
+          defaultValue={dialogDefaultValue}
+          onConfirm={handleDialogConfirm}
+          onClose={() => setDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }

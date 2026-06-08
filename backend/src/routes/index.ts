@@ -12,6 +12,8 @@ import { assetsRouter } from "../modules/assets/assets.router";
 import { knowledgeRouter } from "../modules/knowledge/knowledge.router";
 import { notificationsRouter } from "../modules/notifications/notifications.router";
 import { auditRouter } from "../modules/audit/audit.router";
+import { departmentsRouter } from "../modules/departments/departments.router";
+import { teamsRouter } from "../modules/teams/teams.router";
 
 const router = Router();
 
@@ -28,5 +30,7 @@ router.use("/assets", assetsRouter);
 router.use("/knowledge", knowledgeRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/audit", auditRouter);
+router.use("/departments", departmentsRouter);
+router.use("/teams", teamsRouter);
 
 export default router;

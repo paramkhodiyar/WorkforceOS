@@ -24,7 +24,9 @@ export const listTasks = asyncHandler(async (req: Request, res: Response) => {
     priority: req.query.priority as any,
     fromDate: req.query.fromDate ? new Date(req.query.fromDate as string) : undefined,
     toDate: req.query.toDate ? new Date(req.query.toDate as string) : undefined,
-    overdue: req.query.overdue === "true"
+    overdue: req.query.overdue === "true",
+    departmentId: req.query.departmentId as string,
+    teamId: req.query.teamId as string
   };
 
   const result = await TasksService.listTasks(orgId, filters, page, limit);

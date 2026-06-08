@@ -124,13 +124,19 @@ export default function SideNavBar() {
       </nav>
 
       <div className="pt-4 border-t border-outline-variant mt-auto space-y-1">
-        <Link 
-          href="/unauthorized"
-          className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-slate-50 transition-colors"
-        >
-          <span className="material-symbols-outlined text-[20px]">settings</span>
-          <span className="text-label-md">Settings</span>
-        </Link>
+        {(isAdmin || isHR) && (
+          <Link 
+            href="/settings"
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
+              pathname === '/settings'
+                ? 'bg-primary-container text-on-primary-container font-semibold'
+                : 'text-on-surface-variant hover:bg-slate-50'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">settings</span>
+            <span className="text-label-md">Settings</span>
+          </Link>
+        )}
         <Link 
           href="/unauthorized"
           className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-slate-50 transition-colors"

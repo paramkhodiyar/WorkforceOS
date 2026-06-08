@@ -75,7 +75,17 @@ export class TasksService {
 
   static async listTasks(
     orgId: string,
-    filters: { status?: TaskStatus; assigneeId?: string; creatorId?: string; priority?: TaskPriority; fromDate?: Date; toDate?: Date; overdue?: boolean },
+    filters: {
+      status?: TaskStatus;
+      assigneeId?: string;
+      creatorId?: string;
+      priority?: TaskPriority;
+      fromDate?: Date;
+      toDate?: Date;
+      overdue?: boolean;
+      departmentId?: string;
+      teamId?: string;
+    },
     page: number,
     limit: number
   ) {
@@ -98,6 +108,24 @@ export class TasksService {
     if (filters.overdue) {
       where.dueDate = { lt: new Date() };
       where.status = { notIn: [TaskStatus.CLOSED, TaskStatus.APPROVED] };
+    }
+
+    if (filters.departmentId) {
+      where.assignee = {
+        ...where.assignee,
+        departmentId: filters.departmentId
+      };
+    }
+
+    if (filters.teamId) {
+      where.assignee = {
+        ...where.assignee,
+        teams: {
+          some: {
+            id: filters.teamId
+          }
+        }
+      };
     }
 
     const total = await prisma.task.count({ where });

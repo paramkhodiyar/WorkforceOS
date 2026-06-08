@@ -7,8 +7,9 @@ import { AppError } from "../../utils/errors.util";
 
 export class EmployeesService {
   static async listEmployees(
+    user: any,
     orgId: string,
-    filters: { departmentId?: string; status?: UserStatus; search?: string },
+    filters: { departmentId?: string; teamId?: string; taskAssignees?: string | boolean; status?: UserStatus; search?: string },
     page: number,
     limit: number
   ) {
@@ -20,6 +21,13 @@ export class EmployeesService {
     if (filters.departmentId) {
       where.departmentId = filters.departmentId;
     }
+    if (filters.teamId) {
+      where.teams = {
+        some: {
+          id: filters.teamId
+        }
+      };
+    }
     if (filters.status) {
       where.status = filters.status;
     }
@@ -30,6 +38,36 @@ export class EmployeesService {
         { email: { contains: filters.search, mode: "insensitive" } },
         { employeeId: { contains: filters.search, mode: "insensitive" } }
       ];
+    }
+
+    if (filters.taskAssignees === "true" || filters.taskAssignees === true) {
+      const isSuperAdmin = user.systemRole === "SUPER_ADMIN";
+      const isOrgAdmin = user.systemRole === "ORG_ADMIN";
+      const isHR = user.roles && user.roles.some((r: any) => r.roleName === "HR_MANAGER");
+
+      if (!isSuperAdmin && !isOrgAdmin && !isHR) {
+        const headedDepts = await prisma.department.findMany({
+          where: { headId: user.id, isDeleted: false },
+          select: { id: true }
+        });
+        const deptIds = headedDepts.map((d) => d.id);
+
+        const ledTeams = await prisma.team.findMany({
+          where: { leadId: user.id, isDeleted: false },
+          select: { id: true }
+        });
+        const teamIds = ledTeams.map((t) => t.id);
+
+        where.OR = [
+          ...(deptIds.length > 0 ? [{ departmentId: { in: deptIds } }] : []),
+          ...(teamIds.length > 0 ? [{ teams: { some: { id: { in: teamIds } } } }] : []),
+          { id: user.id }
+        ];
+
+        if (deptIds.length === 0 && teamIds.length === 0) {
+          where.OR = [{ id: user.id }];
+        }
+      }
     }
 
     const total = await prisma.user.count({ where });

@@ -14,12 +14,12 @@ const AuthContext = createContext<any>(null);
 
 export const SEED_USERS: SeedUser[] = [
   { email: 'superadmin@workforceos.com', label: 'Super Admin', role: 'SUPER_ADMIN' },
-  { email: 'orgadmin@acme.com', label: 'Org Admin', role: 'ORG_ADMIN' },
-  { email: 'hr@acme.com', label: 'HR Manager', role: 'HR_MANAGER' },
-  { email: 'manager1@acme.com', label: 'Team Manager', role: 'TEAM_MANAGER' },
-  { email: 'manager2@acme.com', label: 'Dept Head', role: 'DEPARTMENT_HEAD' },
-  { email: 'emp1@acme.com', label: 'Employee 1', role: 'EMPLOYEE' },
-  { email: 'intern@acme.com', label: 'Intern', role: 'INTERN' }
+  { email: 'michael@dunder-mifflin.com', label: 'Michael Scott', role: 'ORG_ADMIN' },
+  { email: 'toby@dunder-mifflin.com', label: 'Toby Flenderson', role: 'HR_MANAGER' },
+  { email: 'jim@dunder-mifflin.com', label: 'Jim Halpert', role: 'TEAM_MANAGER' },
+  { email: 'dwight@dunder-mifflin.com', label: 'Dwight Schrute', role: 'DEPARTMENT_HEAD' },
+  { email: 'pam@dunder-mifflin.com', label: 'Pam Beesly', role: 'EMPLOYEE' },
+  { email: 'ryan@dunder-mifflin.com', label: 'Ryan Howard', role: 'INTERN' }
 ];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

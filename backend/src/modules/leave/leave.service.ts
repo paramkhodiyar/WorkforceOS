@@ -130,14 +130,24 @@ export class LeaveService {
   static async getPendingApprovals(user: any, orgId: string, page = 1, limit = 10) {
     const where: any = {
       isDeleted: false,
-      user: { organizationId: orgId }
+      userId: { not: user.id }
     };
 
-    if (user.systemRole === "HR") {
+    const isHR = user.systemRole === "HR" || (user.roles && user.roles.some((r: any) => r.roleName === "HR_MANAGER"));
+    const isAdmin = user.systemRole === "SUPER_ADMIN" || user.systemRole === "ORG_ADMIN";
+
+    if (isAdmin) {
+      where.status = { in: [LeaveStatus.PENDING, LeaveStatus.MANAGER_APPROVED] };
+      where.user = { organizationId: orgId };
+    } else if (isHR) {
       where.status = LeaveStatus.MANAGER_APPROVED;
+      where.user = { organizationId: orgId };
     } else {
       where.status = LeaveStatus.PENDING;
-      where.user = { managerId: user.id };
+      where.user = { 
+        organizationId: orgId,
+        managerId: user.id 
+      };
     }
 
     const total = await prisma.leaveRequest.count({ where });
@@ -158,7 +168,11 @@ export class LeaveService {
 
   static async approve(orgId: string, id: string, approverId: string, comment?: string, req?: any) {
     const request = await prisma.leaveRequest.findFirst({
-      where: { id, isDeleted: false },
+      where: { 
+        id, 
+        isDeleted: false,
+        user: { organizationId: orgId }
+      },
       include: { user: true }
     });
 
@@ -224,7 +238,11 @@ export class LeaveService {
 
   static async hrApprove(orgId: string, id: string, approverId: string, comment?: string, req?: any) {
     const request = await prisma.leaveRequest.findFirst({
-      where: { id, isDeleted: false },
+      where: { 
+        id, 
+        isDeleted: false,
+        user: { organizationId: orgId }
+      },
       include: { user: true }
     });
 
@@ -284,7 +302,11 @@ export class LeaveService {
 
   static async reject(orgId: string, id: string, approverId: string, comment: string, req?: any) {
     const request = await prisma.leaveRequest.findFirst({
-      where: { id, isDeleted: false }
+      where: { 
+        id, 
+        isDeleted: false,
+        user: { organizationId: orgId }
+      }
     });
 
     if (!request || (request.status !== LeaveStatus.PENDING && request.status !== LeaveStatus.MANAGER_APPROVED)) {

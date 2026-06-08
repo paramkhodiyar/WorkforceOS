@@ -47,7 +47,10 @@ export const api = {
     me: (): Promise<any> => request('/auth/me'),
   },
   employees: {
-    list: (): Promise<any> => request('/employees'),
+    list: (filters?: any): Promise<any> => {
+      const query = filters ? '?' + new URLSearchParams(filters).toString() : '';
+      return request(`/employees${query}`);
+    },
     get: (id: string): Promise<any> => request(`/employees/${id}`),
     create: (data: any): Promise<any> =>
       request('/employees', {
@@ -88,7 +91,12 @@ export const api = {
       }),
     pendingApprovals: (): Promise<any> => request('/leave/approvals'),
     approve: (id: string, data: any): Promise<any> => {
-      const endpoint = data.status === 'APPROVED' ? 'approve' : 'reject';
+      let endpoint;
+      if (data.status === 'REJECTED') {
+        endpoint = 'reject';
+      } else {
+        endpoint = data.currentStatus === 'MANAGER_APPROVED' ? 'hr-approve' : 'approve';
+      }
       return request(`/leave/approvals/${id}/${endpoint}`, {
         method: 'POST',
         body: JSON.stringify({ comment: data.comment }),
@@ -106,7 +114,10 @@ export const api = {
       }),
   },
   tasks: {
-    list: (): Promise<any> => request('/tasks'),
+    list: (filters?: any): Promise<any> => {
+      const query = filters ? '?' + new URLSearchParams(filters).toString() : '';
+      return request(`/tasks${query}`);
+    },
     create: (data: any): Promise<any> =>
       request('/tasks', {
         method: 'POST',
@@ -124,6 +135,11 @@ export const api = {
         body: JSON.stringify({ status }),
       });
     },
+    review: (id: string, data: any): Promise<any> =>
+      request(`/tasks/${id}/review`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
   expenses: {
     list: async (): Promise<any> => {
@@ -200,6 +216,40 @@ export const api = {
       }),
     dismiss: (id: string): Promise<any> =>
       request(`/notifications/${id}`, {
+        method: 'DELETE',
+      }),
+  },
+  departments: {
+    list: (): Promise<any> => request('/departments'),
+    create: (data: any): Promise<any> =>
+      request('/departments', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: any): Promise<any> =>
+      request(`/departments/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string): Promise<any> =>
+      request(`/departments/${id}`, {
+        method: 'DELETE',
+      }),
+  },
+  teams: {
+    list: (): Promise<any> => request('/teams'),
+    create: (data: any): Promise<any> =>
+      request('/teams', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: any): Promise<any> =>
+      request(`/teams/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string): Promise<any> =>
+      request(`/teams/${id}`, {
         method: 'DELETE',
       }),
   },

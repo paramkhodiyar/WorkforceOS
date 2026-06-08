@@ -11,11 +11,13 @@ export const listEmployees = asyncHandler(async (req: Request, res: Response) =>
   const { page, limit } = parsePagination(req.query);
   const filters = {
     departmentId: req.query.departmentId as string,
+    teamId: req.query.teamId as string,
+    taskAssignees: req.query.taskAssignees as string,
     status: req.query.status as any,
     search: req.query.search as string
   };
 
-  const result = await EmployeesService.listEmployees(orgId, filters, page, limit);
+  const result = await EmployeesService.listEmployees(req.user, orgId, filters, page, limit);
 
   return sendPaginated(res, result.employees, {
     page,

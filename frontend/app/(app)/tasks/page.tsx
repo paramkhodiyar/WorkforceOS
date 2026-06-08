@@ -411,7 +411,7 @@ export default function TasksPage() {
                         {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100">
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap inline-block">
                           {task.status}
                         </span>
                       </td>

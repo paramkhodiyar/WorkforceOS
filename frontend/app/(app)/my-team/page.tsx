@@ -519,7 +519,7 @@ export default function MyTeamPage() {
                               </span>
                             </td>
                             <td className="px-6 py-4 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap inline-block ${
                                 task.status === 'APPROVED' || task.status === 'CLOSED'
                                   ? 'bg-green-50 text-green-700 border-green-200'
                                   : task.status === 'IN_PROGRESS'

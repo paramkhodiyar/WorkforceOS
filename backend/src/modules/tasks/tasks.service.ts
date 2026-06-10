@@ -19,7 +19,7 @@ export class TasksService {
     data: { title: string; description?: string; assigneeId?: string; priority?: TaskPriority; dueDate?: Date; parentTaskId?: string; dependencies?: string[] },
     req?: any
   ) {
-    const count = await prisma.task.count();
+    const count = await prisma.task.count({ ignoreSoftDelete: true } as any);
     const taskId = `TASK-${String(count + 1).padStart(4, "0")}`;
 
     const status = data.assigneeId ? TaskStatus.ASSIGNED : TaskStatus.DRAFT;

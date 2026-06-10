@@ -122,8 +122,9 @@ export class EmployeesService {
       where: {
         organizationId: orgId,
         employeeId: { startsWith: `EMP-${year}-` }
-      }
-    });
+      },
+      ignoreSoftDelete: true
+    } as any);
     const index = String(count + 1).padStart(4, "0");
     const employeeId = `EMP-${year}-${index}`;
 

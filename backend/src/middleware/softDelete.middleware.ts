@@ -41,6 +41,11 @@ function flattenCompoundKeys(where: any) {
 }
 
 export const softDeleteMiddleware: Prisma.Middleware = async (params, next) => {
+  params.args = params.args || {};
+  if (params.args.ignoreSoftDelete) {
+    delete params.args.ignoreSoftDelete;
+    return next(params);
+  }
   if (params.model && modelsWithSoftDelete.includes(params.model)) {
     if (params.action === "findUnique" || params.action === "findFirst") {
       params.action = "findFirst";

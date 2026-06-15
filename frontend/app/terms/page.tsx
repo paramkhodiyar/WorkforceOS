@@ -1,8 +1,12 @@
-'use client';
-
 import React from 'react';
 import { LandingHeader } from '../../components/layout/LandingHeader';
 import { LandingFooter } from '../../components/layout/LandingFooter';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Terms & Conditions | WorkforceOS',
+  description: 'Review the Terms and Conditions of service for WorkforceOS. Learn about our license boundaries, GPS verification for shifts, session security, API rate limits, and calculation liability disclaimers.',
+};
 
 export default function TermsPage() {
   return (

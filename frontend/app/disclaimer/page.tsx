@@ -1,8 +1,12 @@
-'use client';
-
 import React from 'react';
 import { LandingHeader } from '../../components/layout/LandingHeader';
 import { LandingFooter } from '../../components/layout/LandingFooter';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Compliance & Payroll Disclaimer | WorkforceOS',
+  description: 'Compliance and statutory payroll calculations disclaimer. WorkforceOS provides automated calculations for Indian compliance, to be verified by subscribing organizations.',
+};
 
 export default function DisclaimerPage() {
   return (

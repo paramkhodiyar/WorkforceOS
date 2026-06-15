@@ -1,9 +1,13 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import { LandingHeader } from '../../components/layout/LandingHeader';
 import { LandingFooter } from '../../components/layout/LandingFooter';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'About Me | WorkforceOS - Solved Operation Challenges',
+  description: 'Read my journey of building WorkforceOS from scratch. Inspired by summer internship manual clock-in friction, I built a modular HRMS to drive startup efficiency.',
+};
 
 export default function AboutPage() {
   return (

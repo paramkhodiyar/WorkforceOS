@@ -1,8 +1,12 @@
-'use client';
-
 import React from 'react';
 import { LandingHeader } from '../../components/layout/LandingHeader';
 import { LandingFooter } from '../../components/layout/LandingFooter';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy | WorkforceOS',
+  description: 'Read our Privacy & Data Security Policy. Understand how we protect employee profile data, secure bank detail calculations using AES-256 field-level encryption, and log activity in an immutable audit ledger.',
+};
 
 export default function PrivacyPage() {
   return (

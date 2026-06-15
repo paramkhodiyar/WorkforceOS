@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'Privacy Policy | WorkforceOS',
-  description: 'Privacy Policy details for data security on WorkforceOS.',
+  description: 'Privacy Policy details for data security on the WorkforceOS enterprise platform. Learn about field-level database encryption, RBAC access controls, shift check-in logs, and isolated database instances.',
 };
 
 export default function PrivacyPolicyPage() {

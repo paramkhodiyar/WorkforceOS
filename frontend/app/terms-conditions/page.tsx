@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'Terms & Conditions | WorkforceOS',
-  description: 'Terms and Conditions of usage for the WorkforceOS platform.',
+  description: 'Terms and Conditions of usage for the WorkforceOS enterprise HRMS platform. Read about shift attendance verification, GPS bounds checking, access control policies, and statutory calculations.',
 };
 
 export default function TermsConditionsPage() {

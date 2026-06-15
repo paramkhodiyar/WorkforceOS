@@ -1,8 +1,12 @@
-'use client';
-
 import React from 'react';
 import { LandingHeader } from '../../components/layout/LandingHeader';
 import { LandingFooter } from '../../components/layout/LandingFooter';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Cookie Policy | WorkforceOS',
+  description: 'Learn how WorkforceOS utilizes secure session cookies for JWT authentication and localStorage caching to optimize performance, with zero third-party advertising or tracking pixels.',
+};
 
 export default function CookiePolicyPage() {
   return (

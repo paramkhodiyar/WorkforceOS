@@ -6,7 +6,7 @@ import { LandingHeader } from '../../components/layout/LandingHeader';
 import { LandingFooter } from '../../components/layout/LandingFooter';
 import { AmbientGrid } from '../../components/ui/AmbientGrid';
 
-export default function FeaturesPage() {
+export default function FeaturesPageClient() {
   const [activeSection, setActiveSection] = useState('employees');
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -50,11 +50,11 @@ export default function FeaturesPage() {
     const time = new Date().toLocaleTimeString();
     setWizardLogs(prev => [`[${time}] ${msg}`, ...prev]);
   };
-
+  
   // 1. Employees (Onboarding Steps)
   const [onboardStep, setOnboardStep] = useState(1);
   const [onboardData, setOnboardData] = useState({ name: 'Aarav Mehta', role: 'SDE-II', bankVerified: false });
-
+  
   // 2. Attendance (Clocking)
   const [attendState, setAttendState] = useState<'out' | 'in' | 'break'>('out');
   const [attendLogs, setAttendLogs] = useState<string[]>(['Checked Out - Yesterday']);
@@ -76,7 +76,7 @@ export default function FeaturesPage() {
   const [weightTask, setWeightTask] = useState(40);
   const [weightQuality, setWeightQuality] = useState(30);
   const [weightAttendance, setWeightAttendance] = useState(30);
-
+  
   // 6. Payroll (Statutory computations)
   const [payrollGross, setPayrollGross] = useState(75000);
   const [payrollLopDays, setPayrollLopDays] = useState(1);
@@ -175,16 +175,16 @@ export default function FeaturesPage() {
     const perDay = payrollGross / 30;
     const lopAmount = perDay * payrollLopDays;
     const grossAfterLop = Math.max(0, payrollGross - lopAmount);
-
+    
     // PF 12% capped at ₹1,800 limit
     const pf = Math.min(1800, Math.round(grossAfterLop * 0.12));
-
+    
     // ESIC 0.75% Employee side if gross is <= 21000
     const esic = grossAfterLop <= 21000 ? Math.round(grossAfterLop * 0.0075) : 0;
-
+    
     // Professional Tax (Standard Maharashtra/Karnataka slab mockup)
     const pt = grossAfterLop > 10000 ? 200 : 0;
-
+    
     const totalDeductions = pf + esic + pt;
     const netSalary = Math.round(grossAfterLop - totalDeductions);
 
@@ -195,8 +195,6 @@ export default function FeaturesPage() {
 
   return (
     <div className="min-h-screen bg-white text-slate-800 flex flex-col font-sans selection:bg-blue-600/10 selection:text-blue-900">
-      <title>Features & Interactive Sandboxes | WorkforceOS</title>
-      <meta name="description" content="Explore the 11 modular features of WorkforceOS. Test our interactive sandboxes for onboarding, shift break timelines, leave pools, and statutory Indian payroll." />
       {/* Navigation Header */}
       <LandingHeader />
 
@@ -204,13 +202,13 @@ export default function FeaturesPage() {
       <section className="relative overflow-hidden pt-28 pb-12 md:pt-36 md:pb-16 bg-slate-50 border-b border-slate-200">
         <AmbientGrid />
         <div className="max-w-[760px] mx-auto text-center px-6 relative z-10">
-          <span
+          <span 
             className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             PRODUCT MODULES
           </span>
-          <h1
+          <h1 
             className="text-3xl md:text-[3rem] font-[800] text-slate-900 leading-tight tracking-[-0.02em] mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
@@ -246,7 +244,7 @@ export default function FeaturesPage() {
 
           {/* Wizard Card Container */}
           <div className="bg-white border border-slate-200 rounded-[20px] overflow-hidden flex flex-col">
-
+            
             {/* Step Indicators */}
             <div className="border-b border-slate-200 bg-slate-50/50 p-4 grid grid-cols-4 text-center gap-2">
               {[
@@ -258,10 +256,11 @@ export default function FeaturesPage() {
                 <button
                   key={s.step}
                   onClick={() => setTourStep(s.step)}
-                  className={`py-2 text-[10px] md:text-xs font-bold rounded-lg border transition-all cursor-pointer ${tourStep === s.step
+                  className={`py-2 text-[10px] md:text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                    tourStep === s.step
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'bg-white hover:bg-slate-100 text-slate-500 border-slate-200'
-                    }`}
+                  }`}
                 >
                   <span className="hidden md:inline">{s.label}</span>
                   <span className="md:hidden">{s.step}</span>
@@ -271,7 +270,7 @@ export default function FeaturesPage() {
 
             {/* Tour Step Panel Content */}
             <div className="p-6 md:p-8 flex-1 min-h-[300px] flex flex-col justify-between">
-
+              
               {/* STEP 1: ONBOARDING */}
               {tourStep === 1 && (
                 <div className="space-y-6 animate-fade-in">
@@ -596,7 +595,7 @@ export default function FeaturesPage() {
 
       {/* MAIN DOCUMENTATION BODY */}
       <div className="max-w-[1100px] mx-auto w-full px-6 py-12 flex-1 flex flex-col md:flex-row gap-12 relative">
-
+        
         {/* DESKTOP SIDEBAR - STICKY */}
         <aside className="hidden md:block w-[200px] shrink-0 sticky top-24 self-start">
           <nav className="flex flex-col gap-1 border-l border-slate-100">
@@ -604,10 +603,11 @@ export default function FeaturesPage() {
               <button
                 key={mod.id}
                 onClick={() => scrollToSection(mod.id)}
-                className={`text-left pl-4 py-2 border-l-[3px] text-sm font-semibold transition-all cursor-pointer ${activeSection === mod.id
+                className={`text-left pl-4 py-2 border-l-[3px] text-sm font-semibold transition-all cursor-pointer ${
+                  activeSection === mod.id
                     ? 'border-blue-600 text-blue-600 font-bold bg-blue-50/30'
                     : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-                  }`}
+                }`}
               >
                 {mod.name}
               </button>
@@ -621,10 +621,11 @@ export default function FeaturesPage() {
             <button
               key={mod.id}
               onClick={() => scrollToSection(mod.id)}
-              className={`px-4 py-1.5 rounded-full font-semibold text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 ${activeSection === mod.id
+              className={`px-4 py-1.5 rounded-full font-semibold text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                activeSection === mod.id
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                }`}
+              }`}
             >
               {mod.name}
             </button>
@@ -633,9 +634,9 @@ export default function FeaturesPage() {
 
         {/* DOCUMENTATION CONTENT AREA */}
         <main className="flex-1 space-y-20">
-
-          <section
-            id="employees"
+          
+          <section 
+            id="employees" 
             ref={(el) => { sectionRefs.current['employees'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -654,7 +655,7 @@ export default function FeaturesPage() {
                 <span>Employee Onboarding Wizard</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {/* Left Side: Interactive controls */}
                 <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px]">
@@ -662,18 +663,18 @@ export default function FeaturesPage() {
                     <div className="space-y-2 py-1 flex-1 flex flex-col justify-center">
                       <span className="text-[8.5px] text-slate-400 font-bold uppercase">Step 1: Personal Profile</span>
                       <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          value={onboardData.name}
-                          onChange={(e) => setOnboardData({ ...onboardData, name: e.target.value })}
-                          className="bg-slate-50 border border-slate-200 p-2 text-[10px] rounded focus:border-blue-600 font-medium"
+                        <input 
+                          type="text" 
+                          value={onboardData.name} 
+                          onChange={(e) => setOnboardData({...onboardData, name: e.target.value})}
+                          className="bg-slate-50 border border-slate-200 p-2 text-[10px] rounded focus:border-blue-600 font-medium" 
                           placeholder="Full Name"
                         />
-                        <input
-                          type="text"
-                          value={onboardData.role}
-                          onChange={(e) => setOnboardData({ ...onboardData, role: e.target.value })}
-                          className="bg-slate-50 border border-slate-200 p-2 text-[10px] rounded focus:border-blue-600 font-medium"
+                        <input 
+                          type="text" 
+                          value={onboardData.role} 
+                          onChange={(e) => setOnboardData({...onboardData, role: e.target.value})}
+                          className="bg-slate-50 border border-slate-200 p-2 text-[10px] rounded focus:border-blue-600 font-medium" 
                           placeholder="Designation"
                         />
                       </div>
@@ -684,10 +685,10 @@ export default function FeaturesPage() {
                       <span className="text-[8.5px] text-slate-400 font-bold uppercase">Step 2: Bank Compliance</span>
                       <div className="flex items-center gap-2">
                         <label className="text-[10px] text-slate-750 font-semibold flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={onboardData.bankVerified}
-                            onChange={(e) => setOnboardData({ ...onboardData, bankVerified: e.target.checked })}
+                          <input 
+                            type="checkbox" 
+                            checked={onboardData.bankVerified} 
+                            onChange={(e) => setOnboardData({...onboardData, bankVerified: e.target.checked})}
                             className="cursor-pointer"
                           />
                           Verify Indian bank account details (PAN/IFSC)
@@ -706,14 +707,14 @@ export default function FeaturesPage() {
                   <div className="flex justify-between border-t border-slate-100 pt-2 shrink-0">
                     <span className="text-[8.5px] text-slate-400 font-bold mt-1">Step {onboardStep} of 3</span>
                     <div className="flex gap-2">
-                      <button
+                      <button 
                         disabled={onboardStep === 1}
                         onClick={() => setOnboardStep(prev => prev - 1)}
                         className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-655 border border-slate-200 rounded text-[9px] font-bold cursor-pointer disabled:opacity-40"
                       >
                         Back
                       </button>
-                      <button
+                      <button 
                         onClick={() => {
                           if (onboardStep === 3) {
                             setOnboardStep(1);
@@ -789,8 +790,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 2. ATTENDANCE */}
-          <section
-            id="attendance"
+          <section 
+            id="attendance" 
             ref={(el) => { sectionRefs.current['attendance'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -822,7 +823,7 @@ export default function FeaturesPage() {
                     </div>
                     <div className="flex gap-2">
                       {attendState === 'out' ? (
-                        <button
+                        <button 
                           onClick={() => {
                             setAttendState('in');
                             setAttendLogs(prev => [`Clocked In (Office IP) - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
@@ -834,7 +835,7 @@ export default function FeaturesPage() {
                         </button>
                       ) : (
                         <>
-                          <button
+                          <button 
                             onClick={() => {
                               if (attendState === 'in') {
                                 setAttendState('break');
@@ -848,7 +849,7 @@ export default function FeaturesPage() {
                           >
                             {attendState === 'break' ? 'End Break' : 'Tea Break'}
                           </button>
-                          <button
+                          <button 
                             onClick={() => {
                               setAttendState('out');
                               setAttendLogs(prev => [`Clocked Out - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
@@ -862,7 +863,7 @@ export default function FeaturesPage() {
                       )}
                     </div>
                   </div>
-
+                  
                   <div className="border-t border-slate-100 pt-2.5 flex-1 flex flex-col justify-end gap-1.5 overflow-hidden">
                     <span className="text-[8px] text-slate-400 font-bold uppercase">Attendance Logs Tracker</span>
                     <div className="space-y-1 font-mono text-[8px] text-slate-500">
@@ -876,7 +877,7 @@ export default function FeaturesPage() {
                 {/* Right Column: Shift Timeline Visualizer */}
                 <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Active Shift Timeline Logs</span>
-
+                  
                   {/* Shift Progress Timeline Bar */}
                   <div className="w-full space-y-3 font-mono text-[8.5px] py-1.5 max-w-[180px] text-left">
                     <div className="flex justify-between items-center text-[7.5px] text-slate-400">
@@ -895,8 +896,9 @@ export default function FeaturesPage() {
                           <div className="bg-teal-600 text-white flex items-center justify-center px-1 border-r border-white/20" style={{ width: '45%' }}>
                             Checked In (09:15)
                           </div>
-                          <div className={`text-white flex items-center justify-center transition-all duration-300 ${attendState === 'break' ? 'bg-orange-500 w-[25%]' : 'bg-teal-600 w-[15%] border-r border-white/20'
-                            }`}>
+                          <div className={`text-white flex items-center justify-center transition-all duration-300 ${
+                            attendState === 'break' ? 'bg-orange-500 w-[25%]' : 'bg-teal-600 w-[15%] border-r border-white/20'
+                          }`}>
                             {attendState === 'break' ? 'Tea Break' : 'Working'}
                           </div>
                           <div className="bg-slate-100 flex-1 text-slate-400 flex items-center justify-center font-normal">
@@ -949,8 +951,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 3. LEAVE */}
-          <section
-            id="leave"
+          <section 
+            id="leave" 
             ref={(el) => { sectionRefs.current['leave'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -977,10 +979,10 @@ export default function FeaturesPage() {
                     <span className="text-slate-400 font-bold uppercase">Leave Balance:</span>
                     <span className="font-extrabold text-blue-600 text-xs">{leaveBalance} Days remaining</span>
                   </div>
-
+                  
                   {/* Form to submit a leave request */}
                   <div className="grid grid-cols-3 gap-2 border-y border-slate-100 py-1.5 items-center">
-                    <select
+                    <select 
                       value={newLeaveType}
                       onChange={(e) => setNewLeaveType(e.target.value)}
                       className="bg-slate-50 border border-slate-200 p-1 rounded text-[9px] cursor-pointer"
@@ -989,7 +991,7 @@ export default function FeaturesPage() {
                       <option value="Sick Leave">Sick Leave</option>
                       <option value="Earned Leave">Earned Leave</option>
                     </select>
-                    <input
+                    <input 
                       type="number"
                       value={newLeaveDays}
                       onChange={(e) => setNewLeaveDays(Number(e.target.value))}
@@ -997,7 +999,7 @@ export default function FeaturesPage() {
                       max={10}
                       className="bg-slate-50 border border-slate-200 p-1 rounded text-[9px] w-full"
                     />
-                    <button
+                    <button 
                       onClick={() => {
                         if (leaveBalance >= newLeaveDays) {
                           setLeaveHistory(prev => [
@@ -1021,10 +1023,11 @@ export default function FeaturesPage() {
                       <div key={leave.id} className="flex justify-between items-center border-b border-slate-50 pb-1">
                         <span>{leave.type} ({leave.duration} Days)</span>
                         <div className="flex gap-1.5 items-center">
-                          <span className={`px-1.5 py-0.5 rounded font-bold ${leave.status === 'Approved' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-600'
-                            }`}>{leave.status}</span>
+                          <span className={`px-1.5 py-0.5 rounded font-bold ${
+                            leave.status === 'Approved' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-600'
+                          }`}>{leave.status}</span>
                           {leave.status === 'Pending Approval' && (
-                            <button
+                            <button 
                               onClick={() => {
                                 setLeaveHistory(prev => prev.map(l => l.id === leave.id ? { ...l, status: 'Approved' } : l));
                                 setLeaveBalance(prev => Math.max(0, prev - leave.duration));
@@ -1044,7 +1047,7 @@ export default function FeaturesPage() {
                 {/* Right Column: Allowances Breakdown Diagram */}
                 <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Policy Allowances</span>
-
+                  
                   {/* Flat breakdown bars visual */}
                   <div className="w-full space-y-2.5 font-mono text-[9px] py-1 max-w-[180px]">
                     <div className="space-y-1 text-left">
@@ -1056,7 +1059,7 @@ export default function FeaturesPage() {
                         <div className="bg-sky-500 h-full" style={{ width: '66%' }}></div>
                       </div>
                     </div>
-
+                    
                     <div className="space-y-1 text-left">
                       <div className="flex justify-between text-slate-500 text-[8px]">
                         <span>Sick Leave</span>
@@ -1115,8 +1118,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 4. TASKS */}
-          <section
-            id="tasks"
+          <section 
+            id="tasks" 
             ref={(el) => { sectionRefs.current['tasks'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -1143,7 +1146,7 @@ export default function FeaturesPage() {
                     <span>Task: Build PostgreSQL Shards</span>
                     <span className="text-violet-600 font-mono text-[9px] font-bold">Priority: High</span>
                   </div>
-
+                  
                   <div className="grid grid-cols-2 gap-4 flex-1 pt-1">
                     <div className="space-y-1.5">
                       <span className="text-[8.5px] text-slate-400 font-bold uppercase block">State Transition</span>
@@ -1156,7 +1159,7 @@ export default function FeaturesPage() {
                     {taskState === 'REVIEW' && (
                       <div className="space-y-1 flex flex-col justify-center animate-fade-in">
                         <label className="text-[8px] text-slate-400 font-bold uppercase block">Quality Evaluation Score</label>
-                        <select
+                        <select 
                           value={taskRating}
                           onChange={(e) => setTaskRating(Number(e.target.value))}
                           className="bg-slate-50 border border-slate-200 rounded text-[9px] p-1 cursor-pointer w-full"
@@ -1168,7 +1171,7 @@ export default function FeaturesPage() {
                   </div>
 
                   <div className="flex justify-end gap-2 shrink-0 border-t border-slate-100 pt-2">
-                    <button
+                    <button 
                       onClick={() => {
                         setTaskState('DRAFT');
                         addAudit("Reset task back to DRAFT state.");
@@ -1177,7 +1180,7 @@ export default function FeaturesPage() {
                     >
                       Reset
                     </button>
-                    <button
+                    <button 
                       onClick={() => {
                         if (taskState === 'DRAFT') {
                           setTaskState('IN_PROGRESS');
@@ -1201,7 +1204,7 @@ export default function FeaturesPage() {
                 {/* Right side: State timeline visual pipeline */}
                 <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Workflow State Pipeline</span>
-
+                  
                   <div className="w-full flex items-center justify-between max-w-[220px] py-2 font-mono text-[8px]">
                     {['DRAFT', 'IN_PROGRESS', 'REVIEW', 'CLOSED'].map((state, idx, arr) => {
                       const statesMap: Record<string, number> = { DRAFT: 1, IN_PROGRESS: 2, REVIEW: 3, CLOSED: 4 };
@@ -1209,16 +1212,17 @@ export default function FeaturesPage() {
                       const targetIdx = statesMap[state];
                       const isPassed = currentIdx > targetIdx;
                       const isCurrent = currentIdx === targetIdx;
-
+                      
                       return (
                         <React.Fragment key={state}>
                           <div className="flex flex-col items-center gap-1.5">
-                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300 font-bold ${isCurrent
-                                ? 'bg-violet-600 border-violet-600 text-white animate-pulse'
-                                : isPassed
-                                  ? 'bg-violet-50 border-violet-300 text-violet-700'
-                                  : 'bg-slate-50 border-slate-200 text-slate-400'
-                              }`}>
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300 font-bold ${
+                              isCurrent 
+                                ? 'bg-violet-600 border-violet-600 text-white animate-pulse' 
+                                : isPassed 
+                                ? 'bg-violet-50 border-violet-300 text-violet-700' 
+                                : 'bg-slate-50 border-slate-200 text-slate-400'
+                            }`}>
                               {idx + 1}
                             </div>
                             <span className={`text-[6px] font-bold tracking-tight ${isCurrent ? 'text-violet-650' : 'text-slate-400'}`}>
@@ -1226,8 +1230,9 @@ export default function FeaturesPage() {
                             </span>
                           </div>
                           {idx < arr.length - 1 && (
-                            <div className={`flex-1 h-0.5 mx-1 transition-all duration-300 ${currentIdx > idx + 1 ? 'bg-violet-600' : 'bg-slate-200'
-                              }`}></div>
+                            <div className={`flex-1 h-0.5 mx-1 transition-all duration-300 ${
+                              currentIdx > idx + 1 ? 'bg-violet-600' : 'bg-slate-200'
+                            }`}></div>
                           )}
                         </React.Fragment>
                       );
@@ -1270,8 +1275,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 5. PERFORMANCE */}
-          <section
-            id="performance"
+          <section 
+            id="performance" 
             ref={(el) => { sectionRefs.current['performance'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -1290,60 +1295,60 @@ export default function FeaturesPage() {
                 <span>Weighted Composite Review Engine</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {/* Left Column: Interactive sliders */}
                 <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-2">
                   <span className="text-[10px] font-bold text-slate-800">Weights configuration: Task rate, Quality, Attendance</span>
-
+                  
                   {/* Weight slider simulations */}
                   <div className="grid grid-cols-3 gap-2 border-y border-slate-100 py-2">
                     <div className="space-y-1">
                       <span className="text-[8px] text-slate-400 font-bold block uppercase">Task Weight ({weightTask}%)</span>
-                      <input
-                        type="range"
-                        min="10"
-                        max="60"
-                        value={weightTask}
+                      <input 
+                        type="range" 
+                        min="10" 
+                        max="60" 
+                        value={weightTask} 
                         onChange={(e) => {
                           const val = Number(e.target.value);
                           setWeightTask(val);
                           setWeightQuality(Math.round((100 - val) / 2));
                           setWeightAttendance(100 - val - Math.round((100 - val) / 2));
                         }}
-                        className="w-full cursor-pointer"
+                        className="w-full cursor-pointer" 
                       />
                     </div>
                     <div className="space-y-1">
                       <span className="text-[8px] text-slate-400 font-bold block uppercase">Quality ({weightQuality}%)</span>
-                      <input
-                        type="range"
-                        min="10"
-                        max="60"
-                        value={weightQuality}
+                      <input 
+                        type="range" 
+                        min="10" 
+                        max="60" 
+                        value={weightQuality} 
                         onChange={(e) => {
                           const val = Number(e.target.value);
                           setWeightQuality(val);
                           setWeightTask(Math.round((100 - val) / 2));
                           setWeightAttendance(100 - val - Math.round((100 - val) / 2));
                         }}
-                        className="w-full cursor-pointer"
+                        className="w-full cursor-pointer" 
                       />
                     </div>
                     <div className="space-y-1">
                       <span className="text-[8px] text-slate-400 font-bold block uppercase">Attendance ({weightAttendance}%)</span>
-                      <input
-                        type="range"
-                        min="10"
-                        max="60"
-                        value={weightAttendance}
+                      <input 
+                        type="range" 
+                        min="10" 
+                        max="60" 
+                        value={weightAttendance} 
                         onChange={(e) => {
                           const val = Number(e.target.value);
                           setWeightAttendance(val);
                           setWeightTask(Math.round((100 - val) / 2));
                           setWeightQuality(100 - val - Math.round((100 - val) / 2));
                         }}
-                        className="w-full cursor-pointer"
+                        className="w-full cursor-pointer" 
                       />
                     </div>
                   </div>
@@ -1362,7 +1367,7 @@ export default function FeaturesPage() {
                 {/* Right Column: Weight breakdown diagram */}
                 <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Weight Config vs Grade</span>
-
+                  
                   <div className="w-full space-y-2.5 font-mono text-[9px] py-1 max-w-[180px]">
                     <div className="space-y-1 text-left">
                       <div className="flex justify-between text-slate-550 text-[8px]">
@@ -1373,7 +1378,7 @@ export default function FeaturesPage() {
                         <div className="bg-amber-500 h-full transition-all duration-300 animate-pulse" style={{ width: `${weightTask}%` }}></div>
                       </div>
                     </div>
-
+                    
                     <div className="space-y-1 text-left">
                       <div className="flex justify-between text-slate-550 text-[8px]">
                         <span>Quality Index:</span>
@@ -1394,7 +1399,7 @@ export default function FeaturesPage() {
                       </div>
                     </div>
                   </div>
-
+                  
                   <span className="text-[8.5px] text-slate-405 leading-normal max-w-[280px]">
                     Adjust weights on the left to recalculate performance indices and auto-assign organization grade bands.
                   </span>
@@ -1432,8 +1437,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 6. PAYROLL */}
-          <section
-            id="payroll"
+          <section 
+            id="payroll" 
             ref={(el) => { sectionRefs.current['payroll'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -1452,14 +1457,14 @@ export default function FeaturesPage() {
                 <span>Statutory Deduction & Net Payout Calculator</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {/* Left Column: Interactive Inputs */}
                 <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <span className="text-[8px] text-slate-400 font-bold block uppercase">Monthly Gross (₹)</span>
-                      <input
+                      <input 
                         type="number"
                         step={5000}
                         value={payrollGross}
@@ -1469,7 +1474,7 @@ export default function FeaturesPage() {
                     </div>
                     <div className="space-y-1">
                       <span className="text-[8px] text-slate-400 font-bold block uppercase">LOP Unpaid Days</span>
-                      <input
+                      <input 
                         type="number"
                         min="0"
                         max="15"
@@ -1498,25 +1503,25 @@ export default function FeaturesPage() {
                 {/* Right Column: Visual payslip block */}
                 <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Net Take-Home vs Deductions</span>
-
+                  
                   <div className="w-full space-y-2.5 font-mono text-[9px] py-1 max-w-[180px]">
                     {/* Visual Stacked bar */}
                     <div className="w-full bg-red-150 h-5 rounded border border-slate-250 overflow-hidden flex text-[7.5px] font-bold">
-                      <div
+                      <div 
                         className="bg-green-600 text-white flex items-center justify-center truncate transition-all duration-300"
                         style={{ width: `${Math.max(10, Math.min(100, (payrollResult.netSalary / payrollGross) * 100))}%` }}
                         title={`Take Home: ₹${payrollResult.netSalary}`}
                       >
                         {Math.round((payrollResult.netSalary / payrollGross) * 100)}% Pay
                       </div>
-                      <div
+                      <div 
                         className="bg-red-500 text-white flex items-center justify-center truncate transition-all duration-300 flex-1"
                         title={`Deductions: ₹${payrollGross - payrollResult.netSalary}`}
                       >
                         Deduct
                       </div>
                     </div>
-
+                    
                     {/* Monospace breakdown */}
                     <div className="text-[8.5px] text-slate-600 text-left space-y-1">
                       <div className="flex justify-between">
@@ -1570,8 +1575,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 7. EXPENSES */}
-          <section
-            id="expenses"
+          <section 
+            id="expenses" 
             ref={(el) => { sectionRefs.current['expenses'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -1590,27 +1595,27 @@ export default function FeaturesPage() {
                 <span>Claims Ledger Sandbox</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {/* Left Column: Form & Claims list */}
                 <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-2">
                   {/* Form to submit an expense */}
                   <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2 items-center">
-                    <input
+                    <input 
                       type="text"
                       value={newExpenseTitle}
                       onChange={(e) => setNewExpenseTitle(e.target.value)}
                       className="bg-slate-50 border border-slate-200 p-1.5 rounded text-[9px] w-full font-medium"
                       placeholder="Title (e.g. Travel)"
                     />
-                    <input
+                    <input 
                       type="number"
                       value={newExpenseAmount}
                       onChange={(e) => setNewExpenseAmount(e.target.value)}
                       className="bg-slate-50 border border-slate-200 p-1.5 rounded text-[9px] w-full font-medium"
                       placeholder="Amount (₹)"
                     />
-                    <button
+                    <button 
                       onClick={() => {
                         if (newExpenseTitle.trim() && newExpenseAmount) {
                           setExpenseList(prev => [
@@ -1633,10 +1638,11 @@ export default function FeaturesPage() {
                       <div key={idx} className="flex justify-between items-center border-b border-slate-50 pb-1">
                         <span className="font-medium">{exp.title} (₹{exp.amount})</span>
                         <div className="flex gap-1.5 items-center">
-                          <span className={`px-1.5 py-0.5 rounded font-bold text-[7px] ${exp.status === 'Paid' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-600'
-                            }`}>{exp.status}</span>
+                          <span className={`px-1.5 py-0.5 rounded font-bold text-[7px] ${
+                            exp.status === 'Paid' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-600'
+                          }`}>{exp.status}</span>
                           {exp.status === 'Pending Manager' && (
-                            <button
+                            <button 
                               onClick={() => {
                                 setExpenseList(prev => prev.map((e, i) => i === idx ? { ...e, status: 'Paid' } : e));
                                 addAudit(`Expense approved by manager & processed as Paid.`);
@@ -1655,7 +1661,7 @@ export default function FeaturesPage() {
                 {/* Right Column: Visual audit timeline */}
                 <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Expense Claim Audit Trail</span>
-
+                  
                   <div className="w-full space-y-3 font-mono text-[8px] py-1 max-w-[180px] text-left">
                     {[
                       { step: 'Claimed', label: 'Claim Submitted', desc: expenseList.length > 0 ? `${expenseList[0].title} (₹${expenseList[0].amount})` : 'No active claim' },
@@ -1664,7 +1670,7 @@ export default function FeaturesPage() {
                       { step: 'Disbursed', label: 'Bank Payout Issued', desc: expenseList.length > 0 ? (expenseList[0].status === 'Paid' ? 'Paid (IMPS/NEFT)' : 'Awaiting Release') : '-' }
                     ].map((flow, idx, arr) => {
                       const isActive = expenseList.length > 0 && (
-                        idx === 0 ||
+                        idx === 0 || 
                         (idx === 1 && expenseList[0].status === 'Paid') ||
                         (idx === 2 && expenseList[0].status === 'Paid') ||
                         (idx === 3 && expenseList[0].status === 'Paid')
@@ -1674,8 +1680,9 @@ export default function FeaturesPage() {
                           {idx < arr.length - 1 && (
                             <div className={`absolute left-1.5 top-3.5 w-0.5 h-6 transition-all duration-300 ${isActive ? 'bg-orange-500' : 'bg-slate-200'}`}></div>
                           )}
-                          <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 text-[6.5px] font-black transition-all duration-300 ${isActive ? 'bg-orange-500 border-orange-500 text-white animate-pulse' : 'bg-white border-slate-200 text-slate-400'
-                            }`}>
+                          <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 text-[6.5px] font-black transition-all duration-300 ${
+                            isActive ? 'bg-orange-500 border-orange-500 text-white animate-pulse' : 'bg-white border-slate-200 text-slate-400'
+                          }`}>
                             {isActive ? '✓' : idx + 1}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1723,8 +1730,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 8. ASSETS */}
-          <section
-            id="assets"
+          <section 
+            id="assets" 
             ref={(el) => { sectionRefs.current['assets'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -1743,7 +1750,7 @@ export default function FeaturesPage() {
                 <span>Asset Inventory Manager</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {/* Left Column: Asset details and actions */}
                 <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-3">
@@ -1757,7 +1764,7 @@ export default function FeaturesPage() {
                   </div>
                   <div className="flex justify-end gap-2 border-t border-slate-100 pt-2 shrink-0">
                     {assetList[0].status === 'Available' ? (
-                      <button
+                      <button 
                         onClick={() => {
                           setAssetList([{ ...assetList[0], status: 'Assigned', assignee: 'Aarav Mehta' }]);
                           addAudit(`Asset AST-2026-04 assigned to Aarav Mehta.`);
@@ -1767,7 +1774,7 @@ export default function FeaturesPage() {
                         Assign to Aarav
                       </button>
                     ) : (
-                      <button
+                      <button 
                         onClick={() => {
                           setAssetList([{ ...assetList[0], status: 'Available', assignee: '-' }]);
                           addAudit(`Asset AST-2026-04 returned and logged available.`);
@@ -1783,24 +1790,26 @@ export default function FeaturesPage() {
                 {/* Right Column: Visual shelf inventory allocation */}
                 <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Visual Asset Allocation Shelf</span>
-
+                  
                   <div className="w-full grid grid-cols-3 gap-2 py-1 max-w-[200px] font-mono text-[8px]">
                     {[
                       { name: 'MacBook Pro', id: 'AST-2026-04', type: 'laptop', status: assetList[0].status, assignee: assetList[0].assignee },
                       { name: 'iPhone 15', id: 'AST-2026-09', type: 'phone', status: 'Available', assignee: '-' },
                       { name: 'Dell 27" Display', id: 'AST-2026-15', type: 'monitor', status: 'Assigned', assignee: 'Ananya Patel' }
                     ].map((asset, idx) => (
-                      <div key={idx} className={`border rounded p-2 flex flex-col justify-between gap-1 transition-all duration-300 ${asset.status === 'Assigned'
-                          ? 'bg-slate-55 border-slate-200 text-slate-450'
+                      <div key={idx} className={`border rounded p-2 flex flex-col justify-between gap-1 transition-all duration-300 ${
+                        asset.status === 'Assigned' 
+                          ? 'bg-slate-55 border-slate-200 text-slate-450' 
                           : 'bg-green-50/50 border-green-200 text-green-700 font-bold'
-                        }`}>
+                      }`}>
                         <div className="flex justify-center select-none text-[15px] text-slate-500 py-0.5">
                           {asset.type === 'laptop' ? '💻' : asset.type === 'phone' ? '📱' : '🖥️'}
                         </div>
                         <div className="truncate font-sans font-bold text-[7px] text-slate-700">{asset.name}</div>
                         <div className="text-[5.5px] text-slate-400 truncate">{asset.id}</div>
-                        <div className={`text-[6px] py-0.5 rounded text-center uppercase font-black tracking-wider ${asset.status === 'Assigned' ? 'bg-slate-150 text-slate-600' : 'bg-green-600 text-white animate-pulse'
-                          }`}>
+                        <div className={`text-[6px] py-0.5 rounded text-center uppercase font-black tracking-wider ${
+                          asset.status === 'Assigned' ? 'bg-slate-150 text-slate-600' : 'bg-green-600 text-white animate-pulse'
+                        }`}>
                           {asset.status === 'Assigned' ? 'Held' : 'Free'}
                         </div>
                       </div>
@@ -1843,8 +1852,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 9. KNOWLEDGE BASE */}
-          <section
-            id="knowledge-base"
+          <section 
+            id="knowledge-base" 
             ref={(el) => { sectionRefs.current['knowledge-base'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -1865,13 +1874,13 @@ export default function FeaturesPage() {
               </div>
               <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 flex flex-col justify-between gap-3">
                 <div className="space-y-2">
-                  <input
-                    type="text"
+                  <input 
+                    type="text" 
                     value={wikiTitle}
                     onChange={(e) => setWikiTitle(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 text-[9.5px] p-1.5 rounded font-bold"
                   />
-                  <textarea
+                  <textarea 
                     value={wikiContent}
                     onChange={(e) => setWikiContent(e.target.value)}
                     rows={2}
@@ -1880,7 +1889,7 @@ export default function FeaturesPage() {
                 </div>
                 <div className="flex justify-between items-center border-t border-slate-100 pt-2 shrink-0">
                   <span className="text-[8px] text-slate-400 font-mono font-semibold">Version: v{wikiVersion}</span>
-                  <button
+                  <button 
                     onClick={() => {
                       setWikiVersion(prev => prev + 1);
                       addAudit(`Knowledge Base article edited. Version incremented: v${wikiVersion + 1}`);
@@ -1923,8 +1932,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 10. NOTIFICATIONS */}
-          <section
-            id="notifications"
+          <section 
+            id="notifications" 
             ref={(el) => { sectionRefs.current['notifications'] = el; }}
             className="pt-6 border-b border-slate-150 pb-16 space-y-8"
           >
@@ -1947,7 +1956,7 @@ export default function FeaturesPage() {
                 <div className="flex justify-between items-center border-b border-slate-100 pb-2 shrink-0">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase">Click triggers to simulate:</span>
                   <div className="flex gap-2">
-                    <button
+                    <button 
                       onClick={() => {
                         setInboxNotifications(prev => [
                           { id: Date.now(), text: 'New Task: Optimize SQL shards allocated to team.', read: false },
@@ -1959,7 +1968,7 @@ export default function FeaturesPage() {
                     >
                       Task Alert
                     </button>
-                    <button
+                    <button 
                       onClick={() => {
                         setInboxNotifications(prev => [
                           { id: Date.now(), text: 'Leave Request Approved by HR Manager.', read: false },
@@ -2015,8 +2024,8 @@ export default function FeaturesPage() {
           </section>
 
           {/* 11. AUDIT LOG */}
-          <section
-            id="audit-log"
+          <section 
+            id="audit-log" 
             ref={(el) => { sectionRefs.current['audit-log'] = el; }}
             className="pt-6 pb-16 space-y-8"
           >
@@ -2039,7 +2048,7 @@ export default function FeaturesPage() {
                 <div className="flex justify-between items-center border-b border-slate-100 pb-2 shrink-0">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase">Trigger Security Simulations:</span>
                   <div className="flex gap-2">
-                    <button
+                    <button 
                       onClick={() => {
                         setAuditEvents(prev => [
                           `[SECURITY WARN] ${new Date().toLocaleTimeString()} - GPS coordinate check failed for user EMP-009. Coordinates mismatch Org-WFO range. Check blocked.`,
@@ -2050,7 +2059,7 @@ export default function FeaturesPage() {
                     >
                       Geo-Spoof Block
                     </button>
-                    <button
+                    <button 
                       onClick={() => {
                         setAuditEvents(prev => [
                           `[FIREWALL BLOCK] ${new Date().toLocaleTimeString()} - Rate limiter blocked API request sequence on /api/auth/login from IP 192.168.1.198.`,

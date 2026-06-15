@@ -48,11 +48,13 @@ export default function DashboardPage() {
           console.error(e);
         }
 
-        try {
-          const auditRes = await api.audit.logs();
-          activities = auditRes.data?.slice(0, 5) || [];
-        } catch (e) {
-          console.error(e);
+        if (isAdmin) {
+          try {
+            const auditRes = await api.audit.logs();
+            activities = auditRes.data?.slice(0, 5) || [];
+          } catch (e) {
+            console.error(e);
+          }
         }
 
         setMetrics({
@@ -186,36 +188,38 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white border border-slate-100 p-6 rounded-2xl shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Today's Activity Log</h2>
-                <Link href="/audit" className="text-xs text-primary font-bold hover:underline">View All Logs</Link>
-              </div>
-              
-              {recentActivities.length === 0 ? (
-                <p className="text-body-sm text-outline py-8 text-center">No recent audit log activities recorded today.</p>
-              ) : (
-                <div className="space-y-4">
-                  {recentActivities.map((log) => (
-                    <div key={log.id} className="flex gap-4 items-start py-1">
-                      <div className="p-2 bg-slate-50 text-slate-600 rounded-lg shrink-0">
-                        <span className="material-symbols-outlined text-[16px]">history</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-body-sm font-semibold text-on-surface">
-                          {log.actor?.firstName} {log.actor?.lastName} {log.action.toLowerCase()} {log.module.toLowerCase()}
-                        </p>
-                        <p className="text-[10px] text-outline mt-0.5 font-medium">
-                          Target ID: {log.targetId || '-'} &bull; {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+            {isAdmin && (
+              <div className="lg:col-span-2 bg-white border border-slate-100 p-6 rounded-2xl shadow-sm">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Today's Activity Log</h2>
+                  <Link href="/audit" className="text-xs text-primary font-bold hover:underline">View All Logs</Link>
                 </div>
-              )}
-            </div>
+                
+                {recentActivities.length === 0 ? (
+                  <p className="text-body-sm text-outline py-8 text-center">No recent audit log activities recorded today.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {recentActivities.map((log) => (
+                      <div key={log.id} className="flex gap-4 items-start py-1">
+                        <div className="p-2 bg-slate-50 text-slate-600 rounded-lg shrink-0">
+                          <span className="material-symbols-outlined text-[16px]">history</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-body-sm font-semibold text-on-surface">
+                            {log.actor?.firstName} {log.actor?.lastName} {log.action.toLowerCase()} {log.module.toLowerCase()}
+                          </p>
+                          <p className="text-[10px] text-outline mt-0.5 font-medium">
+                            Target ID: {log.targetId || '-'} &bull; {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm">
+            <div className={`${isAdmin ? 'lg:col-span-1' : 'lg:col-span-3'} bg-white border border-slate-100 p-6 rounded-2xl shadow-sm`}>
               <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-6">Pending Approvals Queue</h2>
               {pendingItems.length === 0 ? (
                 <p className="text-body-sm text-outline py-8 text-center">No pending items in your queue.</p>

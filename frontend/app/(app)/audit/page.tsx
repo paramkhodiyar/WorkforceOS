@@ -4,12 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
+import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function AuditPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     if (user) {
@@ -35,10 +39,40 @@ export default function AuditPage() {
     loadLogs();
   }, []);
 
+  const filteredLogs = logs.filter((log) => {
+    const actorName = log.actor ? `${log.actor.firstName} ${log.actor.lastName}`.toLowerCase() : 'system process';
+    const actorEmail = log.actor?.email?.toLowerCase() || '';
+    const action = log.action?.toLowerCase() || '';
+    const module = log.module?.toLowerCase() || '';
+    const query = searchQuery.toLowerCase();
+
+    return (
+      actorName.includes(query) ||
+      actorEmail.includes(query) ||
+      action.includes(query) ||
+      module.includes(query)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  }
+
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="space-y-6 font-sans">
+        <div>
+          <h1 className="text-headline-md font-bold text-on-surface">System Audit Trail</h1>
+          <p className="text-body-sm text-outline">Inspect real-time operations, logs, and state changes</p>
+        </div>
+        <TableSkeleton rows={8} cols={5} />
       </div>
     );
   }
@@ -50,8 +84,19 @@ export default function AuditPage() {
         <p className="text-body-sm text-outline">Inspect real-time operations, logs, and state changes</p>
       </div>
 
-      <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-        {logs.length === 0 ? (
+      <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm space-y-4">
+        <div className="relative w-full">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>
+          <input
+            type="text"
+            placeholder="Search by actor, email, action, or module..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
+          />
+        </div>
+
+        {paginatedLogs.length === 0 ? (
           <p className="text-body-sm text-outline py-8 text-center">No system audit records logged.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -66,7 +111,7 @@ export default function AuditPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant text-body-sm">
-                {logs.map(log => (
+                {paginatedLogs.map(log => (
                   <tr key={log.id} className="hover:bg-surface-container-low transition-colors">
                     <td className="px-4 py-3 text-on-surface-variant font-mono">
                       {new Date(log.timestamp).toLocaleString()}
@@ -96,6 +141,30 @@ export default function AuditPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-body-sm text-outline">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredLogs.length)} of {filteredLogs.length} entries
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+              >
+                Previous
+              </button>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>

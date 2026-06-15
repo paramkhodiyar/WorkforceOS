@@ -82,14 +82,6 @@ export class PerformanceService {
       req
     });
 
-    await NotificationService.notify(
-      data.subjectId,
-      NotificationType.REVIEW_DUE,
-      "Performance Review Created",
-      `Your manager created a performance review for ${data.period}. Composite Score: ${metrics.finalScore} (${metrics.scoreBand})`,
-      { reviewId: review.id }
-    );
-
     return { ...review, metrics };
   }
 
@@ -295,6 +287,56 @@ export class PerformanceService {
     });
 
     return { ...updated, metrics };
+  }
+
+  static async publishReview(id: string, orgId: string, actorId: string, req?: any) {
+    const review = await prisma.performanceReview.findFirst({
+      where: { id, isDeleted: false, subject: { organizationId: orgId } }
+    });
+
+    if (!review) throw AppError.notFound("Performance review not found");
+    if (review.isPublished) {
+      throw AppError.badRequest("Performance review is already published");
+    }
+
+    const actor = await prisma.user.findFirst({
+      where: { id: actorId, isDeleted: false },
+      include: { roles: { include: { role: true } } }
+    });
+
+    const isReviewer = review.reviewerId === actorId;
+    const isHR = actor?.systemRole === "HR" || actor?.roles.some(ur => ur.role.name === "HR_MANAGER");
+    const isAdmin = actor?.systemRole === "SUPER_ADMIN" || actor?.systemRole === "ORG_ADMIN";
+
+    if (!isReviewer && !isHR && !isAdmin) {
+      throw AppError.forbidden("Only the reviewer, HR, or an Admin can publish this review");
+    }
+
+    const updated = await prisma.performanceReview.update({
+      where: { id },
+      data: { isPublished: true }
+    });
+
+    await AuditService.log({
+      organizationId: orgId,
+      actorId,
+      action: AuditAction.UPDATED,
+      module: "performance",
+      targetId: id,
+      targetType: "PerformanceReview",
+      newValue: { isPublished: true },
+      req
+    });
+
+    await NotificationService.notify(
+      review.subjectId,
+      NotificationType.REVIEW_DUE,
+      "Performance Review Published",
+      `Your performance review for ${review.period} has been published. Final Score: ${review.finalScore ?? 0} (${review.scoreBand ?? "N/A"})`,
+      { reviewId: review.id }
+    );
+
+    return updated;
   }
 
   static async getLeaderboard(orgId: string, departmentId?: string, period = "2026-Q1", type = "QUARTERLY") {

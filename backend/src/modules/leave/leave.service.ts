@@ -82,7 +82,7 @@ export class LeaveService {
       where: { userId_leaveType_year: { userId, leaveType: data.leaveType, year } }
     });
 
-    if (!balance || balance.remaining < days) {
+    if (!balance || (balance.remaining - balance.pending) < days) {
       throw AppError.badRequest("Insufficient leave balance");
     }
 
@@ -101,8 +101,7 @@ export class LeaveService {
     await prisma.leaveBalance.update({
       where: { id: balance.id },
       data: {
-        pending: { increment: days },
-        remaining: { decrement: days }
+        pending: { increment: days }
       }
     });
 
@@ -402,6 +401,7 @@ export class LeaveService {
         where: { id: balance.id },
         data: {
           pending: { decrement: request.days },
+          remaining: { decrement: request.days },
           used: { increment: request.days }
         }
       });
@@ -543,8 +543,7 @@ export class LeaveService {
       await prisma.leaveBalance.update({
         where: { id: balance.id },
         data: {
-          pending: { decrement: request.days },
-          remaining: { increment: request.days }
+          pending: { decrement: request.days }
         }
       });
     }
@@ -594,8 +593,7 @@ export class LeaveService {
       await prisma.leaveBalance.update({
         where: { id: balance.id },
         data: {
-          pending: { decrement: request.days },
-          remaining: { increment: request.days }
+          pending: { decrement: request.days }
         }
       });
     }
@@ -677,6 +675,50 @@ export class LeaveService {
           daysAllowed
         }
       });
+    }
+
+    // Propagate leave balance updates to active employees for the current year
+    const year = new Date().getFullYear();
+    const activeEmployees = await prisma.user.findMany({
+      where: {
+        organizationId: orgId,
+        status: "ACTIVE",
+        isDeleted: false
+      }
+    });
+
+    for (const emp of activeEmployees) {
+      const balance = await prisma.leaveBalance.findUnique({
+        where: {
+          userId_leaveType_year: {
+            userId: emp.id,
+            leaveType,
+            year
+          }
+        }
+      });
+
+      if (balance) {
+        await prisma.leaveBalance.update({
+          where: { id: balance.id },
+          data: {
+            allocated: daysAllowed,
+            remaining: Math.max(0, daysAllowed - balance.used)
+          }
+        });
+      } else {
+        await prisma.leaveBalance.create({
+          data: {
+            userId: emp.id,
+            leaveType,
+            year,
+            allocated: daysAllowed,
+            used: 0,
+            pending: 0,
+            remaining: daysAllowed
+          }
+        });
+      }
     }
 
     await AuditService.log({

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
+import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function StatusesPage() {
   const { user } = useAuth();
@@ -73,8 +74,12 @@ export default function StatusesPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="space-y-6 font-sans">
+        <div>
+          <h1 className="text-headline-md font-bold text-on-surface">Employee Status Board</h1>
+          <p className="text-body-sm text-outline">Monitor daily check-ins, shift modes, and activity locations</p>
+        </div>
+        <TableSkeleton rows={8} cols={6} />
       </div>
     );
   }

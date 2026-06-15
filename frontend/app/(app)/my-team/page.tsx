@@ -6,6 +6,8 @@ import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { CommentDialog } from '../../../components/ui/CommentDialog';
+import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
+import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function MyTeamPage() {
   const { user, refetchUser } = useAuth();
@@ -25,6 +27,17 @@ export default function MyTeamPage() {
   const [selectedToAssign, setSelectedToAssign] = useState<string[]>([]);
 
   const [delayReviewTaskId, setDelayReviewTaskId] = useState<string | null>(null);
+
+  const [membersSearch, setMembersSearch] = useState('');
+  const [membersPage, setMembersPage] = useState(1);
+  const [tasksSearch, setTasksSearch] = useState('');
+  const [tasksPage, setTasksPage] = useState(1);
+  const itemsPerPage = 8;
+
+  useEffect(() => {
+    setMembersPage(1);
+    setTasksPage(1);
+  }, [selectedScope, activeTab]);
 
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
@@ -267,6 +280,34 @@ export default function MyTeamPage() {
 
   const [type] = selectedScope.split(':');
   const membersList = type === 'dept' ? entityData?.employees || [] : entityData?.members || [];
+
+  const filteredMembers = membersList.filter((m: any) => {
+    const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
+    const email = (m.email || '').toLowerCase();
+    const designation = (m.designation || '').toLowerCase();
+    const query = membersSearch.toLowerCase();
+    return fullName.includes(query) || email.includes(query) || designation.includes(query);
+  });
+
+  const totalMembersPages = Math.ceil(filteredMembers.length / itemsPerPage);
+  const paginatedMembers = filteredMembers.slice(
+    (membersPage - 1) * itemsPerPage,
+    membersPage * itemsPerPage
+  );
+
+  const filteredTasks = tasks.filter((t: any) => {
+    const taskId = (t.taskId || '').toLowerCase();
+    const title = (t.title || '').toLowerCase();
+    const assigneeName = t.assignee ? `${t.assignee.firstName} ${t.assignee.lastName}`.toLowerCase() : 'unassigned';
+    const query = tasksSearch.toLowerCase();
+    return taskId.includes(query) || title.includes(query) || assigneeName.includes(query);
+  });
+
+  const totalTasksPages = Math.ceil(filteredTasks.length / itemsPerPage);
+  const paginatedTasks = filteredTasks.slice(
+    (tasksPage - 1) * itemsPerPage,
+    tasksPage * itemsPerPage
+  );
   
   const currentMemberIds = new Set(membersList.map((m: any) => m.id));
   const assignableEmployees = allEmployees.filter((emp: any) => !currentMemberIds.has(emp.id));
@@ -314,10 +355,7 @@ export default function MyTeamPage() {
       )}
 
       {loading && !entityData ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="h-8 w-8 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-label-sm text-outline font-semibold uppercase">Loading Team Metrics...</p>
-        </div>
+        <TableSkeleton rows={6} cols={5} />
       ) : (
         <>
           {entityData && (
@@ -401,12 +439,21 @@ export default function MyTeamPage() {
 
           {activeTab === 'members' && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-label-sm font-bold text-slate-700 uppercase font-semibold">Team Members</h3>
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full md:w-80">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>
+                  <input
+                    type="text"
+                    placeholder="Search members..."
+                    value={membersSearch}
+                    onChange={(e) => { setMembersSearch(e.target.value); setMembersPage(1); }}
+                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-primary rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary text-on-surface"
+                  />
+                </div>
                 {canEdit && (
                   <button
                     onClick={handleOpenAddModal}
-                    className="px-4 py-2 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-xs font-bold transition-all cursor-pointer"
+                    className="px-4 py-2 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-xs font-bold transition-all cursor-pointer whitespace-nowrap"
                   >
                     Add Member
                   </button>
@@ -425,8 +472,8 @@ export default function MyTeamPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
-                    {membersList.length > 0 ? (
-                      membersList.map((m: any) => {
+                    {paginatedMembers.length > 0 ? (
+                      paginatedMembers.map((m: any) => {
                         const isLead = type === 'team' && entityData.leadId === m.id;
                         const isHead = type === 'dept' && entityData.headId === m.id;
                         return (
@@ -455,15 +502,20 @@ export default function MyTeamPage() {
                             </td>
                             {canEdit && (
                               <td className="px-6 py-4 text-right">
-                                <button
-                                  onClick={() => handleRemoveMember(m.id)}
-                                  disabled={submitting || isLead || isHead}
-                                  className={`text-error hover:text-red-700 font-bold text-label-xs cursor-pointer ${
-                                    isLead || isHead ? 'opacity-40 cursor-not-allowed' : ''
-                                  }`}
-                                >
-                                  Remove
-                                </button>
+                                {!(isLead || isHead) ? (
+                                  <ThreeDotMenu
+                                    actions={[
+                                      {
+                                        label: 'Remove Member',
+                                        icon: 'person_remove',
+                                        className: 'text-red-600 hover:bg-red-50/50',
+                                        onClick: () => handleRemoveMember(m.id)
+                                      }
+                                    ]}
+                                  />
+                                ) : (
+                                  <span className="text-slate-300 text-label-xs select-none">No action</span>
+                                )}
                               </td>
                             )}
                           </tr>
@@ -478,13 +530,46 @@ export default function MyTeamPage() {
                     )}
                   </tbody>
                 </table>
+
+                {totalMembersPages > 1 && (
+                  <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-body-sm text-outline">
+                      Showing {(membersPage - 1) * itemsPerPage + 1} to {Math.min(membersPage * itemsPerPage, filteredMembers.length)} of {filteredMembers.length} members
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={membersPage === 1}
+                        onClick={() => setMembersPage(membersPage - 1)}
+                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        disabled={membersPage === totalMembersPages}
+                        onClick={() => setMembersPage(membersPage + 1)}
+                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {activeTab === 'tasks' && (
             <div className="space-y-4">
-              <h3 className="text-label-sm font-bold text-slate-700 uppercase font-semibold">Scoped Task Board</h3>
+              <div className="relative w-full md:w-80">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  value={tasksSearch}
+                  onChange={(e) => { setTasksSearch(e.target.value); setTasksPage(1); }}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-primary rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary text-on-surface"
+                />
+              </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <table className="w-full text-left border-collapse">
@@ -500,8 +585,8 @@ export default function MyTeamPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
-                    {tasks.length > 0 ? (
-                      tasks.map((task: any) => {
+                    {paginatedTasks.length > 0 ? (
+                      paginatedTasks.map((task: any) => {
                         const isPending = !['APPROVED', 'CLOSED'].includes(task.status);
                         const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
                         const showDelayAction = isPending && isOverdue;
@@ -539,12 +624,15 @@ export default function MyTeamPage() {
                             {canEdit && (
                               <td className="px-6 py-4 text-right">
                                 {showDelayAction ? (
-                                  <button
-                                    onClick={() => setDelayReviewTaskId(task.id)}
-                                    className="text-primary hover:text-blue-700 font-bold text-label-xs cursor-pointer"
-                                  >
-                                    Raise Delay Review
-                                  </button>
+                                  <ThreeDotMenu
+                                    actions={[
+                                      {
+                                        label: 'Raise Delay Review',
+                                        icon: 'rate_review',
+                                        onClick: () => setDelayReviewTaskId(task.id)
+                                      }
+                                    ]}
+                                  />
                                 ) : (
                                   <span className="text-slate-300 text-label-xs select-none">No action</span>
                                 )}
@@ -562,6 +650,30 @@ export default function MyTeamPage() {
                     )}
                   </tbody>
                 </table>
+
+                {totalTasksPages > 1 && (
+                  <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-body-sm text-outline">
+                      Showing {(tasksPage - 1) * itemsPerPage + 1} to {Math.min(tasksPage * itemsPerPage, filteredTasks.length)} of {filteredTasks.length} tasks
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={tasksPage === 1}
+                        onClick={() => setTasksPage(tasksPage - 1)}
+                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        disabled={tasksPage === totalTasksPages}
+                        onClick={() => setTasksPage(tasksPage + 1)}
+                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -10,6 +10,7 @@ import {
   updateReview,
   submitHrFeedback,
   recalculateScore,
+  publishReview,
   getLeaderboard
 } from "./performance.controller";
 import {
@@ -34,6 +35,7 @@ router.get("/reviews/:id", getReviewById);
 router.patch("/reviews/:id", validate(updateReviewSchema), updateReview);
 router.post("/reviews/:id/hr-feedback", requirePermission("performance", "hr-feedback"), submitHrFeedback);
 router.post("/reviews/:id/recalculate", requirePermission("performance", "review"), recalculateScore);
+router.post("/reviews/:id/publish", publishReview);
 router.get("/leaderboard", requirePermission("performance", "leaderboard"), validate(getLeaderboardSchema, "query"), getLeaderboard);
 
 export const performanceRouter = router;

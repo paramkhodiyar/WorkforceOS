@@ -6,6 +6,7 @@ import { useAuth } from '../../../lib/auth/AuthProvider';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
+import { ReadMoreText } from '../../../components/ui/ReadMoreText';
 
 export default function AttendancePage() {
   const { user } = useAuth();
@@ -660,8 +661,8 @@ export default function AttendancePage() {
                             Out: {formatTime(req.proposedCheckOut)}<br />
                             Status: <span className="font-bold text-[10px]">{req.proposedStatus || req.attendance?.status}</span>
                           </td>
-                          <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate" title={req.reason}>
-                            {req.reason}
+                          <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                            <ReadMoreText text={req.reason} title="Adjustment Reason" />
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-2">
@@ -830,8 +831,8 @@ export default function AttendancePage() {
                             Out: {formatTime(req.proposedCheckOut)}<br />
                             Status: <span className="font-bold text-[10px]">{req.proposedStatus || req.attendance?.status}</span>
                           </td>
-                          <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate" title={req.reason}>
-                            {req.reason}
+                          <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                            <ReadMoreText text={req.reason} title="Adjustment Notes" />
                           </td>
                         </tr>
                       );

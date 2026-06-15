@@ -119,6 +119,13 @@ export const recalculateScore = asyncHandler(async (req: Request, res: Response)
   return sendSuccess(res, result, "Performance score recalculated successfully");
 });
 
+export const publishReview = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const actorId = req.user!.id;
+  const result = await PerformanceService.publishReview(req.params.id, orgId, actorId, req);
+  return sendSuccess(res, result, "Performance review published successfully");
+});
+
 export const getLeaderboard = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
   const departmentId = req.query.departmentId as string;
@@ -128,3 +135,4 @@ export const getLeaderboard = asyncHandler(async (req: Request, res: Response) =
   const board = await PerformanceService.getLeaderboard(orgId, departmentId, period, type);
   return sendSuccess(res, board);
 });
+

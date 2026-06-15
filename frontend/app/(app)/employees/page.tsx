@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
+import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function EmployeesPage() {
   const { user } = useAuth();
@@ -478,9 +480,7 @@ export default function EmployeesPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
+          <TableSkeleton rows={8} cols={7} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -549,61 +549,29 @@ export default function EmployeesPage() {
                           {emp.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveMenuId(activeMenuId === emp.id ? null : emp.id);
-                          }}
-                          className="p-1 hover:bg-slate-100 rounded-lg text-outline hover:text-on-surface transition-colors cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">more_vert</span>
-                        </button>
- 
-                        {activeMenuId === emp.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-10"
-                              onClick={() => setActiveMenuId(null)}
-                            />
-                            <div className="absolute right-6 mt-1 w-44 bg-white border border-slate-100 rounded-xl shadow-lg py-1.5 z-20 text-left">
-                              <button
-                                onClick={() => {
-                                  setActiveMenuId(null);
-                                  router.push(`/profile?id=${emp.id}`);
-                                }}
-                                className="w-full px-4 py-2 text-body-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-[16px]">visibility</span>
-                                View Details
-                              </button>
-                              {(isAdmin || isHR) && (
-                                <>
-                                  <button
-                                    onClick={() => {
-                                      setActiveMenuId(null);
-                                      handleEditEmployee(emp);
-                                    }}
-                                    className="w-full px-4 py-2 text-body-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium cursor-pointer"
-                                  >
-                                    <span className="material-symbols-outlined text-[16px]">edit</span>
-                                    Edit Details
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setActiveMenuId(null);
-                                      handleDeleteEmployee(emp.id);
-                                    }}
-                                    className="w-full px-4 py-2 text-body-sm text-red-600 hover:bg-red-50/50 transition-colors flex items-center gap-2 font-medium cursor-pointer"
-                                  >
-                                    <span className="material-symbols-outlined text-[16px]">delete</span>
-                                    Delete
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </>
-                        )}
+                      <td className="px-6 py-4 text-center">
+                        <ThreeDotMenu
+                          actions={[
+                            {
+                              label: 'View Details',
+                              icon: 'visibility',
+                              onClick: () => router.push(`/profile?id=${emp.id}`)
+                            },
+                            ...((isAdmin || isHR) ? [
+                              {
+                                label: 'Edit Details',
+                                icon: 'edit',
+                                onClick: () => handleEditEmployee(emp)
+                              },
+                              {
+                                label: 'Delete',
+                                icon: 'delete',
+                                className: 'text-red-600 hover:bg-red-50/50',
+                                onClick: () => handleDeleteEmployee(emp.id)
+                              }
+                            ] : [])
+                          ]}
+                        />
                       </td>
                     </tr>
                   ))

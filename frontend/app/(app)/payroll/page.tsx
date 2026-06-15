@@ -6,6 +6,7 @@ import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import { TableSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
+import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 
 export default function PayrollPage() {
   const { user } = useAuth();
@@ -346,13 +347,15 @@ export default function PayrollPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => handleViewPayslip(ps.id)}
-                        className="px-3 py-1 bg-surface-container hover:bg-surface-container-high rounded text-label-sm font-semibold transition-colors inline-flex items-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">visibility</span>
-                        View Slip
-                      </button>
+                      <ThreeDotMenu
+                        actions={[
+                          {
+                            label: 'View Payslip',
+                            icon: 'visibility',
+                            onClick: () => handleViewPayslip(ps.id)
+                          }
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}

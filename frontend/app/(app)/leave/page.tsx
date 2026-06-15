@@ -7,6 +7,8 @@ import { CommentDialog } from '../../../components/ui/CommentDialog';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
+import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
+import { ReadMoreText } from '../../../components/ui/ReadMoreText';
 
 export default function LeavePage() {
   const { user } = useAuth();
@@ -375,7 +377,9 @@ export default function LeavePage() {
                         <td className="px-4 py-3 text-on-surface-variant">
                           {new Date(req.startDate).toLocaleDateString()} to {new Date(req.endDate).toLocaleDateString()}
                         </td>
-                        <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">{req.reason}</td>
+                        <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                          <ReadMoreText text={req.reason} title="Leave Reason" />
+                        </td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                             req.status === 'HR_APPROVED'
@@ -392,13 +396,19 @@ export default function LeavePage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {(req.status === 'PENDING' || req.status === 'MANAGER_APPROVED') && (
-                            <button
-                              onClick={() => handleCancel(req.id)}
-                              className="text-error hover:text-red-700 font-semibold text-xs transition-colors"
-                            >
-                              Cancel
-                            </button>
+                          {(req.status === 'PENDING' || req.status === 'MANAGER_APPROVED') ? (
+                            <ThreeDotMenu
+                              actions={[
+                                {
+                                  label: 'Cancel Request',
+                                  icon: 'close',
+                                  className: 'text-error hover:bg-error/5',
+                                  onClick: () => handleCancel(req.id)
+                                }
+                              ]}
+                            />
+                          ) : (
+                            <span className="text-outline">-</span>
                           )}
                         </td>
                       </tr>

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
+import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
+import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -31,6 +33,11 @@ export default function SettingsPage() {
   const [memberSearch, setMemberSearch] = useState('');
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'department' | 'team'; id: string; name: string } | null>(null);
+  
+  const [deptSearch, setDeptSearch] = useState('');
+  const [deptPage, setDeptPage] = useState(1);
+  const [teamSearch, setTeamSearch] = useState('');
+  const [teamPage, setTeamPage] = useState(1);
 
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
@@ -155,6 +162,23 @@ export default function SettingsPage() {
     }
   }
 
+  const filteredDepts = departments.filter(d => 
+    d.name.toLowerCase().includes(deptSearch.toLowerCase()) || 
+    (d.head ? `${d.head.firstName} ${d.head.lastName}` : '').toLowerCase().includes(deptSearch.toLowerCase())
+  );
+  
+  const itemsPerPage = 8;
+  const totalPagesDepts = Math.ceil(filteredDepts.length / itemsPerPage);
+  const paginatedDepts = filteredDepts.slice((deptPage - 1) * itemsPerPage, deptPage * itemsPerPage);
+
+  const filteredTeams = teams.filter(t => 
+    t.name.toLowerCase().includes(teamSearch.toLowerCase()) || 
+    (t.department?.name || '').toLowerCase().includes(teamSearch.toLowerCase()) ||
+    (t.lead ? `${t.lead.firstName} ${t.lead.lastName}` : '').toLowerCase().includes(teamSearch.toLowerCase())
+  );
+  const totalPagesTeams = Math.ceil(filteredTeams.length / itemsPerPage);
+  const paginatedTeams = filteredTeams.slice((teamPage - 1) * itemsPerPage, teamPage * itemsPerPage);
+
   const employeeOptions = [
     { value: '', label: 'None / Unassigned' },
     ...employees.map((emp) => ({
@@ -233,130 +257,219 @@ export default function SettingsPage() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="h-8 w-8 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-label-sm text-outline font-semibold uppercase">Loading Organization Configuration...</p>
+        <div className="space-y-6">
+          <TableSkeleton rows={4} cols={5} />
         </div>
       ) : (
         <>
           {activeTab === 'departments' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department Name</th>
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department Head</th>
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Teams Count</th>
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Employees Count</th>
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
-                  {departments.length > 0 ? (
-                    departments.map((dept) => (
-                      <tr key={dept.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 text-slate-900 font-bold">{dept.name}</td>
-                        <td className="px-6 py-4 text-slate-600">
-                          {dept.head ? `${dept.head.firstName} ${dept.head.lastName}` : 'Unassigned'}
-                        </td>
-                        <td className="px-6 py-4 text-center text-slate-600">{dept._count?.teams || 0}</td>
-                        <td className="px-6 py-4 text-center text-slate-600">{dept._count?.employees || 0}</td>
-                        <td className="px-6 py-4 text-right space-x-2">
-                          <button
-                            onClick={() => {
-                              setDeptForm({ id: dept.id, name: dept.name, headId: dept.headId });
-                              setIsDeptModalOpen(true);
-                            }}
-                            className="text-primary hover:text-blue-700 font-bold text-label-xs cursor-pointer"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget({ type: 'department', id: dept.id, name: dept.name })}
-                            className="text-error hover:text-red-700 font-bold text-label-xs cursor-pointer"
-                          >
-                            Delete
-                          </button>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+              <div className="flex justify-between items-center flex-wrap gap-4">
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Departments</h2>
+                <div className="relative w-48">
+                  <input
+                    type="text"
+                    placeholder="Search departments..."
+                    value={deptSearch}
+                    onChange={(e) => {
+                      setDeptSearch(e.target.value);
+                      setDeptPage(1);
+                    }}
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                  />
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department Name</th>
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department Head</th>
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Teams Count</th>
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Employees Count</th>
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
+                    {paginatedDepts.length > 0 ? (
+                      paginatedDepts.map((dept) => (
+                        <tr key={dept.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4 text-slate-900 font-bold">{dept.name}</td>
+                          <td className="px-6 py-4 text-slate-600">
+                            {dept.head ? `${dept.head.firstName} ${dept.head.lastName}` : 'Unassigned'}
+                          </td>
+                          <td className="px-6 py-4 text-center text-slate-600">{dept._count?.teams || 0}</td>
+                          <td className="px-6 py-4 text-center text-slate-600">{dept._count?.employees || 0}</td>
+                          <td className="px-6 py-4 text-right">
+                            <ThreeDotMenu
+                              actions={[
+                                {
+                                  label: 'Edit',
+                                  icon: 'edit',
+                                  onClick: () => {
+                                    setDeptForm({ id: dept.id, name: dept.name, headId: dept.headId });
+                                    setIsDeptModalOpen(true);
+                                  }
+                                },
+                                {
+                                  label: 'Delete',
+                                  icon: 'delete',
+                                  className: 'text-error hover:bg-error/5',
+                                  onClick: () => setDeleteTarget({ type: 'department', id: dept.id, name: dept.name })
+                                }
+                              ]}
+                            />
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                          No departments found.
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
-                        No departments found. Click Add Department to create one.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {totalPagesDepts > 1 && (
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] text-outline">
+                    Showing {(deptPage - 1) * itemsPerPage + 1} to {Math.min(deptPage * itemsPerPage, filteredDepts.length)} of {filteredDepts.length} departments
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      disabled={deptPage === 1}
+                      onClick={() => setDeptPage(deptPage - 1)}
+                      className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                    >
+                      Prev
+                    </button>
+                    <button
+                      disabled={deptPage === totalPagesDepts}
+                      onClick={() => setDeptPage(deptPage + 1)}
+                      className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === 'teams' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Team Name</th>
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department</th>
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Team Lead</th>
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Members Count</th>
-                    <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
-                  {teams.length > 0 ? (
-                    teams.map((team) => (
-                      <tr key={team.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 text-slate-900 font-bold">{team.name}</td>
-                        <td className="px-6 py-4 text-slate-600">{team.department?.name}</td>
-                        <td className="px-6 py-4 text-slate-600">
-                          {team.lead ? `${team.lead.firstName} ${team.lead.lastName}` : 'Unassigned'}
-                        </td>
-                        <td className="px-6 py-4 text-center text-slate-600">{team._count?.members || 0}</td>
-                        <td className="px-6 py-4 text-right space-x-2">
-                          <button
-                            onClick={async () => {
-                              try {
-                                const res = await api.teams.get(team.id);
-                                const fullTeam = res.data;
-                                setTeamForm({
-                                  id: fullTeam.id,
-                                  name: fullTeam.name,
-                                  departmentId: fullTeam.departmentId,
-                                  leadId: fullTeam.leadId,
-                                  memberIds: fullTeam.members?.map((m: any) => m.id) || [],
-                                });
-                                setMemberSearch('');
-                                setIsTeamModalOpen(true);
-                              } catch (err: any) {
-                                setErrorMessage(err.message || 'Failed to load team details');
-                              }
-                            }}
-                            className="text-primary hover:text-blue-700 font-bold text-label-xs cursor-pointer"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget({ type: 'team', id: team.id, name: team.name })}
-                            className="text-error hover:text-red-700 font-bold text-label-xs cursor-pointer"
-                          >
-                            Delete
-                          </button>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+              <div className="flex justify-between items-center flex-wrap gap-4">
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Teams</h2>
+                <div className="relative w-48">
+                  <input
+                    type="text"
+                    placeholder="Search teams..."
+                    value={teamSearch}
+                    onChange={(e) => {
+                      setTeamSearch(e.target.value);
+                      setTeamPage(1);
+                    }}
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                  />
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Team Name</th>
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department</th>
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Team Lead</th>
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Members Count</th>
+                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
+                    {paginatedTeams.length > 0 ? (
+                      paginatedTeams.map((team) => (
+                        <tr key={team.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4 text-slate-900 font-bold">{team.name}</td>
+                          <td className="px-6 py-4 text-slate-600">{team.department?.name}</td>
+                          <td className="px-6 py-4 text-slate-600">
+                            {team.lead ? `${team.lead.firstName} ${team.lead.lastName}` : 'Unassigned'}
+                          </td>
+                          <td className="px-6 py-4 text-center text-slate-600">{team._count?.members || 0}</td>
+                          <td className="px-6 py-4 text-right">
+                            <ThreeDotMenu
+                              actions={[
+                                {
+                                  label: 'Edit',
+                                  icon: 'edit',
+                                  onClick: async () => {
+                                    try {
+                                      const res = await api.teams.get(team.id);
+                                      const fullTeam = res.data;
+                                      setTeamForm({
+                                        id: fullTeam.id,
+                                        name: fullTeam.name,
+                                        departmentId: fullTeam.departmentId,
+                                        leadId: fullTeam.leadId,
+                                        memberIds: fullTeam.members?.map((m: any) => m.id) || [],
+                                      });
+                                      setMemberSearch('');
+                                      setIsTeamModalOpen(true);
+                                    } catch (err: any) {
+                                      setErrorMessage(err.message || 'Failed to load team details');
+                                    }
+                                  }
+                                },
+                                {
+                                  label: 'Delete',
+                                  icon: 'delete',
+                                  className: 'text-error hover:bg-error/5',
+                                  onClick: () => setDeleteTarget({ type: 'team', id: team.id, name: team.name })
+                                }
+                              ]}
+                            />
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                          No teams found.
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
-                        {departments.length === 0
-                          ? 'Please add a department first before creating teams.'
-                          : 'No teams found. Click Add Team to create one.'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {totalPagesTeams > 1 && (
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] text-outline">
+                    Showing {(teamPage - 1) * itemsPerPage + 1} to {Math.min(teamPage * itemsPerPage, filteredTeams.length)} of {filteredTeams.length} teams
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      disabled={teamPage === 1}
+                      onClick={() => setTeamPage(teamPage - 1)}
+                      className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                    >
+                      Prev
+                    </button>
+                    <button
+                      disabled={teamPage === totalPagesTeams}
+                      onClick={() => setTeamPage(teamPage + 1)}
+                      className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>

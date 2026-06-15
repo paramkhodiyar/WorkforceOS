@@ -14,10 +14,15 @@ import { notificationsRouter } from "../modules/notifications/notifications.rout
 import { auditRouter } from "../modules/audit/audit.router";
 import { departmentsRouter } from "../modules/departments/departments.router";
 import { teamsRouter } from "../modules/teams/teams.router";
+import { rateLimitByUser } from "../middleware/rateLimit.middleware";
 
 const router = Router();
 
 router.use("/auth", authRouter);
+
+// Apply user-scoped rate limiting to all authenticated api endpoints
+router.use(rateLimitByUser(200, 60));
+
 router.use("/organization", organizationRouter);
 router.use("/employees", employeesRouter);
 router.use("/attendance", attendanceRouter);

@@ -303,5 +303,9 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    publish: (id: string): Promise<any> =>
+      request(`/performance/reviews/${id}/publish`, {
+        method: 'POST',
+      }),
   },
 };

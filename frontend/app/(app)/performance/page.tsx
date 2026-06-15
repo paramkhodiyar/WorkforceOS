@@ -5,6 +5,7 @@ import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import { TableSkeleton, ListSkeleton } from '../../../components/ui/Skeleton';
+import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 
 export default function PerformancePage() {
   const { user } = useAuth();
@@ -16,6 +17,11 @@ export default function PerformancePage() {
   const [loading, setLoading] = useState(true);
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<'my-reviews' | 'team-reviews'>('my-reviews');
+
+  const [myReviewsSearch, setMyReviewsSearch] = useState('');
+  const [myReviewsPage, setMyReviewsPage] = useState(1);
+  const [teamReviewsSearch, setTeamReviewsSearch] = useState('');
+  const [teamReviewsPage, setTeamReviewsPage] = useState(1);
 
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
@@ -47,6 +53,34 @@ export default function PerformancePage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  async function handlePublishReview(id: string) {
+    if (!confirm('Are you sure you want to release/publish this performance review? Once released, it will be visible to the employee.')) return;
+    try {
+      await api.performance.publish(id);
+      toast.success('Performance review released successfully');
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to release performance review');
+    }
+  }
+
+  const filteredMyReviews = reviews.filter(rev => 
+    rev.period.toLowerCase().includes(myReviewsSearch.toLowerCase()) ||
+    (rev.reviewer ? `${rev.reviewer.firstName} ${rev.reviewer.lastName}` : '').toLowerCase().includes(myReviewsSearch.toLowerCase()) ||
+    (rev.scoreBand || '').toLowerCase().includes(myReviewsSearch.toLowerCase())
+  );
+  const itemsPerPage = 8;
+  const paginatedMyReviews = filteredMyReviews.slice((myReviewsPage - 1) * itemsPerPage, myReviewsPage * itemsPerPage);
+  const totalPagesMyReviews = Math.ceil(filteredMyReviews.length / itemsPerPage);
+
+  const filteredTeamReviews = teamReviews.filter(rev => 
+    (rev.subject ? `${rev.subject.firstName} ${rev.subject.lastName}` : '').toLowerCase().includes(teamReviewsSearch.toLowerCase()) ||
+    rev.period.toLowerCase().includes(teamReviewsSearch.toLowerCase()) ||
+    (rev.scoreBand || '').toLowerCase().includes(teamReviewsSearch.toLowerCase())
+  );
+  const paginatedTeamReviews = filteredTeamReviews.slice((teamReviewsPage - 1) * itemsPerPage, teamReviewsPage * itemsPerPage);
+  const totalPagesTeamReviews = Math.ceil(filteredTeamReviews.length / itemsPerPage);
 
   const validReviews = reviews.filter(r => r.finalScore !== null && r.finalScore !== undefined);
   const averageScore = validReviews.length > 0 
@@ -100,8 +134,24 @@ export default function PerformancePage() {
             )}
 
             {activeTab === 'my-reviews' ? (
-              <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">My Review History</h2>
+              <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm space-y-4">
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">My Review History</h2>
+                  <div className="relative w-48">
+                    <input
+                      type="text"
+                      placeholder="Search reviews..."
+                      value={myReviewsSearch}
+                      onChange={(e) => {
+                        setMyReviewsSearch(e.target.value);
+                        setMyReviewsPage(1);
+                      }}
+                      className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                    />
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -114,14 +164,14 @@ export default function PerformancePage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant text-body-sm">
-                      {reviews.length === 0 ? (
+                      {paginatedMyReviews.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="px-4 py-8 text-center text-outline">
-                            No approved performance reviews are currently visible. Reviews must be approved and published by the administration to be visible here.
+                            No approved performance reviews found.
                           </td>
                         </tr>
                       ) : (
-                        reviews.map((rev) => (
+                        paginatedMyReviews.map((rev) => (
                           <tr key={rev.id} className="hover:bg-surface-container-low transition-colors">
                             <td className="px-4 py-3 font-semibold text-on-surface">
                               <div>
@@ -147,12 +197,15 @@ export default function PerformancePage() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <button
-                                onClick={() => setSelectedReview(rev)}
-                                className="text-primary hover:underline font-bold text-xs"
-                              >
-                                View Details
-                              </button>
+                              <ThreeDotMenu
+                                actions={[
+                                  {
+                                    label: 'View Details',
+                                    icon: 'visibility',
+                                    onClick: () => setSelectedReview(rev)
+                                  }
+                                ]}
+                              />
                             </td>
                           </tr>
                         ))
@@ -160,11 +213,51 @@ export default function PerformancePage() {
                     </tbody>
                   </table>
                 </div>
+
+                {totalPagesMyReviews > 1 && (
+                  <div className="pt-4 border-t border-outline-variant flex items-center justify-between">
+                    <span className="text-[11px] text-outline">
+                      Showing {(myReviewsPage - 1) * itemsPerPage + 1} to {Math.min(myReviewsPage * itemsPerPage, filteredMyReviews.length)} of {filteredMyReviews.length} reviews
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        disabled={myReviewsPage === 1}
+                        onClick={() => setMyReviewsPage(myReviewsPage - 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        disabled={myReviewsPage === totalPagesMyReviews}
+                        onClick={() => setMyReviewsPage(myReviewsPage + 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               // Team Reviews Tab (Managers / HR / Admin only)
-              <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Team Reviews Dashboard</h2>
+              <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm space-y-4">
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Team Reviews Dashboard</h2>
+                  <div className="relative w-48">
+                    <input
+                      type="text"
+                      placeholder="Search team reviews..."
+                      value={teamReviewsSearch}
+                      onChange={(e) => {
+                        setTeamReviewsSearch(e.target.value);
+                        setTeamReviewsPage(1);
+                      }}
+                      className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                    />
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -177,14 +270,14 @@ export default function PerformancePage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant text-body-sm">
-                      {teamReviews.length === 0 ? (
+                      {paginatedTeamReviews.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="px-4 py-8 text-center text-outline">
-                            No team reviews have been created or assigned to you.
+                            No team reviews found.
                           </td>
                         </tr>
                       ) : (
-                        teamReviews.map((rev) => (
+                        paginatedTeamReviews.map((rev) => (
                           <tr key={rev.id} className="hover:bg-surface-container-low transition-colors">
                             <td className="px-4 py-3 font-semibold text-on-surface">
                               {rev.subject ? `${rev.subject.firstName} ${rev.subject.lastName}` : 'Unknown'}
@@ -209,12 +302,20 @@ export default function PerformancePage() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <button
-                                onClick={() => setSelectedReview(rev)}
-                                className="text-primary hover:underline font-bold text-xs"
-                              >
-                                View Detailed Score
-                              </button>
+                              <ThreeDotMenu
+                                actions={[
+                                  {
+                                    label: 'View Detailed Score',
+                                    icon: 'visibility',
+                                    onClick: () => setSelectedReview(rev)
+                                  },
+                                  ...(!rev.isPublished ? [{
+                                    label: 'Release Review',
+                                    icon: 'publish',
+                                    onClick: () => handlePublishReview(rev.id)
+                                  }] : [])
+                                ]}
+                              />
                             </td>
                           </tr>
                         ))
@@ -222,6 +323,30 @@ export default function PerformancePage() {
                     </tbody>
                   </table>
                 </div>
+
+                {totalPagesTeamReviews > 1 && (
+                  <div className="pt-4 border-t border-outline-variant flex items-center justify-between">
+                    <span className="text-[11px] text-outline">
+                      Showing {(teamReviewsPage - 1) * itemsPerPage + 1} to {Math.min(teamReviewsPage * itemsPerPage, filteredTeamReviews.length)} of {filteredTeamReviews.length} reviews
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        disabled={teamReviewsPage === 1}
+                        onClick={() => setTeamReviewsPage(teamReviewsPage - 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        disabled={teamReviewsPage === totalPagesTeamReviews}
+                        onClick={() => setTeamReviewsPage(teamReviewsPage + 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -439,7 +564,18 @@ export default function PerformancePage() {
               </div>
             )}
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end gap-3 pt-2">
+              {showManagementFeatures && !selectedReview.isPublished && (
+                <button
+                  onClick={async () => {
+                    await handlePublishReview(selectedReview.id);
+                    setSelectedReview(null);
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg text-label-md font-bold transition-all"
+                >
+                  Release Review
+                </button>
+              )}
               <button
                 onClick={() => setSelectedReview(null)}
                 className="bg-primary hover:bg-blue-700 text-on-primary px-5 py-2 rounded-lg text-label-md font-bold transition-all"

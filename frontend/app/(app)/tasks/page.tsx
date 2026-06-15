@@ -8,6 +8,7 @@ import { CommentDialog } from '../../../components/ui/CommentDialog';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
+import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -40,6 +41,9 @@ export default function TasksPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   const [reviewingTaskId, setReviewingTaskId] = useState<string | null>(null);
+  const [delayedSearch, setDelayedSearch] = useState('');
+  const [delayedPage, setDelayedPage] = useState(1);
+  const itemsPerPageDelayed = 5;
 
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
@@ -226,6 +230,20 @@ export default function TasksPage() {
     return !isCompleted && isOverdue;
   });
   const delayedCount = delayedTasks.length;
+
+  const filteredDelayedTasks = delayedTasks.filter((t: any) => {
+    const title = (t.title || '').toLowerCase();
+    const desc = (t.description || '').toLowerCase();
+    const assigneeName = t.assignee ? `${t.assignee.firstName} ${t.assignee.lastName}`.toLowerCase() : 'unassigned';
+    const query = delayedSearch.toLowerCase();
+    return title.includes(query) || desc.includes(query) || assigneeName.includes(query);
+  });
+
+  const totalDelayedPages = Math.ceil(filteredDelayedTasks.length / itemsPerPageDelayed);
+  const paginatedDelayedTasks = filteredDelayedTasks.slice(
+    (delayedPage - 1) * itemsPerPageDelayed,
+    delayedPage * itemsPerPageDelayed
+  );
 
   return (
     <div className="space-y-6 font-sans max-w-7xl mx-auto p-4 md:p-6">
@@ -425,80 +443,123 @@ export default function TasksPage() {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-              <h2 className="text-label-sm font-bold text-slate-900 uppercase tracking-wider">Delayed Milestones</h2>
-              <span className="text-[11px] text-red-500 font-bold">{delayedCount} Overdue</span>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6 space-y-4">
+            <div className="flex justify-between items-center flex-wrap gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="text-label-sm font-bold text-slate-900 uppercase tracking-wider">Delayed Milestones</h2>
+                <p className="text-body-xs text-outline font-medium">{delayedCount} Overdue</p>
+              </div>
+              <div className="relative w-64">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[16px]">search</span>
+                <input
+                  type="text"
+                  placeholder="Search delayed milestones..."
+                  value={delayedSearch}
+                  onChange={(e) => {
+                    setDelayedSearch(e.target.value);
+                    setDelayedPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                />
+              </div>
             </div>
 
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Task Details</th>
-                  <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Assignee</th>
-                  <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Priority</th>
-                  <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Due Date</th>
-                  <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Current Status</th>
-                  <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
-                {delayedTasks.length > 0 ? (
-                  delayedTasks.map(task => (
-                    <tr key={task.id} className="hover:bg-slate-50/40 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900">{task.title}</div>
-                        <div className="text-[11px] text-outline line-clamp-1 mt-0.5">{task.description}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {task.assignee ? (
-                          <div className="flex items-center gap-2">
-                            <span className="h-5 w-5 rounded-full bg-blue-100 text-primary flex items-center justify-center font-extrabold text-[8px]">
-                              {task.assignee.firstName[0]}{task.assignee.lastName[0]}
-                            </span>
-                            <span>{task.assignee.firstName} {task.assignee.lastName}</span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400">Unassigned</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${
-                          task.priority === 'HIGH'
-                            ? 'bg-red-50 text-red-700'
-                            : 'bg-yellow-50 text-yellow-700'
-                        }`}>
-                          {task.priority}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-red-600 font-bold">
-                        {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap inline-block">
-                          {task.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setReviewingTaskId(task.id)}
-                          className="px-3.5 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-xs font-bold transition-all shadow-sm cursor-pointer inline-flex items-center gap-1.5"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">rate_review</span>
-                          Raise Delay Review
-                        </button>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Task Details</th>
+                    <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Assignee</th>
+                    <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Priority</th>
+                    <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Due Date</th>
+                    <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase">Current Status</th>
+                    <th className="px-6 py-4 text-label-xs font-bold text-slate-500 uppercase text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
+                  {paginatedDelayedTasks.length > 0 ? (
+                    paginatedDelayedTasks.map(task => (
+                      <tr key={task.id} className="hover:bg-slate-50/40 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-slate-900">{task.title}</div>
+                          <div className="text-[11px] text-outline line-clamp-1 mt-0.5">{task.description}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {task.assignee ? (
+                            <div className="flex items-center gap-2">
+                              <span className="h-5 w-5 rounded-full bg-blue-100 text-primary flex items-center justify-center font-extrabold text-[8px]">
+                                {task.assignee.firstName[0]}{task.assignee.lastName[0]}
+                              </span>
+                              <span>{task.assignee.firstName} {task.assignee.lastName}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">Unassigned</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${
+                            task.priority === 'HIGH'
+                              ? 'bg-red-50 text-red-700'
+                              : 'bg-yellow-50 text-yellow-700'
+                          }`}>
+                            {task.priority}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-red-600 font-bold">
+                          {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap inline-block">
+                            {task.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <ThreeDotMenu
+                            actions={[
+                              {
+                                label: 'Raise Delay Review',
+                                icon: 'rate_review',
+                                onClick: () => setReviewingTaskId(task.id)
+                              }
+                            ]}
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium">
+                        No overdue tasks found matching your filter.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium">
-                      No overdue tasks found. Excellent!
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {totalDelayedPages > 1 && (
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-body-sm text-outline">
+                  Showing {(delayedPage - 1) * itemsPerPageDelayed + 1} to {Math.min(delayedPage * itemsPerPageDelayed, filteredDelayedTasks.length)} of {filteredDelayedTasks.length} tasks
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    disabled={delayedPage === 1}
+                    onClick={() => setDelayedPage(delayedPage - 1)}
+                    className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    disabled={delayedPage === totalDelayedPages}
+                    onClick={() => setDelayedPage(delayedPage + 1)}
+                    className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

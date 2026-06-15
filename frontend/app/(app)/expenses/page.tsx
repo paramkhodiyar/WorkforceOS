@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { Button } from '../../../components/ui/Button';
+import { TableSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
+import { ReadMoreText } from '../../../components/ui/ReadMoreText';
 
 export default function ExpensesPage() {
   const { user } = useAuth();
@@ -11,6 +14,7 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [actioningClaimId, setActioningClaimId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('TRAVEL');
   const [description, setDescription] = useState('');
@@ -63,19 +67,33 @@ export default function ExpensesPage() {
   }
 
   async function handleApprove(id: string, status: string) {
+    setActioningClaimId(id);
     try {
       await api.expenses.approve(id, status);
       await loadData();
       toast.success(`Expense claim ${status.toLowerCase()} successfully`);
     } catch (err: any) {
       toast.error(err.message || 'Action failed');
+    } finally {
+      setActioningClaimId(null);
     }
   }
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="space-y-6 font-sans">
+        <div>
+          <h1 className="text-headline-md font-bold text-on-surface">Reimbursement & Expenses</h1>
+          <p className="text-body-sm text-outline">File reimbursement requests and review team expenses claims</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1">
+            <FormSkeleton />
+          </div>
+          <div className="md:col-span-2">
+            <TableSkeleton rows={6} cols={4} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -155,13 +173,13 @@ export default function ExpensesPage() {
               />
             </div>
 
-            <button
+            <Button
               type="submit"
-              disabled={submitting}
-              className="w-full py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50"
+              loading={submitting}
+              className="w-full py-3"
             >
-              {submitting ? 'Filing Claim...' : 'File Expense Claim'}
-            </button>
+              File Expense Claim
+            </Button>
           </form>
         </div>
 
@@ -200,18 +218,24 @@ export default function ExpensesPage() {
                           <p className="text-body-sm text-outline italic mt-1">"{exp.description}"</p>
                         </div>
                         <div className="flex gap-2 shrink-0">
-                          <button
+                          <Button
+                            variant="outline"
+                            loading={actioningClaimId === exp.id}
+                            disabled={actioningClaimId !== null}
                             onClick={() => handleApprove(exp.id, 'REJECTED')}
-                            className="px-3 py-1.5 border border-error-container text-error hover:bg-error/5 rounded-lg text-label-sm font-bold transition-colors"
+                            className="px-3 py-1.5 text-error hover:bg-error/5 border-error-container text-label-sm"
                           >
                             Reject
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="primary"
+                            loading={actioningClaimId === exp.id}
+                            disabled={actioningClaimId !== null}
                             onClick={() => handleApprove(exp.id, 'APPROVED')}
-                            className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold shadow-sm transition-all"
+                            className="px-3 py-1.5 text-label-sm"
                           >
                             Approve
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -283,7 +307,9 @@ export default function ExpensesPage() {
                         <td className="px-4 py-3 text-on-surface-variant font-mono">
                           ₹{exp.amount.toFixed(2)}
                         </td>
-                        <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">{exp.description}</td>
+                        <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                          <ReadMoreText text={exp.description} title="Expense Description" />
+                        </td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                             exp.status === 'APPROVED'

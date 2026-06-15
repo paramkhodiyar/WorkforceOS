@@ -5,6 +5,7 @@ import { config } from "../../config/env";
 import { AppError } from "../../utils/errors.util";
 import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "@prisma/client";
+import { redis } from "../../config/redis";
 
 export class AuthService {
   static async login(email: string, password: string, req?: any) {
@@ -173,6 +174,8 @@ export class AuthService {
       where: { id: userId },
       data: { passwordHash }
     });
+
+    await redis.del(`user:session:${userId}`).catch(() => {});
 
     await prisma.refreshToken.updateMany({
       where: { userId },

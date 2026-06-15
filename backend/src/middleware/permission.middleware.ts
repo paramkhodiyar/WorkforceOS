@@ -28,30 +28,67 @@ export function requirePermission(resource: string, action: string) {
       let hasPermission = false;
       const allPermissions: Array<{ resource: string; action: string }> = [];
 
-      for (const userRole of roles) {
-        const cacheKey = `permissions:${orgId}:${userRole.roleId}`;
-        const cachedPerms = await redis.get(cacheKey);
-        let perms: Array<{ resource: string; action: string }> = [];
+      // Fetch all from redis in parallel
+      const cachedPermsList = await Promise.all(
+        roles.map((userRole) => redis.get(`permissions:${orgId}:${userRole.roleId}`))
+      );
 
-        if (cachedPerms) {
-          perms = JSON.parse(cachedPerms);
+      const rolesToQueryFromDb: any[] = [];
+      const cachedPermissionsMap: Record<string, Array<{ resource: string; action: string }>> = {};
+
+      for (let i = 0; i < roles.length; i++) {
+        const userRole = roles[i];
+        const cached = cachedPermsList[i];
+        if (cached) {
+          cachedPermissionsMap[userRole.roleId] = JSON.parse(cached);
         } else {
-          const dbPerms = await prisma.rolePermission.findMany({
-            where: {
-              roleId: userRole.roleId,
-              organizationId: orgId
-            },
-            select: {
-              resource: true,
-              action: true
-            }
-          });
-          perms = dbPerms;
-          await redis.setex(cacheKey, 300, JSON.stringify(perms));
+          rolesToQueryFromDb.push(userRole);
+        }
+      }
+
+      if (rolesToQueryFromDb.length > 0) {
+        const roleIds = rolesToQueryFromDb.map((ur) => ur.roleId);
+        const dbPerms = await prisma.rolePermission.findMany({
+          where: {
+            roleId: { in: roleIds },
+            organizationId: orgId
+          },
+          select: {
+            roleId: true,
+            resource: true,
+            action: true
+          }
+        });
+
+        // Group dbPerms by roleId
+        const groupedPerms: Record<string, Array<{ resource: string; action: string }>> = {};
+        // Initialize empty arrays for all queried roles to handle roles with no permissions
+        for (const roleId of roleIds) {
+          groupedPerms[roleId] = [];
         }
 
-        allPermissions.push(...perms);
+        for (const p of dbPerms) {
+          groupedPerms[p.roleId].push({
+            resource: p.resource,
+            action: p.action
+          });
+        }
 
+        // Cache the newly fetched permissions in parallel
+        await Promise.all(
+          Object.entries(groupedPerms).map(([roleId, perms]) =>
+            redis.setex(`permissions:${orgId}:${roleId}`, 300, JSON.stringify(perms))
+          )
+        );
+
+        // Merge into cachedPermissionsMap
+        Object.assign(cachedPermissionsMap, groupedPerms);
+      }
+
+      // Collect all permissions and check match
+      for (const userRole of roles) {
+        const perms = cachedPermissionsMap[userRole.roleId] || [];
+        allPermissions.push(...perms);
         const match = perms.some((p) => p.resource === resource && p.action === action);
         if (match) {
           hasPermission = true;

@@ -1,5 +1,6 @@
 import { prisma } from "../../config/database";
 import { AuditAction } from "@prisma/client";
+import { logger } from "../../config/logger";
 
 export class AuditService {
   static async log(payload: {
@@ -12,7 +13,7 @@ export class AuditService {
     oldValue?: any;
     newValue?: any;
     req?: any;
-  }) {
+  }): Promise<void> {
     let ipAddress = null;
     let userAgent = null;
 
@@ -21,7 +22,7 @@ export class AuditService {
       userAgent = payload.req.headers ? payload.req.headers["user-agent"] || null : null;
     }
 
-    return prisma.auditLog.create({
+    prisma.auditLog.create({
       data: {
         organizationId: payload.organizationId,
         actorId: payload.actorId,
@@ -34,6 +35,8 @@ export class AuditService {
         ipAddress,
         userAgent
       }
+    }).catch((err) => {
+      logger.error("Background AuditLog Error: " + err.message);
     });
   }
 

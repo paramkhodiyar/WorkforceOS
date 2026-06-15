@@ -80,6 +80,7 @@ export const api = {
       }),
     getCurrentStatus: (): Promise<any> => request('/attendance/today'),
     team: (): Promise<any> => request('/attendance/team'),
+    shifts: (): Promise<any> => request('/attendance/shifts'),
   },
   leave: {
     list: (): Promise<any> => request('/leave/my-requests'),

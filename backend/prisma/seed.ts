@@ -325,7 +325,7 @@ async function main() {
       departmentId: dept.id,
       managerId: jim.id,
       status: UserStatus.ACTIVE,
-      salaryBand: "20000",
+      salaryBand: "BAND_E",
       designation: "Temp Intern",
       joinDate: new Date("2026-05-01")
     }
@@ -430,7 +430,7 @@ async function main() {
     "BAND_A": 85000,
     "BAND_B": 55000,
     "BAND_C": 40000,
-    "20000": 20000
+    "BAND_E": 20000
   };
 
   for (let month = 1; month <= 5; month++) {

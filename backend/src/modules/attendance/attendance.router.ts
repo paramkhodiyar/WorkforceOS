@@ -12,7 +12,8 @@ import {
   getTeam,
   getExceptions,
   adjust,
-  getSummary
+  getSummary,
+  getShifts
 } from "./attendance.controller";
 import { checkInSchema, adjustSchema, getHistorySchema, getSummarySchema } from "./attendance.validation";
 
@@ -23,6 +24,7 @@ const router = Router();
 router.use(authenticate);
 router.use(requireFeature("attendance"));
 
+router.get("/shifts", getShifts);
 router.post("/check-in", validate(checkInSchema), checkIn);
 router.post("/check-out", checkOut);
 router.post("/break-start", breakStart);

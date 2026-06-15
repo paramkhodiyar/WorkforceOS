@@ -3,6 +3,7 @@ import { ExpenseStatus, AuditAction, NotificationType } from "@prisma/client";
 import { AppError } from "../../utils/errors.util";
 import { AuditService } from "../audit/audit.service";
 import { NotificationService } from "../notifications/notifications.service";
+import { getPermissionScopes } from "../../utils/permission.util";
 
 export class ExpensesService {
   static async createClaim(userId: string, orgId: string, data: { title: string; category: string; amount: number; currency?: string; incurredOn: Date; description?: string }, req?: any) {
@@ -143,19 +144,72 @@ export class ExpensesService {
   }
 
   static async getPendingApprovals(user: any, orgId: string) {
-    const isFinance = user.systemRole === "FINANCE" || user.roles.some((ur: any) => ur.roleName === "FINANCE_MANAGER");
-    const isManager = user.systemRole === "MANAGER" || user.roles.some((ur: any) => ur.roleName === "TEAM_MANAGER" || ur.roleName === "DEPARTMENT_HEAD");
+    const financeScopes = await getPermissionScopes(user, orgId, "expense", "approve:finance");
+    const managerScopes = await getPermissionScopes(user, orgId, "expense", "approve:manager");
 
-    const where: any = { isDeleted: false, user: { organizationId: orgId } };
+    const conditions: any[] = [];
 
-    if (isFinance) {
-      where.status = ExpenseStatus.MANAGER_APPROVED;
-    } else if (isManager) {
-      where.status = ExpenseStatus.SUBMITTED;
-      where.user = { managerId: user.id };
-    } else {
-      throw AppError.forbidden("Access denied: insufficient permissions to approve expenses");
+    // Finance approval step (global only)
+    if (financeScopes.isGlobal) {
+      conditions.push({
+        status: ExpenseStatus.MANAGER_APPROVED,
+        user: { organizationId: orgId }
+      });
     }
+
+    // Manager approval step (global or scoped)
+    if (managerScopes.isGlobal) {
+      conditions.push({
+        status: ExpenseStatus.SUBMITTED,
+        user: { organizationId: orgId }
+      });
+    } else {
+      const managerOrConditions: any[] = [];
+
+      // Department scope
+      if (managerScopes.departmentIds.length > 0) {
+        managerOrConditions.push({
+          user: { departmentId: { in: managerScopes.departmentIds } }
+        });
+      }
+
+      // Team scope or direct reports
+      if (managerScopes.teamIds.length > 0 || user.systemRole === "MANAGER" || user.systemRole === "DEPARTMENT_HEAD") {
+        // Direct manager
+        managerOrConditions.push({
+          user: { managerId: user.id }
+        });
+        // Team scope
+        if (managerScopes.teamIds.length > 0) {
+          managerOrConditions.push({
+            user: {
+              teams: {
+                some: { id: { in: managerScopes.teamIds } }
+              }
+            }
+          });
+        }
+      }
+
+      if (managerOrConditions.length > 0) {
+        conditions.push({
+          status: ExpenseStatus.SUBMITTED,
+          user: {
+            organizationId: orgId,
+            OR: managerOrConditions
+          }
+        });
+      }
+    }
+
+    if (conditions.length === 0) {
+      return [];
+    }
+
+    const where: any = {
+      isDeleted: false,
+      OR: conditions
+    };
 
     return prisma.expenseClaim.findMany({
       where,

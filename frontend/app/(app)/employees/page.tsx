@@ -22,13 +22,61 @@ export default function EmployeesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  // Wizard States
+  const [activeStep, setActiveStep] = useState(0);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [shifts, setShifts] = useState<any[]>([]);
+
+  // Step 1: Personal Info
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [personalEmail, setPersonalEmail] = useState('');
+  const [personalPhone, setPersonalPhone] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [gender, setGender] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [addressCity, setAddressCity] = useState('');
+  const [addressState, setAddressState] = useState('');
+  const [addressPincode, setAddressPincode] = useState('');
+  const [addressCountry, setAddressCountry] = useState('');
+
+  // Step 2: Professional Info
   const [designation, setDesignation] = useState('');
-  const [salaryBand, setSalaryBand] = useState('BAND_A');
+  const [employeeType, setEmployeeType] = useState('FULL_TIME');
+  const [departmentId, setDepartmentId] = useState('');
+  const [managerId, setManagerId] = useState('');
   const [joinDate, setJoinDate] = useState('');
+  const [probationEndDate, setProbationEndDate] = useState('');
+  const [workLocation, setWorkLocation] = useState('');
+  const [shiftId, setShiftId] = useState('');
+
+  // Step 3: Compensation
+  const [salaryBand, setSalaryBand] = useState('BAND_A');
+  const [basicSalary, setBasicSalary] = useState('');
+  const [taxRegime, setTaxRegime] = useState('NEW');
+  const [pfApplicable, setPfApplicable] = useState(true);
+  const [ctcAnnual, setCtcAnnual] = useState('');
+
+  // Step 4: Bank Details
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [panNumber, setPanNumber] = useState('');
+  const [aadhaarLast4, setAadhaarLast4] = useState('');
+
+  // Step 5: Emergency Contact
+  const [emergencyName, setEmergencyName] = useState('');
+  const [emergencyRelation, setEmergencyRelation] = useState('');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
+  const [emergencyAltPhone, setEmergencyAltPhone] = useState('');
+
+  // Step 6: Review & Access
+  const [systemRoleField, setSystemRoleField] = useState('EMPLOYEE');
 
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
@@ -37,8 +85,14 @@ export default function EmployeesPage() {
 
   async function loadEmployees() {
     try {
-      const response = await api.employees.list();
-      setEmployees(response.data || []);
+      const empRes = await api.employees.list();
+      setEmployees(empRes.data || []);
+
+      const deptRes = await api.departments.list().catch(() => ({ data: [] }));
+      setDepartments(deptRes.data || []);
+
+      const shiftRes = await api.attendance.shifts().catch(() => ({ data: [] }));
+      setShifts(shiftRes.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -70,38 +124,112 @@ export default function EmployeesPage() {
     e.preventDefault();
     setEnrollResult(null);
     try {
+      const address = addressLine1 || addressCity || addressState || addressPincode ? {
+        line1: addressLine1,
+        line2: addressLine2 || undefined,
+        city: addressCity,
+        state: addressState,
+        pincode: addressPincode,
+        country: addressCountry || undefined
+      } : undefined;
+
+      const bankDetail = bankName || accountNumber || ifscCode || accountHolderName || panNumber ? {
+        bankName,
+        accountNumber,
+        ifscCode,
+        accountHolderName,
+        panNumber,
+        aadhaarLast4: aadhaarLast4 || undefined
+      } : undefined;
+
+      const emergencyContact = emergencyName || emergencyRelation || emergencyPhone ? {
+        name: emergencyName,
+        relation: emergencyRelation,
+        phone: emergencyPhone,
+        altPhone: emergencyAltPhone || undefined
+      } : undefined;
+
+      const payload: any = {
+        firstName,
+        lastName,
+        email,
+        phone: phone || undefined,
+        designation: designation || undefined,
+        salaryBand: salaryBand || undefined,
+        joinDate: joinDate ? new Date(joinDate) : undefined,
+        personalEmail: personalEmail || undefined,
+        personalPhone: personalPhone || undefined,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        gender: gender || undefined,
+        bloodGroup: bloodGroup || undefined,
+        address,
+        employeeType: employeeType || undefined,
+        departmentId: departmentId || undefined,
+        managerId: managerId || undefined,
+        probationEndDate: probationEndDate ? new Date(probationEndDate) : undefined,
+        workLocation: workLocation || undefined,
+        shiftId: shiftId || undefined,
+        basicSalary: basicSalary ? Number(basicSalary) : undefined,
+        taxRegime: taxRegime || undefined,
+        pfApplicable: pfApplicable,
+        ctcAnnual: ctcAnnual ? Number(ctcAnnual) : undefined,
+        systemRole: systemRoleField || undefined,
+        bankDetail,
+        emergencyContact
+      };
+
       if (editingEmployee) {
-        await api.employees.update(editingEmployee.id, {
-          firstName,
-          lastName,
-          email,
-          phone,
-          designation,
-          salaryBand,
-          joinDate: joinDate ? new Date(joinDate) : undefined
-        });
+        await api.employees.update(editingEmployee.id, payload);
         loadEmployees();
         setShowModal(false);
         setEditingEmployee(null);
       } else {
-        const result = await api.employees.create({
-          firstName,
-          lastName,
-          email,
-          phone,
-          designation,
-          salaryBand,
-          joinDate: joinDate ? new Date(joinDate) : undefined
-        });
+        const result = await api.employees.create(payload);
         setEnrollResult(result.data);
         loadEmployees();
       }
+
+      // Clear fields
       setFirstName('');
       setLastName('');
       setEmail('');
       setPhone('');
       setDesignation('');
+      setSalaryBand('BAND_A');
       setJoinDate('');
+      setPersonalEmail('');
+      setPersonalPhone('');
+      setDateOfBirth('');
+      setGender('');
+      setBloodGroup('');
+      setAddressLine1('');
+      setAddressLine2('');
+      setAddressCity('');
+      setAddressState('');
+      setAddressPincode('');
+      setAddressCountry('');
+      setEmployeeType('FULL_TIME');
+      setDepartmentId('');
+      setManagerId('');
+      setProbationEndDate('');
+      setWorkLocation('');
+      setShiftId('');
+      setBasicSalary('');
+      setTaxRegime('NEW');
+      setPfApplicable(true);
+      setCtcAnnual('');
+      setBankName('');
+      setAccountNumber('');
+      setIfscCode('');
+      setAccountHolderName('');
+      setPanNumber('');
+      setAadhaarLast4('');
+      setEmergencyName('');
+      setEmergencyRelation('');
+      setEmergencyPhone('');
+      setEmergencyAltPhone('');
+      setSystemRoleField('EMPLOYEE');
+      setActiveStep(0);
     } catch (err: any) {
       alert(err.message || 'Failed to process employee request');
     }
@@ -109,9 +237,9 @@ export default function EmployeesPage() {
 
   function handleEditEmployee(emp: any) {
     setEditingEmployee(emp);
-    setFirstName(emp.firstName);
-    setLastName(emp.lastName);
-    setEmail(emp.email);
+    setFirstName(emp.firstName || '');
+    setLastName(emp.lastName || '');
+    setEmail(emp.email || '');
     setPhone(emp.phone || '');
     setDesignation(emp.designation || '');
     setSalaryBand(emp.salaryBand || 'BAND_A');
@@ -120,7 +248,69 @@ export default function EmployeesPage() {
     } else {
       setJoinDate('');
     }
+
+    setPersonalEmail(emp.personalEmail || '');
+    setPersonalPhone(emp.personalPhone || '');
+    setDateOfBirth(emp.dateOfBirth ? new Date(emp.dateOfBirth).toISOString().split('T')[0] : '');
+    setGender(emp.gender || '');
+    setBloodGroup(emp.bloodGroup || '');
+    if (emp.address) {
+      setAddressLine1(emp.address.line1 || '');
+      setAddressLine2(emp.address.line2 || '');
+      setAddressCity(emp.address.city || '');
+      setAddressState(emp.address.state || '');
+      setAddressPincode(emp.address.pincode || '');
+      setAddressCountry(emp.address.country || '');
+    } else {
+      setAddressLine1('');
+      setAddressLine2('');
+      setAddressCity('');
+      setAddressState('');
+      setAddressPincode('');
+      setAddressCountry('');
+    }
+    setEmployeeType(emp.employeeType || 'FULL_TIME');
+    setDepartmentId(emp.departmentId || '');
+    setManagerId(emp.managerId || '');
+    setProbationEndDate(emp.probationEndDate ? new Date(emp.probationEndDate).toISOString().split('T')[0] : '');
+    setWorkLocation(emp.workLocation || '');
+    setShiftId(emp.shiftId || '');
+    setBasicSalary(emp.basicSalary ? String(emp.basicSalary) : '');
+    setTaxRegime(emp.taxRegime || 'NEW');
+    setPfApplicable(emp.pfApplicable !== false);
+    setCtcAnnual(emp.ctcAnnual ? String(emp.ctcAnnual) : '');
+
+    if (emp.bankDetail) {
+      setBankName(emp.bankDetail.bankName || '');
+      setAccountNumber(emp.bankDetail.accountNumber || '');
+      setIfscCode(emp.bankDetail.ifscCode || '');
+      setAccountHolderName(emp.bankDetail.accountHolderName || '');
+      setPanNumber(emp.bankDetail.panNumber || '');
+      setAadhaarLast4(emp.bankDetail.aadhaarLast4 || '');
+    } else {
+      setBankName('');
+      setAccountNumber('');
+      setIfscCode('');
+      setAccountHolderName('');
+      setPanNumber('');
+      setAadhaarLast4('');
+    }
+
+    if (emp.emergencyContact) {
+      setEmergencyName(emp.emergencyContact.name || '');
+      setEmergencyRelation(emp.emergencyContact.relation || '');
+      setEmergencyPhone(emp.emergencyContact.phone || '');
+      setEmergencyAltPhone(emp.emergencyContact.altPhone || '');
+    } else {
+      setEmergencyName('');
+      setEmergencyRelation('');
+      setEmergencyPhone('');
+      setEmergencyAltPhone('');
+    }
+
+    setSystemRoleField(emp.systemRole || 'EMPLOYEE');
     setEnrollResult(null);
+    setActiveStep(0);
     setShowModal(true);
   }
 
@@ -192,7 +382,40 @@ export default function EmployeesPage() {
               setDesignation('');
               setSalaryBand('BAND_A');
               setJoinDate('');
+              setPersonalEmail('');
+              setPersonalPhone('');
+              setDateOfBirth('');
+              setGender('');
+              setBloodGroup('');
+              setAddressLine1('');
+              setAddressLine2('');
+              setAddressCity('');
+              setAddressState('');
+              setAddressPincode('');
+              setAddressCountry('');
+              setEmployeeType('FULL_TIME');
+              setDepartmentId('');
+              setManagerId('');
+              setProbationEndDate('');
+              setWorkLocation('');
+              setShiftId('');
+              setBasicSalary('');
+              setTaxRegime('NEW');
+              setPfApplicable(true);
+              setCtcAnnual('');
+              setBankName('');
+              setAccountNumber('');
+              setIfscCode('');
+              setAccountHolderName('');
+              setPanNumber('');
+              setAadhaarLast4('');
+              setEmergencyName('');
+              setEmergencyRelation('');
+              setEmergencyPhone('');
+              setEmergencyAltPhone('');
+              setSystemRoleField('EMPLOYEE');
               setEnrollResult(null);
+              setActiveStep(0);
               setShowModal(true);
             }}
             className="bg-primary hover:bg-blue-700 text-on-primary px-5 py-2.5 rounded-xl text-label-md font-bold shadow-sm transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer self-start sm:self-auto"
@@ -432,7 +655,7 @@ export default function EmployeesPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-slate-950/40 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-          <div className="bg-white border border-slate-100 rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
               <h2 className="text-headline-sm font-bold text-on-surface">
                 {editingEmployee ? 'Edit Employee Details' : 'Add New Employee'}
@@ -457,16 +680,18 @@ export default function EmployeesPage() {
                 <div className="space-y-3 p-4 bg-slate-50 border border-slate-100 rounded-xl">
                   <div>
                     <span className="text-[10px] text-outline font-bold uppercase block">Email</span>
-                    <span className="text-body-sm font-bold text-on-surface font-mono">{enrollResult.employee.email}</span>
+                    <span className="text-body-sm font-bold text-on-surface font-mono">{enrollResult.employee?.email || enrollResult.employee?.email}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-outline font-bold uppercase block">Employee ID</span>
-                    <span className="text-body-sm font-bold text-on-surface font-mono">{enrollResult.employee.employeeId}</span>
+                    <span className="text-body-sm font-bold text-on-surface font-mono">{enrollResult.employee?.employeeId}</span>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-outline font-bold uppercase block">Temporary Password</span>
-                    <span className="text-body-sm font-bold text-primary font-mono">{enrollResult.tempPassword}</span>
-                  </div>
+                  {enrollResult.tempPassword && (
+                    <div>
+                      <span className="text-[10px] text-outline font-bold uppercase block">Temporary Password</span>
+                      <span className="text-body-sm font-bold text-primary font-mono">{enrollResult.tempPassword}</span>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => {
@@ -479,88 +704,609 @@ export default function EmployeesPage() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleEnroll} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">First Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
-                    />
+              <form onSubmit={handleEnroll} className="space-y-6">
+                {/* Stepper progress */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3 overflow-x-auto gap-4 scrollbar-none">
+                    {['Personal', 'Professional', 'Compensation', 'Bank Details', 'Emergency', 'Access & Review'].map((stepName, idx) => (
+                      <button
+                        key={stepName}
+                        type="button"
+                        onClick={() => {
+                          if (idx > 0 && (!firstName.trim() || !lastName.trim() || !email.trim())) {
+                            alert('Please fill out first name, last name, and work email before moving to other steps.');
+                            return;
+                          }
+                          setActiveStep(idx);
+                        }}
+                        className={`text-body-xs font-bold uppercase tracking-wider pb-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+                          activeStep === idx
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-outline hover:text-on-surface'
+                        }`}
+                      >
+                        {idx + 1}. {stepName}
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Last Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
-                    />
+                </div>
+
+                {/* Step 0: Personal Info */}
+                {activeStep === 0 && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">First Name *</label>
+                        <input
+                          type="text"
+                          required
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Last Name *</label>
+                        <input
+                          type="text"
+                          required
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Work Email *</label>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Work Phone</label>
+                        <input
+                          type="text"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Personal Email</label>
+                        <input
+                          type="email"
+                          value={personalEmail}
+                          onChange={(e) => setPersonalEmail(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Personal Phone</label>
+                        <input
+                          type="text"
+                          value={personalPhone}
+                          onChange={(e) => setPersonalPhone(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">DOB</label>
+                        <input
+                          type="date"
+                          value={dateOfBirth}
+                          onChange={(e) => setDateOfBirth(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Gender</label>
+                        <select
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium animate-none"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Blood Group</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. O+"
+                          value={bloodGroup}
+                          onChange={(e) => setBloodGroup(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <h3 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Address Details</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Address Line 1</label>
+                          <input
+                            type="text"
+                            value={addressLine1}
+                            onChange={(e) => setAddressLine1(e.target.value)}
+                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Address Line 2</label>
+                          <input
+                            type="text"
+                            value={addressLine2}
+                            onChange={(e) => setAddressLine2(e.target.value)}
+                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">City</label>
+                          <input
+                            type="text"
+                            value={addressCity}
+                            onChange={(e) => setAddressCity(e.target.value)}
+                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">State</label>
+                          <input
+                            type="text"
+                            value={addressState}
+                            onChange={(e) => setAddressState(e.target.value)}
+                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Pincode</label>
+                          <input
+                            type="text"
+                            value={addressPincode}
+                            onChange={(e) => setAddressPincode(e.target.value)}
+                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Country</label>
+                          <input
+                            type="text"
+                            value={addressCountry}
+                            onChange={(e) => setAddressCountry(e.target.value)}
+                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div>
-                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
-                  />
-                </div>
+                {/* Step 1: Professional Info */}
+                {activeStep === 1 && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Designation</label>
+                        <input
+                          type="text"
+                          value={designation}
+                          onChange={(e) => setDesignation(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Employee Type</label>
+                        <select
+                          value={employeeType}
+                          onChange={(e) => setEmployeeType(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        >
+                          <option value="FULL_TIME">Full Time</option>
+                          <option value="PART_TIME">Part Time</option>
+                          <option value="INTERN">Intern</option>
+                          <option value="CONTRACTOR">Contractor</option>
+                        </select>
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Phone</label>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
-                  />
-                </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Department</label>
+                        <select
+                          value={departmentId}
+                          onChange={(e) => setDepartmentId(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        >
+                          <option value="">Select Department</option>
+                          {departments.map((d: any) => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Manager / Supervisor</label>
+                        <select
+                          value={managerId}
+                          onChange={(e) => setManagerId(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        >
+                          <option value="">Select Manager</option>
+                          {employees
+                            .filter((emp: any) => !editingEmployee || emp.id !== editingEmployee.id)
+                            .map((emp: any) => (
+                              <option key={emp.id} value={emp.id}>
+                                {emp.firstName} {emp.lastName} ({emp.designation || 'Staff'})
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Designation</label>
-                  <input
-                    type="text"
-                    value={designation}
-                    onChange={(e) => setDesignation(e.target.value)}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
-                  />
-                </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Join Date</label>
+                        <input
+                          type="date"
+                          value={joinDate}
+                          onChange={(e) => setJoinDate(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Probation End Date</label>
+                        <input
+                          type="date"
+                          value={probationEndDate}
+                          onChange={(e) => setProbationEndDate(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Join Date</label>
-                  <input
-                    type="date"
-                    value={joinDate}
-                    onChange={(e) => setJoinDate(e.target.value)}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
-                  />
-                </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Work Location</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Scranton HQ"
+                          value={workLocation}
+                          onChange={(e) => setWorkLocation(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Shift Configuration</label>
+                        <select
+                          value={shiftId}
+                          onChange={(e) => setShiftId(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        >
+                          <option value="">Select Shift Config</option>
+                          {shifts.map((s: any) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} ({s.checkInStart} - {s.checkInDeadline} deadline)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                <div className="pt-4 border-t border-slate-100 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditingEmployee(null);
-                    }}
-                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-on-surface rounded-xl text-label-md font-bold transition-all active:scale-[0.98] cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-md font-bold transition-all active:scale-[0.98] cursor-pointer"
-                  >
-                    {editingEmployee ? 'Save Changes' : 'Enroll'}
-                  </button>
+                {/* Step 2: Compensation */}
+                {activeStep === 2 && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Salary Band</label>
+                        <select
+                          value={salaryBand}
+                          onChange={(e) => setSalaryBand(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        >
+                          <option value="BAND_A">Band A (Executive)</option>
+                          <option value="BAND_B">Band B (Senior)</option>
+                          <option value="BAND_C">Band C (Lead / Manager)</option>
+                          <option value="BAND_D">Band D (Director / Head)</option>
+                          <option value="BAND_E">Band E (VP / C-Suite)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Basic Monthly Salary (₹)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={basicSalary}
+                          onChange={(e) => setBasicSalary(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Tax Regime</label>
+                        <select
+                          value={taxRegime}
+                          onChange={(e) => setTaxRegime(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        >
+                          <option value="NEW">New Tax Regime</option>
+                          <option value="OLD">Old Tax Regime</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">CTC Annual (₹)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={ctcAnnual}
+                          onChange={(e) => setCtcAnnual(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={pfApplicable}
+                          onChange={(e) => setPfApplicable(e.target.checked)}
+                          className="h-5 w-5 rounded border-slate-300 text-primary focus:ring-primary"
+                        />
+                        <span className="text-body-sm font-semibold text-slate-800">Provident Fund (PF) Contribution Applicable</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Bank Details */}
+                {activeStep === 3 && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex gap-3 text-blue-800">
+                      <span className="material-symbols-outlined text-[20px] shrink-0">lock</span>
+                      <p className="text-body-xs font-medium">Bank details and PAN are securely encrypted at rest using industry-grade AES-256-GCM. These fields are masked for authorized views.</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Account Holder Name</label>
+                        <input
+                          type="text"
+                          value={accountHolderName}
+                          onChange={(e) => setAccountHolderName(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Bank Name</label>
+                        <input
+                          type="text"
+                          value={bankName}
+                          onChange={(e) => setBankName(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">IFSC Code</label>
+                        <input
+                          type="text"
+                          value={ifscCode}
+                          onChange={(e) => setIfscCode(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Account Number</label>
+                        <input
+                          type="text"
+                          value={accountNumber}
+                          onChange={(e) => setAccountNumber(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">PAN Number</label>
+                        <input
+                          type="text"
+                          value={panNumber}
+                          onChange={(e) => setPanNumber(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Aadhaar Last 4 Digits</label>
+                        <input
+                          type="text"
+                          maxLength={4}
+                          placeholder="e.g. 1234"
+                          value={aadhaarLast4}
+                          onChange={(e) => setAadhaarLast4(e.target.value.replace(/\D/g, ''))}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Emergency Contact */}
+                {activeStep === 4 && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Contact Name</label>
+                        <input
+                          type="text"
+                          value={emergencyName}
+                          onChange={(e) => setEmergencyName(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Relation</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Spouse, Parent, Sibling"
+                          value={emergencyRelation}
+                          onChange={(e) => setEmergencyRelation(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Phone Number</label>
+                        <input
+                          type="text"
+                          value={emergencyPhone}
+                          onChange={(e) => setEmergencyPhone(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Alternative Phone Number</label>
+                        <input
+                          type="text"
+                          value={emergencyAltPhone}
+                          onChange={(e) => setEmergencyAltPhone(e.target.value)}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 5: Access & Review */}
+                {activeStep === 5 && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">System Permission Role</label>
+                      <select
+                        value={systemRoleField}
+                        onChange={(e) => setSystemRoleField(e.target.value)}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                      >
+                        <option value="SUPER_ADMIN">Super Admin</option>
+                        <option value="ORG_ADMIN">Organization Admin</option>
+                        <option value="HR">HR Specialist / Manager</option>
+                        <option value="FINANCE">Finance Manager</option>
+                        <option value="DEPARTMENT_HEAD">Department Head</option>
+                        <option value="MANAGER">Manager / Lead</option>
+                        <option value="EMPLOYEE">Employee</option>
+                        <option value="AUDITOR">Auditor</option>
+                        <option value="INTERN">Intern</option>
+                      </select>
+                    </div>
+
+                    <div className="pt-2 space-y-3">
+                      <h3 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Review Summary Checklist</h3>
+                      <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl text-body-xs font-semibold text-slate-600">
+                        <div>
+                          <span className="text-slate-400 block font-normal text-[10px] uppercase">Name</span>
+                          <span className="text-slate-800">{firstName || '-'} {lastName || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block font-normal text-[10px] uppercase">Work Email</span>
+                          <span className="text-slate-800 font-mono">{email || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block font-normal text-[10px] uppercase">Designation</span>
+                          <span className="text-slate-800">{designation || 'Not Assigned'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block font-normal text-[10px] uppercase">Salary Band / Monthly</span>
+                          <span className="text-slate-800">{salaryBand} {basicSalary ? `/ ₹${basicSalary}` : ''}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block font-normal text-[10px] uppercase">Bank Account</span>
+                          <span className="text-slate-800 font-mono">
+                            {accountNumber ? `Masked (${accountNumber.slice(-4)})` : 'Not Provided'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block font-normal text-[10px] uppercase">Emergency Phone</span>
+                          <span className="text-slate-800 font-mono">{emergencyPhone || 'Not Provided'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-4 border-t border-slate-100 flex justify-between gap-3">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowModal(false);
+                        setEditingEmployee(null);
+                      }}
+                      className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-on-surface rounded-xl text-label-md font-bold transition-all active:scale-[0.98] cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    {activeStep > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveStep(prev => prev - 1)}
+                        className="px-4 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-label-md font-bold transition-all active:scale-[0.98] cursor-pointer"
+                      >
+                        Back
+                      </button>
+                    )}
+                  </div>
+                  {activeStep < 5 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeStep === 0) {
+                          if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+                            alert('Please fill out all required fields: First Name, Last Name, and Work Email.');
+                            return;
+                          }
+                        }
+                        if (activeStep === 3) {
+                          const startedBank = bankName || accountNumber || ifscCode || accountHolderName || panNumber || aadhaarLast4;
+                          if (startedBank && (!bankName || !accountNumber || !ifscCode || !accountHolderName || !panNumber)) {
+                            alert('If providing bank details, please fill out all required fields: Bank Name, Account Number, IFSC Code, Account Holder Name, and PAN.');
+                            return;
+                          }
+                        }
+                        if (activeStep === 4) {
+                          const startedEmergency = emergencyName || emergencyRelation || emergencyPhone || emergencyAltPhone;
+                          if (startedEmergency && (!emergencyName || !emergencyRelation || !emergencyPhone)) {
+                            alert('If providing emergency contact, please fill out Name, Relation, and Phone Number.');
+                            return;
+                          }
+                        }
+                        setActiveStep(prev => prev + 1);
+                      }}
+                      className="px-6 py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-md font-bold transition-all active:scale-[0.98] cursor-pointer"
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-md font-bold transition-all active:scale-[0.98] cursor-pointer"
+                    >
+                      {editingEmployee ? 'Save Changes' : 'Enroll'}
+                    </button>
+                  )}
                 </div>
               </form>
             )}

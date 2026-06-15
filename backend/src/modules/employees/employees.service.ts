@@ -2,8 +2,11 @@ import { prisma } from "../../config/database";
 import { hashPassword } from "../../utils/hash.util";
 import { AuditService } from "../audit/audit.service";
 import { NotificationService } from "../notifications/notifications.service";
-import { AuditAction, UserStatus, NotificationType } from "@prisma/client";
+import { AuditAction, UserStatus, NotificationType, SalaryBand, EmployeeType, TaxRegime, SystemRole } from "@prisma/client";
 import { AppError } from "../../utils/errors.util";
+import { redis } from "../../config/redis";
+import { getPermissionScopes } from "../../utils/permission.util";
+import { encrypt, decrypt } from "../../utils/encryption.util";
 
 export class EmployeesService {
   static async listEmployees(
@@ -41,30 +44,16 @@ export class EmployeesService {
     }
 
     if (filters.taskAssignees === "true" || filters.taskAssignees === true) {
-      const isSuperAdmin = user.systemRole === "SUPER_ADMIN";
-      const isOrgAdmin = user.systemRole === "ORG_ADMIN";
-      const isHR = user.roles && user.roles.some((r: any) => r.roleName === "HR_MANAGER");
+      const scopes = await getPermissionScopes(user, orgId, "employee", "read");
 
-      if (!isSuperAdmin && !isOrgAdmin && !isHR) {
-        const headedDepts = await prisma.department.findMany({
-          where: { headId: user.id, isDeleted: false },
-          select: { id: true }
-        });
-        const deptIds = headedDepts.map((d) => d.id);
-
-        const ledTeams = await prisma.team.findMany({
-          where: { leadId: user.id, isDeleted: false },
-          select: { id: true }
-        });
-        const teamIds = ledTeams.map((t) => t.id);
-
+      if (!scopes.isGlobal) {
         where.OR = [
-          ...(deptIds.length > 0 ? [{ departmentId: { in: deptIds } }] : []),
-          ...(teamIds.length > 0 ? [{ teams: { some: { id: { in: teamIds } } } }] : []),
+          ...(scopes.departmentIds.length > 0 ? [{ departmentId: { in: scopes.departmentIds } }] : []),
+          ...(scopes.teamIds.length > 0 ? [{ teams: { some: { id: { in: scopes.teamIds } } } }] : []),
           { id: user.id }
         ];
 
-        if (deptIds.length === 0 && teamIds.length === 0) {
+        if (scopes.departmentIds.length === 0 && scopes.teamIds.length === 0) {
           where.OR = [{ id: user.id }];
         }
       }
@@ -103,8 +92,39 @@ export class EmployeesService {
       designation?: string;
       departmentId?: string;
       managerId?: string;
-      salaryBand?: string;
+      salaryBand?: SalaryBand;
       joinDate?: Date;
+
+      dateOfBirth?: Date;
+      gender?: string;
+      bloodGroup?: string;
+      personalEmail?: string;
+      personalPhone?: string;
+      address?: any;
+      employeeType?: EmployeeType;
+      workLocation?: string;
+      shiftId?: string;
+      probationEndDate?: Date;
+      basicSalary?: number;
+      pfApplicable?: boolean;
+      taxRegime?: TaxRegime;
+      ctcAnnual?: number;
+      systemRole?: SystemRole;
+
+      bankDetail?: {
+        bankName: string;
+        accountNumber: string;
+        ifscCode: string;
+        accountHolderName: string;
+        panNumber: string;
+        aadhaarLast4?: string;
+      };
+      emergencyContact?: {
+        name: string;
+        relation: string;
+        phone: string;
+        altPhone?: string;
+      };
     },
     actorId: string,
     req?: any
@@ -117,67 +137,101 @@ export class EmployeesService {
       throw AppError.conflict("Email is already in use");
     }
 
-    const year = new Date().getFullYear();
-    const count = await prisma.user.count({
-      where: {
-        organizationId: orgId,
-        employeeId: { startsWith: `EMP-${year}-` }
-      },
-      ignoreSoftDelete: true
-    } as any);
-    const index = String(count + 1).padStart(4, "0");
-    const employeeId = `EMP-${year}-${index}`;
+    const { bankDetail, emergencyContact, ...coreUserData } = data;
 
-    const tempPassword = `Temp-${year}-${Math.round(Math.random() * 10000)}`;
-    const passwordHash = await hashPassword(tempPassword);
+    const result = await prisma.$transaction(async (tx) => {
+      const year = new Date().getFullYear();
+      const count = await tx.user.count({
+        where: {
+          organizationId: orgId,
+          employeeId: { startsWith: `EMP-${year}-` }
+        },
+        ignoreSoftDelete: true
+      } as any);
+      const index = String(count + 1).padStart(4, "0");
+      const employeeId = `EMP-${year}-${index}`;
 
-    const employee = await prisma.user.create({
-      data: {
-        ...data,
-        employeeId,
-        passwordHash,
-        organizationId: orgId,
-        status: UserStatus.ACTIVE
-      }
-    });
+      const tempPassword = `Temp-${year}-${Math.round(Math.random() * 10000)}`;
+      const passwordHash = await hashPassword(tempPassword);
 
-    const policies = await prisma.leavePolicy.findMany({
-      where: { organizationId: orgId, isDeleted: false }
-    });
-
-    for (const policy of policies) {
-      await prisma.leaveBalance.create({
+      const employee = await tx.user.create({
         data: {
-          userId: employee.id,
-          leaveType: policy.leaveType,
-          year,
-          allocated: policy.daysAllowed,
-          used: 0,
-          pending: 0,
-          remaining: policy.daysAllowed
+          ...coreUserData,
+          employeeId,
+          passwordHash,
+          organizationId: orgId,
+          status: UserStatus.ACTIVE,
+          systemRole: data.systemRole || "EMPLOYEE"
         }
       });
-    }
 
+      if (bankDetail) {
+        await tx.bankDetail.create({
+          data: {
+            userId: employee.id,
+            bankName: bankDetail.bankName,
+            accountNumber: encrypt(bankDetail.accountNumber),
+            ifscCode: bankDetail.ifscCode,
+            accountHolderName: bankDetail.accountHolderName,
+            panNumber: encrypt(bankDetail.panNumber),
+            aadhaarLast4: bankDetail.aadhaarLast4 || null
+          }
+        });
+      }
+
+      if (emergencyContact) {
+        await tx.emergencyContact.create({
+          data: {
+            userId: employee.id,
+            name: emergencyContact.name,
+            relation: emergencyContact.relation,
+            phone: emergencyContact.phone,
+            altPhone: emergencyContact.altPhone || null
+          }
+        });
+      }
+
+      const policies = await tx.leavePolicy.findMany({
+        where: { organizationId: orgId, isDeleted: false }
+      });
+
+      for (const policy of policies) {
+        await tx.leaveBalance.create({
+          data: {
+            userId: employee.id,
+            leaveType: policy.leaveType,
+            year,
+            allocated: policy.daysAllowed,
+            used: 0,
+            pending: 0,
+            remaining: policy.daysAllowed
+          }
+        });
+      }
+
+      return { employee, tempPassword };
+    });
+
+    // Logging audit and notification after transaction commit
     await AuditService.log({
       organizationId: orgId,
       actorId,
       action: AuditAction.CREATED,
       module: "employees",
-      targetId: employee.id,
+      targetId: result.employee.id,
       targetType: "User",
-      newValue: { employeeId },
+      newValue: { employeeId: result.employee.employeeId },
       req
     });
 
     await NotificationService.notify(
-      employee.id,
+      result.employee.id,
       NotificationType.SYSTEM,
       "Welcome to WorkforceOS",
-      `Your account has been created. Your temporary password is ${tempPassword}`
+      `Your account has been created. Please secure your temporary login credentials from your administrator.`
     );
 
-    return { employee, tempPassword };
+    return result;
   }
 
   static async getEmployeeById(id: string, orgId: string) {
@@ -207,12 +261,32 @@ export class EmployeesService {
         teamLead: {
           where: { isDeleted: false },
           select: { id: true, name: true }
-        }
+        },
+        bankDetail: true,
+        emergencyContact: true
       }
     });
+
     if (!emp) {
       throw AppError.notFound("Employee profile not found");
     }
+
+    if (emp.bankDetail) {
+      try {
+        const decryptedAccount = decrypt(emp.bankDetail.accountNumber);
+        const decryptedPan = decrypt(emp.bankDetail.panNumber);
+        
+        (emp.bankDetail as any).accountNumber = decryptedAccount.length > 4
+          ? "*".repeat(decryptedAccount.length - 4) + decryptedAccount.slice(-4)
+          : decryptedAccount;
+        (emp.bankDetail as any).panNumber = decryptedPan.length > 4
+          ? "*".repeat(decryptedPan.length - 4) + decryptedPan.slice(-4)
+          : decryptedPan;
+      } catch (err) {
+        console.error("Failed to decrypt bank detail:", err);
+      }
+    }
+
     return emp;
   }
 
@@ -231,10 +305,52 @@ export class EmployeesService {
       throw AppError.notFound("Employee profile not found");
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data
+    const { bankDetail, emergencyContact, ...coreUserData } = data;
+
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: { id },
+        data: coreUserData
+      });
+
+      if (bankDetail) {
+        const updateData: any = { ...bankDetail };
+        if (bankDetail.accountNumber) updateData.accountNumber = encrypt(bankDetail.accountNumber);
+        if (bankDetail.panNumber) updateData.panNumber = encrypt(bankDetail.panNumber);
+
+        await tx.bankDetail.upsert({
+          where: { userId: id },
+          update: updateData,
+          create: {
+            userId: id,
+            bankName: bankDetail.bankName || "",
+            accountNumber: encrypt(bankDetail.accountNumber || ""),
+            ifscCode: bankDetail.ifscCode || "",
+            accountHolderName: bankDetail.accountHolderName || "",
+            panNumber: encrypt(bankDetail.panNumber || ""),
+            aadhaarLast4: bankDetail.aadhaarLast4 || null
+          }
+        });
+      }
+
+      if (emergencyContact) {
+        await tx.emergencyContact.upsert({
+          where: { userId: id },
+          update: emergencyContact,
+          create: {
+            userId: id,
+            name: emergencyContact.name || "",
+            relation: emergencyContact.relation || "",
+            phone: emergencyContact.phone || "",
+            altPhone: emergencyContact.altPhone || null
+          }
+        });
+      }
+
+      return user;
     });
+
+    await redis.del(`user:session:${id}`).catch(() => {});
 
     const fields = ["firstName", "lastName", "email", "phone", "avatarUrl", "designation", "departmentId", "managerId", "salaryBand", "status"];
     for (const f of fields) {
@@ -274,6 +390,8 @@ export class EmployeesService {
         deletedAt: new Date()
       }
     });
+
+    await redis.del(`user:session:${id}`).catch(() => {});
 
     await prisma.refreshToken.updateMany({
       where: { userId: id },

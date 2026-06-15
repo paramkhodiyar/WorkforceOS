@@ -3,6 +3,7 @@ import { PayrollService } from "./payroll.service";
 import { sendSuccess, sendPaginated } from "../../utils/response.util";
 import { parsePagination } from "../../utils/pagination.util";
 import { asyncHandler } from "../../utils/asyncHandler.util";
+import { getPermissionScopes } from "../../utils/permission.util";
 
 export const getRuns = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
@@ -60,9 +61,10 @@ export const getMyPayslips = asyncHandler(async (req: Request, res: Response) =>
 export const getPayslip = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const orgId = req.org!.id;
+  const readScopes = await getPermissionScopes(req.user!, orgId, "payroll", "read");
   const isSuperAdmin = req.user!.systemRole === "SUPER_ADMIN";
-  const hasGlobalRead = req.permissions?.some((p) => p.resource === "payroll" && p.action === "read") || req.user!.systemRole === "ORG_ADMIN" || isSuperAdmin;
-
+  const hasGlobalRead = readScopes.isGlobal;
+ 
   const payslip = await PayrollService.getPayslipById(
     req.params.recordId,
     isSuperAdmin ? undefined : orgId,

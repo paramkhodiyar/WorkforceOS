@@ -3,6 +3,7 @@ import { DepartmentsService } from "./departments.service";
 import { sendSuccess } from "../../utils/response.util";
 import { asyncHandler } from "../../utils/asyncHandler.util";
 import { AppError } from "../../utils/errors.util";
+import { getPermissionScopes } from "../../utils/permission.util";
 
 export const listDepartments = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
@@ -26,10 +27,8 @@ export const updateDepartment = asyncHandler(async (req: Request, res: Response)
   const orgId = req.org!.id;
   const dept = await DepartmentsService.getDepartmentById(req.params.id, orgId);
 
-  const isAuthorizedAdminOrHR =
-    req.user!.systemRole === "SUPER_ADMIN" ||
-    req.user!.systemRole === "ORG_ADMIN" ||
-    (req.user!.roles || []).some((r: any) => r.roleName === "HR_MANAGER");
+  const scopes = await getPermissionScopes(req.user!, orgId, "employee", "update:any");
+  const isAuthorizedAdminOrHR = scopes.isGlobal;
 
   if (!isAuthorizedAdminOrHR && dept.headId !== req.user!.id) {
     throw AppError.forbidden("Access denied: insufficient permissions to manage this department");

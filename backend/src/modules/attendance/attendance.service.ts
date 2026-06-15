@@ -20,8 +20,37 @@ export class AttendanceService {
       throw AppError.badRequest("Already checked in today");
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { shift: true }
+    });
+
+    if (!user) {
+      throw AppError.notFound("User not found");
+    }
+
+    let shift = user.shift;
+    if (!shift) {
+      shift = await prisma.shiftConfig.findFirst({
+        where: { organizationId: orgId, isDefault: true, isDeleted: false }
+      });
+    }
+
     const checkInTime = new Date();
-    const isLate = checkInTime.getHours() > 9 || (checkInTime.getHours() === 9 && checkInTime.getMinutes() > 30);
+    let isLate = false;
+
+    if (shift) {
+      const [deadlineHour, deadlineMin] = shift.checkInDeadline.split(":").map(Number);
+      const checkInHour = checkInTime.getHours();
+      const checkInMin = checkInTime.getMinutes();
+
+      if (checkInHour > deadlineHour || (checkInHour === deadlineHour && checkInMin > deadlineMin)) {
+        isLate = true;
+      }
+    } else {
+      isLate = checkInTime.getHours() > 9 || (checkInTime.getHours() === 9 && checkInTime.getMinutes() > 30);
+    }
+
     const status = isLate ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
 
     const record = await prisma.attendance.upsert({
@@ -62,7 +91,8 @@ export class AttendanceService {
   static async checkOut(userId: string, orgId: string, req?: any) {
     const today = this.getTodayDate();
     const existing = await prisma.attendance.findUnique({
-      where: { userId_date: { userId, date: today } }
+      where: { userId_date: { userId, date: today } },
+      include: { breaks: true }
     });
 
     if (!existing || !existing.checkIn) {
@@ -76,10 +106,13 @@ export class AttendanceService {
     const checkOutTime = new Date();
     let totalHours = (checkOutTime.getTime() - existing.checkIn.getTime()) / (1000 * 60 * 60);
 
-    if (existing.breakStart && existing.breakEnd) {
-      const breakHours = (existing.breakEnd.getTime() - existing.breakStart.getTime()) / (1000 * 60 * 60);
-      totalHours = Math.max(0, totalHours - breakHours);
+    let totalBreakMs = 0;
+    for (const b of existing.breaks) {
+      const end = b.breakEnd || new Date();
+      totalBreakMs += (end.getTime() - b.breakStart.getTime());
     }
+    const breakHours = totalBreakMs / (1000 * 60 * 60);
+    totalHours = Math.max(0, totalHours - breakHours);
 
     const record = await prisma.attendance.update({
       where: { id: existing.id },
@@ -105,20 +138,29 @@ export class AttendanceService {
   static async breakStart(userId: string, orgId: string, req?: any) {
     const today = this.getTodayDate();
     const existing = await prisma.attendance.findUnique({
-      where: { userId_date: { userId, date: today } }
+      where: { userId_date: { userId, date: today } },
+      include: { breaks: true }
     });
 
     if (!existing || !existing.checkIn) {
       throw AppError.badRequest("No check-in record found for today");
     }
 
-    if (existing.breakStart) {
+    const activeBreak = existing.breaks.find(b => !b.breakEnd);
+    if (activeBreak) {
       throw AppError.badRequest("Break already started");
     }
 
-    const record = await prisma.attendance.update({
+    await prisma.attendanceBreak.create({
+      data: {
+        attendanceId: existing.id,
+        breakStart: new Date()
+      }
+    });
+
+    const record = await prisma.attendance.findUnique({
       where: { id: existing.id },
-      data: { breakStart: new Date() }
+      include: { breaks: true }
     });
 
     await AuditService.log({
@@ -126,32 +168,39 @@ export class AttendanceService {
       actorId: userId,
       action: AuditAction.UPDATED,
       module: "attendance",
-      targetId: record.id,
+      targetId: existing.id,
       targetType: "Attendance",
       newValue: { breakStart: true },
       req
     });
 
-    return record;
+    return record!;
   }
 
   static async breakEnd(userId: string, orgId: string, req?: any) {
     const today = this.getTodayDate();
     const existing = await prisma.attendance.findUnique({
-      where: { userId_date: { userId, date: today } }
+      where: { userId_date: { userId, date: today } },
+      include: { breaks: true }
     });
 
-    if (!existing || !existing.breakStart) {
+    if (!existing) {
+      throw AppError.badRequest("No attendance record found for today");
+    }
+
+    const activeBreak = existing.breaks.find(b => !b.breakEnd);
+    if (!activeBreak) {
       throw AppError.badRequest("Break has not been started");
     }
 
-    if (existing.breakEnd) {
-      throw AppError.badRequest("Break already ended");
-    }
-
-    const record = await prisma.attendance.update({
-      where: { id: existing.id },
+    await prisma.attendanceBreak.update({
+      where: { id: activeBreak.id },
       data: { breakEnd: new Date() }
+    });
+
+    const record = await prisma.attendance.findUnique({
+      where: { id: existing.id },
+      include: { breaks: true }
     });
 
     await AuditService.log({
@@ -159,13 +208,13 @@ export class AttendanceService {
       actorId: userId,
       action: AuditAction.UPDATED,
       module: "attendance",
-      targetId: record.id,
+      targetId: record!.id,
       targetType: "Attendance",
       newValue: { breakEnd: true },
       req
     });
 
-    return record;
+    return record!;
   }
 
   static async getTodayRecord(userId: string) {
@@ -289,7 +338,8 @@ export class AttendanceService {
     req?: any
   ) {
     const existing = await prisma.attendance.findUnique({
-      where: { id }
+      where: { id },
+      include: { breaks: true }
     });
 
     if (!existing) {
@@ -302,10 +352,13 @@ export class AttendanceService {
 
     if (checkInTime && checkOutTime) {
       let calcHours = (new Date(checkOutTime).getTime() - new Date(checkInTime).getTime()) / (1000 * 60 * 60);
-      if (existing.breakStart && existing.breakEnd) {
-        const breakHours = (existing.breakEnd.getTime() - existing.breakStart.getTime()) / (1000 * 60 * 60);
-        calcHours = Math.max(0, calcHours - breakHours);
+      let totalBreakMs = 0;
+      for (const b of existing.breaks) {
+        const end = b.breakEnd || new Date();
+        totalBreakMs += (end.getTime() - b.breakStart.getTime());
       }
+      const breakHours = totalBreakMs / (1000 * 60 * 60);
+      calcHours = Math.max(0, calcHours - breakHours);
       totalHours = Math.round(calcHours * 100) / 100;
     }
 
@@ -339,5 +392,12 @@ export class AttendanceService {
 
   static async getSummaryStats(userId: string, month: number, year: number) {
     return getAttendanceSummary(userId, month, year);
+  }
+
+  static async listShifts(orgId: string) {
+    return prisma.shiftConfig.findMany({
+      where: { organizationId: orgId, isDeleted: false },
+      orderBy: { name: "asc" }
+    });
   }
 }

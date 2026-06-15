@@ -10,10 +10,26 @@ import routes from "./routes";
 
 const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        objectSrc: ["'none'"],
+      },
+    },
+    hsts: { maxAge: 31536000, includeSubDomains: true },
+    noSniff: true,
+    frameguard: { action: 'deny' },
+  })
+);
 app.use(
   cors({
-    origin: config.CORS_ORIGINS
+    origin: config.CORS_ORIGINS,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 app.use(compression());

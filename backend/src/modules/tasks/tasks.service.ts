@@ -4,6 +4,7 @@ import { AppError } from "../../utils/errors.util";
 import { AuditService } from "../audit/audit.service";
 import { NotificationService } from "../notifications/notifications.service";
 import { TASK_TRANSITIONS } from "../../config/constants";
+import { getPermissionScopes } from "../../utils/permission.util";
 
 export class TasksService {
   static validateStateTransition(current: TaskStatus, next: TaskStatus) {
@@ -19,8 +20,19 @@ export class TasksService {
     data: { title: string; description?: string; assigneeId?: string; priority?: TaskPriority; dueDate?: Date; parentTaskId?: string; dependencies?: string[] },
     req?: any
   ) {
-    const count = await prisma.task.count({ ignoreSoftDelete: true } as any);
-    const taskId = `TASK-${String(count + 1).padStart(4, "0")}`;
+    const lastTask = await prisma.task.findFirst({
+      orderBy: { taskId: "desc" },
+      select: { taskId: true },
+      ignoreSoftDelete: true
+    } as any);
+    let nextNum = 1;
+    if (lastTask && lastTask.taskId) {
+      const match = lastTask.taskId.match(/TASK-(\d+)/);
+      if (match) {
+        nextNum = parseInt(match[1], 10) + 1;
+      }
+    }
+    const taskId = `TASK-${String(nextNum).padStart(4, "0")}`;
 
     const status = data.assigneeId ? TaskStatus.ASSIGNED : TaskStatus.DRAFT;
 
@@ -35,6 +47,15 @@ export class TasksService {
         priority: data.priority || TaskPriority.MEDIUM,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         parentTaskId: data.parentTaskId || null
+      }
+    });
+
+    await prisma.taskStatusHistory.create({
+      data: {
+        taskId: task.id,
+        fromStatus: null,
+        toStatus: status,
+        changedBy: creatorId
       }
     });
 
@@ -95,39 +116,43 @@ export class TasksService {
       creator: { organizationId: orgId }
     };
 
-    const isSuperAdmin = user.systemRole === "SUPER_ADMIN";
-    const isOrgAdmin = user.systemRole === "ORG_ADMIN";
-    const isHR = user.roles && user.roles.some((r: any) => r.roleName === "HR_MANAGER");
+    const orgScopes = await getPermissionScopes(user, orgId, "task", "read:org");
+    const assignedScopes = await getPermissionScopes(user, orgId, "task", "read:assigned");
+    const createdScopes = await getPermissionScopes(user, orgId, "task", "read:created");
 
-    if (!isSuperAdmin && !isOrgAdmin && !isHR) {
-      const headedDepts = await prisma.department.findMany({
-        where: { headId: user.id, isDeleted: false },
-        select: { id: true }
-      });
-      const deptIds = headedDepts.map((d) => d.id);
+    const isGlobal = orgScopes.isGlobal;
+    if (!isGlobal) {
+      const departmentIds = Array.from(new Set([...assignedScopes.departmentIds, ...createdScopes.departmentIds]));
+      const teamIds = Array.from(new Set([...assignedScopes.teamIds, ...createdScopes.teamIds]));
 
-      const ledTeams = await prisma.team.findMany({
-        where: { leadId: user.id, isDeleted: false },
-        select: { id: true }
-      });
-      const teamIds = ledTeams.map((t) => t.id);
+      const conditions: any[] = [
+        { creatorId: user.id },
+        { assigneeId: user.id }
+      ];
 
+      if (departmentIds.length > 0) {
+        conditions.push({ assignee: { departmentId: { in: departmentIds } } });
+      }
+      if (teamIds.length > 0) {
+        conditions.push({ assignee: { teams: { some: { id: { in: teamIds } } } } });
+      }
+
+      // Add extra filters if specified and authorized by scope
+      const userDeptId = user.departmentId;
       const userTeams = await prisma.team.findMany({
         where: { members: { some: { id: user.id } }, isDeleted: false },
         select: { id: true }
       });
       const memberTeamIds = userTeams.map((t) => t.id);
 
-      const userDeptId = user.departmentId;
+      if (filters.teamId && (teamIds.includes(filters.teamId) || memberTeamIds.includes(filters.teamId))) {
+        conditions.push({ assignee: { teams: { some: { id: filters.teamId } } } });
+      }
+      if (filters.departmentId && (departmentIds.includes(filters.departmentId) || userDeptId === filters.departmentId)) {
+        conditions.push({ assignee: { departmentId: filters.departmentId } });
+      }
 
-      where.OR = [
-        { creatorId: user.id },
-        { assigneeId: user.id },
-        ...(deptIds.length > 0 ? [{ assignee: { departmentId: { in: deptIds } } }] : []),
-        ...(teamIds.length > 0 ? [{ assignee: { teams: { some: { id: { in: teamIds } } } } }] : []),
-        ...(filters.teamId && memberTeamIds.includes(filters.teamId) ? [{ assignee: { teams: { some: { id: filters.teamId } } } }] : []),
-        ...(filters.departmentId && userDeptId === filters.departmentId ? [{ assignee: { departmentId: filters.departmentId } }] : [])
-      ];
+      where.OR = conditions;
     }
 
     if (filters.status) where.status = filters.status;
@@ -227,26 +252,17 @@ export class TasksService {
       throw AppError.notFound("Task not found");
     }
 
-    const isSuperAdmin = user.systemRole === "SUPER_ADMIN";
-    const isOrgAdmin = user.systemRole === "ORG_ADMIN";
-    const isHR = user.roles && user.roles.some((r: any) => r.roleName === "HR_MANAGER");
-
-    if (!isSuperAdmin && !isOrgAdmin && !isHR) {
+    const orgScopes = await getPermissionScopes(user, orgId, "task", "read:org");
+    if (!orgScopes.isGlobal) {
       const isCreatorOrAssignee = task.creatorId === user.id || task.assigneeId === user.id;
       if (!isCreatorOrAssignee) {
-        const headedDepts = await prisma.department.findMany({
-          where: { headId: user.id, isDeleted: false },
-          select: { id: true }
-        });
-        const deptIds = headedDepts.map(d => d.id);
+        const assignedScopes = await getPermissionScopes(user, orgId, "task", "read:assigned");
+        const createdScopes = await getPermissionScopes(user, orgId, "task", "read:created");
+        
+        const departmentIds = Array.from(new Set([...assignedScopes.departmentIds, ...createdScopes.departmentIds]));
+        const teamIds = Array.from(new Set([...assignedScopes.teamIds, ...createdScopes.teamIds]));
 
-        const ledTeams = await prisma.team.findMany({
-          where: { leadId: user.id, isDeleted: false },
-          select: { id: true }
-        });
-        const teamIds = ledTeams.map(t => t.id);
-
-        const isDeptHeadOfAssignee = task.assignee?.departmentId && deptIds.includes(task.assignee.departmentId);
+        const isDeptHeadOfAssignee = task.assignee?.departmentId && departmentIds.includes(task.assignee.departmentId);
         const isTeamLeadOfAssignee = task.assignee?.teams && task.assignee.teams.some(t => teamIds.includes(t.id));
 
         if (!isDeptHeadOfAssignee && !isTeamLeadOfAssignee) {
@@ -269,6 +285,15 @@ export class TasksService {
 
     if (data.status && data.status !== task.status) {
       this.validateStateTransition(task.status, data.status);
+
+      await prisma.taskStatusHistory.create({
+        data: {
+          taskId: id,
+          fromStatus: task.status,
+          toStatus: data.status,
+          changedBy: actorId
+        }
+      });
 
       await AuditService.log({
         organizationId: orgId,
@@ -303,7 +328,7 @@ export class TasksService {
     return updated;
   }
 
-  static async deleteTask(id: string, orgId: string, actorId: string, req?: any) {
+  static async deleteTask(id: string, orgId: string, user: any, req?: any) {
     const task = await prisma.task.findFirst({
       where: { id, isDeleted: false, creator: { organizationId: orgId } }
     });
@@ -312,16 +337,11 @@ export class TasksService {
       throw AppError.notFound("Task not found");
     }
 
-    const isCreator = task.creatorId === actorId;
-    const user = await prisma.user.findUnique({
-      where: { id: actorId },
-      include: { roles: { include: { role: true } } }
-    });
+    const deleteScopes = await getPermissionScopes(user, orgId, "task", "delete");
+    const isCreator = task.creatorId === user.id;
 
-    const isManager = user?.systemRole === "ORG_ADMIN" || user?.roles.some((ur) => ur.role.name === "TEAM_MANAGER" || ur.role.name === "HR_MANAGER");
-
-    if (!isCreator && !isManager) {
-      throw AppError.forbidden("Only the creator or a manager can delete this task");
+    if (!isCreator && !deleteScopes.isGlobal) {
+      throw AppError.forbidden("Only the creator or an admin can delete this task");
     }
 
     await prisma.task.update({
@@ -334,7 +354,7 @@ export class TasksService {
 
     await AuditService.log({
       organizationId: orgId,
-      actorId,
+      actorId: user.id,
       action: AuditAction.DELETED,
       module: "tasks",
       targetId: id,
@@ -362,6 +382,15 @@ export class TasksService {
       data: {
         assigneeId,
         status: newStatus
+      }
+    });
+
+    await prisma.taskStatusHistory.create({
+      data: {
+        taskId: id,
+        fromStatus: task.status,
+        toStatus: newStatus,
+        changedBy: actorId
       }
     });
 
@@ -404,6 +433,15 @@ export class TasksService {
       data: { status: TaskStatus.ACCEPTED }
     });
 
+    await prisma.taskStatusHistory.create({
+      data: {
+        taskId: id,
+        fromStatus: task.status,
+        toStatus: TaskStatus.ACCEPTED,
+        changedBy: userId
+      }
+    });
+
     await AuditService.log({
       organizationId: orgId,
       actorId: userId,
@@ -437,8 +475,32 @@ export class TasksService {
         data: { status: TaskStatus.IN_PROGRESS }
       });
       this.validateStateTransition(TaskStatus.IN_PROGRESS, nextStatus);
+      await prisma.taskStatusHistory.create({
+        data: {
+          taskId: id,
+          fromStatus: TaskStatus.ACCEPTED,
+          toStatus: TaskStatus.IN_PROGRESS,
+          changedBy: userId
+        }
+      });
+      await prisma.taskStatusHistory.create({
+        data: {
+          taskId: id,
+          fromStatus: TaskStatus.IN_PROGRESS,
+          toStatus: nextStatus,
+          changedBy: userId
+        }
+      });
     } else {
       this.validateStateTransition(currentStatus, nextStatus);
+      await prisma.taskStatusHistory.create({
+        data: {
+          taskId: id,
+          fromStatus: currentStatus,
+          toStatus: nextStatus,
+          changedBy: userId
+        }
+      });
     }
 
     const updated = await prisma.task.update({
@@ -493,12 +555,30 @@ export class TasksService {
       data: { status: TaskStatus.IN_REVIEW }
     });
 
+    await prisma.taskStatusHistory.create({
+      data: {
+        taskId: id,
+        fromStatus: task.status,
+        toStatus: TaskStatus.IN_REVIEW,
+        changedBy: reviewerId
+      }
+    });
+
     const nextStatus = action === "APPROVED" ? TaskStatus.APPROVED : TaskStatus.CHANGES_REQUESTED;
     this.validateStateTransition(TaskStatus.IN_REVIEW, nextStatus);
 
     const updated = await prisma.task.update({
       where: { id },
       data: { status: nextStatus }
+    });
+
+    await prisma.taskStatusHistory.create({
+      data: {
+        taskId: id,
+        fromStatus: TaskStatus.IN_REVIEW,
+        toStatus: nextStatus,
+        changedBy: reviewerId
+      }
     });
 
     await prisma.taskReview.create({
@@ -552,6 +632,15 @@ export class TasksService {
       data: { status: TaskStatus.RESUBMITTED }
     });
 
+    await prisma.taskStatusHistory.create({
+      data: {
+        taskId: id,
+        fromStatus: task.status,
+        toStatus: TaskStatus.RESUBMITTED,
+        changedBy: userId
+      }
+    });
+
     await AuditService.log({
       organizationId: orgId,
       actorId: userId,
@@ -589,6 +678,15 @@ export class TasksService {
     const updated = await prisma.task.update({
       where: { id },
       data: { status: TaskStatus.CLOSED }
+    });
+
+    await prisma.taskStatusHistory.create({
+      data: {
+        taskId: id,
+        fromStatus: task.status,
+        toStatus: TaskStatus.CLOSED,
+        changedBy: userId
+      }
     });
 
     await AuditService.log({

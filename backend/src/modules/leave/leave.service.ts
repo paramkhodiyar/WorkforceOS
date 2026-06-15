@@ -3,6 +3,7 @@ import { LeaveType, LeaveStatus, AuditAction, NotificationType } from "@prisma/c
 import { AppError } from "../../utils/errors.util";
 import { AuditService } from "../audit/audit.service";
 import { NotificationService } from "../notifications/notifications.service";
+import { getPermissionScopes } from "../../utils/permission.util";
 
 export class LeaveService {
   static async getBalance(userId: string, year: number) {
@@ -128,27 +129,74 @@ export class LeaveService {
   }
 
   static async getPendingApprovals(user: any, orgId: string, page = 1, limit = 10) {
+    const hrScopes = await getPermissionScopes(user, orgId, "leave", "approve:hr");
+    const managerScopes = await getPermissionScopes(user, orgId, "leave", "approve:manager");
+
+    const conditions: any[] = [];
+
+    // HR Approval Step
+    if (hrScopes.isGlobal) {
+      conditions.push({
+        status: LeaveStatus.MANAGER_APPROVED,
+        user: { organizationId: orgId }
+      });
+    }
+
+    // Manager Approval Step (Global/Org Scope)
+    if (managerScopes.isGlobal) {
+      conditions.push({
+        status: LeaveStatus.PENDING,
+        user: { organizationId: orgId }
+      });
+    } else {
+      // Scoped Manager Approval
+      const scopedOrConditions: any[] = [];
+
+      // Department scope
+      if (managerScopes.departmentIds.length > 0) {
+        scopedOrConditions.push({
+          user: { departmentId: { in: managerScopes.departmentIds } }
+        });
+      }
+
+      // Team scope or Direct Reports (Manager)
+      if (managerScopes.teamIds.length > 0 || user.systemRole === "MANAGER" || user.systemRole === "DEPARTMENT_HEAD") {
+        // Direct manager reports
+        scopedOrConditions.push({
+          user: { managerId: user.id }
+        });
+        // Team member reports
+        if (managerScopes.teamIds.length > 0) {
+          scopedOrConditions.push({
+            user: {
+              teams: {
+                some: { id: { in: managerScopes.teamIds } }
+              }
+            }
+          });
+        }
+      }
+
+      if (scopedOrConditions.length > 0) {
+        conditions.push({
+          status: LeaveStatus.PENDING,
+          user: {
+            organizationId: orgId,
+            OR: scopedOrConditions
+          }
+        });
+      }
+    }
+
+    if (conditions.length === 0) {
+      return { requests: [], total: 0 };
+    }
+
     const where: any = {
       isDeleted: false,
-      userId: { not: user.id }
+      userId: { not: user.id },
+      OR: conditions
     };
-
-    const isHR = user.systemRole === "HR" || (user.roles && user.roles.some((r: any) => r.roleName === "HR_MANAGER"));
-    const isAdmin = user.systemRole === "SUPER_ADMIN" || user.systemRole === "ORG_ADMIN";
-
-    if (isAdmin) {
-      where.status = { in: [LeaveStatus.PENDING, LeaveStatus.MANAGER_APPROVED] };
-      where.user = { organizationId: orgId };
-    } else if (isHR) {
-      where.status = LeaveStatus.MANAGER_APPROVED;
-      where.user = { organizationId: orgId };
-    } else {
-      where.status = LeaveStatus.PENDING;
-      where.user = { 
-        organizationId: orgId,
-        managerId: user.id 
-      };
-    }
 
     const total = await prisma.leaveRequest.count({ where });
     const requests = await prisma.leaveRequest.findMany({

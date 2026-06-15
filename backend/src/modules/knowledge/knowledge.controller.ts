@@ -3,6 +3,7 @@ import { KnowledgeService } from "./knowledge.service";
 import { sendSuccess, sendPaginated } from "../../utils/response.util";
 import { parsePagination } from "../../utils/pagination.util";
 import { asyncHandler } from "../../utils/asyncHandler.util";
+import { getPermissionScopes } from "../../utils/permission.util";
 
 export const listArticles = asyncHandler(async (req: Request, res: Response) => {
   const { page, limit } = parsePagination(req.query);
@@ -32,7 +33,10 @@ export const createArticle = asyncHandler(async (req: Request, res: Response) =>
 
 export const getArticle = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const isHrOrAdmin = req.user!.systemRole === "ORG_ADMIN" || req.user!.systemRole === "SUPER_ADMIN" || (req.user!.roles?.some((ur: any) => ur.roleName === "HR_MANAGER") ?? false);
+  const orgId = req.org!.id;
+  const updateScopes = await getPermissionScopes(req.user!, orgId, "knowledge", "update");
+  const publishScopes = await getPermissionScopes(req.user!, orgId, "knowledge", "publish");
+  const isHrOrAdmin = updateScopes.isGlobal || publishScopes.isGlobal;
 
   const article = await KnowledgeService.getArticleById(req.params.id, userId, isHrOrAdmin);
   return sendSuccess(res, article);

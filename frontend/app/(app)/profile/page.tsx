@@ -22,6 +22,33 @@ function ProfileContent() {
   const [phone, setPhone] = useState('');
   const [designation, setDesignation] = useState('');
 
+  // Personal Info edit states
+  const [personalEmail, setPersonalEmail] = useState('');
+  const [personalPhone, setPersonalPhone] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [gender, setGender] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [addressCity, setAddressCity] = useState('');
+  const [addressState, setAddressState] = useState('');
+  const [addressPincode, setAddressPincode] = useState('');
+  const [addressCountry, setAddressCountry] = useState('');
+
+  // Bank Details edit states
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [panNumber, setPanNumber] = useState('');
+  const [aadhaarLast4, setAadhaarLast4] = useState('');
+
+  // Emergency Contact edit states
+  const [emergencyName, setEmergencyName] = useState('');
+  const [emergencyRelation, setEmergencyRelation] = useState('');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
+  const [emergencyAltPhone, setEmergencyAltPhone] = useState('');
+
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
@@ -74,17 +101,99 @@ function ProfileContent() {
       setLastName(profile.lastName || '');
       setPhone(profile.phone || '');
       setDesignation(profile.designation || '');
+
+      setPersonalEmail(profile.personalEmail || '');
+      setPersonalPhone(profile.personalPhone || '');
+      setDateOfBirth(profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : '');
+      setGender(profile.gender || '');
+      setBloodGroup(profile.bloodGroup || '');
+      if (profile.address) {
+        setAddressLine1(profile.address.line1 || '');
+        setAddressLine2(profile.address.line2 || '');
+        setAddressCity(profile.address.city || '');
+        setAddressState(profile.address.state || '');
+        setAddressPincode(profile.address.pincode || '');
+        setAddressCountry(profile.address.country || '');
+      } else {
+        setAddressLine1('');
+        setAddressLine2('');
+        setAddressCity('');
+        setAddressState('');
+        setAddressPincode('');
+        setAddressCountry('');
+      }
+
+      if (profile.bankDetail) {
+        setBankName(profile.bankDetail.bankName || '');
+        setAccountNumber(profile.bankDetail.accountNumber || '');
+        setIfscCode(profile.bankDetail.ifscCode || '');
+        setAccountHolderName(profile.bankDetail.accountHolderName || '');
+        setPanNumber(profile.bankDetail.panNumber || '');
+        setAadhaarLast4(profile.bankDetail.aadhaarLast4 || '');
+      } else {
+        setBankName('');
+        setAccountNumber('');
+        setIfscCode('');
+        setAccountHolderName('');
+        setPanNumber('');
+        setAadhaarLast4('');
+      }
+
+      if (profile.emergencyContact) {
+        setEmergencyName(profile.emergencyContact.name || '');
+        setEmergencyRelation(profile.emergencyContact.relation || '');
+        setEmergencyPhone(profile.emergencyContact.phone || '');
+        setEmergencyAltPhone(profile.emergencyContact.altPhone || '');
+      } else {
+        setEmergencyName('');
+        setEmergencyRelation('');
+        setEmergencyPhone('');
+        setEmergencyAltPhone('');
+      }
     }
   }, [profile]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     try {
+      const address = addressLine1 || addressCity || addressState || addressPincode ? {
+        line1: addressLine1,
+        line2: addressLine2 || undefined,
+        city: addressCity,
+        state: addressState,
+        pincode: addressPincode,
+        country: addressCountry || undefined
+      } : undefined;
+
+      const bankDetail = bankName || accountNumber || ifscCode || accountHolderName || panNumber ? {
+        bankName,
+        accountNumber,
+        ifscCode,
+        accountHolderName,
+        panNumber,
+        aadhaarLast4: aadhaarLast4 || undefined
+      } : undefined;
+
+      const emergencyContact = emergencyName || emergencyRelation || emergencyPhone ? {
+        name: emergencyName,
+        relation: emergencyRelation,
+        phone: emergencyPhone,
+        altPhone: emergencyAltPhone || undefined
+      } : undefined;
+
       await api.employees.update(profile.id, {
         firstName,
         lastName,
         phone,
-        designation: canEdit && !isOwnProfile ? designation : undefined
+        designation: canEdit && !isOwnProfile ? designation : undefined,
+        personalEmail: personalEmail || undefined,
+        personalPhone: personalPhone || undefined,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        gender: gender || undefined,
+        bloodGroup: bloodGroup || undefined,
+        address,
+        bankDetail,
+        emergencyContact
       });
       setEditing(false);
       loadProfileData();
@@ -208,7 +317,7 @@ function ProfileContent() {
             {activeTab === 'personal' && (
               <div>
                 {editing ? (
-                  <form onSubmit={handleSave} className="space-y-4">
+                  <form onSubmit={handleSave} className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">First Name</label>
@@ -217,7 +326,7 @@ function ProfileContent() {
                           required
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
-                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary"
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
                         />
                       </div>
                       <div>
@@ -227,19 +336,239 @@ function ProfileContent() {
                           required
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
-                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary"
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
                         />
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Phone Number</label>
-                      <input
-                        type="text"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary"
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Work Phone Number</label>
+                        <input
+                          type="text"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Personal Email</label>
+                        <input
+                          type="email"
+                          value={personalEmail}
+                          onChange={(e) => setPersonalEmail(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Personal Phone</label>
+                        <input
+                          type="text"
+                          value={personalPhone}
+                          onChange={(e) => setPersonalPhone(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Date of Birth</label>
+                        <input
+                          type="date"
+                          value={dateOfBirth}
+                          onChange={(e) => setDateOfBirth(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Gender</label>
+                        <select
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium animate-none"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Blood Group</label>
+                        <input
+                          type="text"
+                          value={bloodGroup}
+                          onChange={(e) => setBloodGroup(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <h4 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Address</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Line 1</label>
+                          <input
+                            type="text"
+                            value={addressLine1}
+                            onChange={(e) => setAddressLine1(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Line 2</label>
+                          <input
+                            type="text"
+                            value={addressLine2}
+                            onChange={(e) => setAddressLine2(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">City</label>
+                          <input
+                            type="text"
+                            value={addressCity}
+                            onChange={(e) => setAddressCity(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">State</label>
+                          <input
+                            type="text"
+                            value={addressState}
+                            onChange={(e) => setAddressState(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Pincode</label>
+                          <input
+                            type="text"
+                            value={addressPincode}
+                            onChange={(e) => setAddressPincode(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Country</label>
+                          <input
+                            type="text"
+                            value={addressCountry}
+                            onChange={(e) => setAddressCountry(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-4 border-t border-slate-100">
+                      <h4 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Bank Details</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Account Holder Name</label>
+                          <input
+                            type="text"
+                            value={accountHolderName}
+                            onChange={(e) => setAccountHolderName(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Bank Name</label>
+                          <input
+                            type="text"
+                            value={bankName}
+                            onChange={(e) => setBankName(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">IFSC Code</label>
+                          <input
+                            type="text"
+                            value={ifscCode}
+                            onChange={(e) => setIfscCode(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Account Number</label>
+                          <input
+                            type="text"
+                            value={accountNumber}
+                            onChange={(e) => setAccountNumber(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">PAN Number</label>
+                          <input
+                            type="text"
+                            value={panNumber}
+                            onChange={(e) => setPanNumber(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Aadhaar Last 4</label>
+                          <input
+                            type="text"
+                            maxLength={4}
+                            value={aadhaarLast4}
+                            onChange={(e) => setAadhaarLast4(e.target.value.replace(/\D/g, ''))}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-4 border-t border-slate-100">
+                      <h4 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Emergency Contact</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Contact Name</label>
+                          <input
+                            type="text"
+                            value={emergencyName}
+                            onChange={(e) => setEmergencyName(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Relation</label>
+                          <input
+                            type="text"
+                            value={emergencyRelation}
+                            onChange={(e) => setEmergencyRelation(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Phone Number</label>
+                          <input
+                            type="text"
+                            value={emergencyPhone}
+                            onChange={(e) => setEmergencyPhone(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Alternative Phone Number</label>
+                          <input
+                            type="text"
+                            value={emergencyAltPhone}
+                            onChange={(e) => setEmergencyAltPhone(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     {canEdit && !isOwnProfile && (
@@ -249,7 +578,7 @@ function ProfileContent() {
                           type="text"
                           value={designation}
                           onChange={(e) => setDesignation(e.target.value)}
-                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary"
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
                         />
                       </div>
                     )}
@@ -296,7 +625,102 @@ function ProfileContent() {
                         <span className="text-outline">Phone Number</span>
                         <span className="font-semibold text-on-surface">{profile.phone || 'N/A'}</span>
                       </div>
+                      <div className="flex justify-between py-3 text-body-sm">
+                        <span className="text-outline">Personal Email</span>
+                        <span className="font-semibold text-on-surface font-mono">{profile.personalEmail || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between py-3 text-body-sm">
+                        <span className="text-outline">Personal Phone</span>
+                        <span className="font-semibold text-on-surface">{profile.personalPhone || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between py-3 text-body-sm">
+                        <span className="text-outline">Date of Birth</span>
+                        <span className="font-semibold text-on-surface font-mono">
+                          {profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-3 text-body-sm">
+                        <span className="text-outline">Gender</span>
+                        <span className="font-semibold text-on-surface">{profile.gender || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between py-3 text-body-sm">
+                        <span className="text-outline">Blood Group</span>
+                        <span className="font-semibold text-on-surface font-mono">{profile.bloodGroup || 'N/A'}</span>
+                      </div>
+                      {profile.address && (
+                        <div className="flex justify-between py-3 text-body-sm">
+                          <span className="text-outline text-left">Address</span>
+                          <span className="font-semibold text-on-surface text-right whitespace-pre-line max-w-[250px]">
+                            {profile.address.line1}
+                            {profile.address.line2 ? `, ${profile.address.line2}` : ''}
+                            {`\n${profile.address.city}, ${profile.address.state} - ${profile.address.pincode}`}
+                            {profile.address.country ? `\n${profile.address.country}` : ''}
+                          </span>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Bank Details section */}
+                    {profile.bankDetail && (
+                      <div className="pt-6 mt-6 border-t border-slate-100">
+                        <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-3">Bank Details</h3>
+                        <div className="divide-y divide-slate-100">
+                          <div className="flex justify-between py-3 text-body-sm">
+                            <span className="text-outline">Account Holder Name</span>
+                            <span className="font-semibold text-on-surface">{profile.bankDetail.accountHolderName || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between py-3 text-body-sm">
+                            <span className="text-outline">Bank Name</span>
+                            <span className="font-semibold text-on-surface">{profile.bankDetail.bankName || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between py-3 text-body-sm">
+                            <span className="text-outline">IFSC Code</span>
+                            <span className="font-semibold text-on-surface font-mono">{profile.bankDetail.ifscCode || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between py-3 text-body-sm">
+                            <span className="text-outline">Account Number</span>
+                            <span className="font-semibold text-on-surface font-mono">{profile.bankDetail.accountNumber || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between py-3 text-body-sm">
+                            <span className="text-outline">PAN Number</span>
+                            <span className="font-semibold text-on-surface font-mono">{profile.bankDetail.panNumber || 'N/A'}</span>
+                          </div>
+                          {profile.bankDetail.aadhaarLast4 && (
+                            <div className="flex justify-between py-3 text-body-sm">
+                              <span className="text-outline">Aadhaar Last 4 Digits</span>
+                              <span className="font-semibold text-on-surface font-mono">**** **** {profile.bankDetail.aadhaarLast4}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Emergency Contact section */}
+                    {profile.emergencyContact && (
+                      <div className="pt-6 mt-6 border-t border-slate-100">
+                        <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-3">Emergency Contact</h3>
+                        <div className="divide-y divide-slate-100">
+                          <div className="flex justify-between py-3 text-body-sm">
+                            <span className="text-outline">Contact Name</span>
+                            <span className="font-semibold text-on-surface">{profile.emergencyContact.name || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between py-3 text-body-sm">
+                            <span className="text-outline">Relation</span>
+                            <span className="font-semibold text-on-surface">{profile.emergencyContact.relation || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between py-3 text-body-sm">
+                            <span className="text-outline">Phone Number</span>
+                            <span className="font-semibold text-on-surface font-mono">{profile.emergencyContact.phone || 'N/A'}</span>
+                          </div>
+                          {profile.emergencyContact.altPhone && (
+                            <div className="flex justify-between py-3 text-body-sm">
+                              <span className="text-outline">Alternative Phone</span>
+                              <span className="font-semibold text-on-surface font-mono">{profile.emergencyContact.altPhone}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

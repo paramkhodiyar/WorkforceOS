@@ -1,5 +1,6 @@
 import { prisma } from "../../config/database";
 import { NotificationType } from "@prisma/client";
+import { logger } from "../../config/logger";
 
 export class NotificationService {
   static async notify(
@@ -8,8 +9,8 @@ export class NotificationService {
     title: string,
     body: string,
     meta?: any
-  ) {
-    const notification = await prisma.notification.create({
+  ): Promise<void> {
+    prisma.notification.create({
       data: {
         userId,
         type,
@@ -17,11 +18,15 @@ export class NotificationService {
         body,
         meta: meta ? JSON.parse(JSON.stringify(meta)) : null
       }
+    }).then(async () => {
+      try {
+        await this.sendEmailOrPush(userId, title, body);
+      } catch (err: any) {
+        logger.error("Failed to send push/email notification: " + err.message);
+      }
+    }).catch((err) => {
+      logger.error("Background Notification Error: " + err.message);
     });
-
-    await this.sendEmailOrPush(userId, title, body);
-
-    return notification;
   }
 
   static async sendEmailOrPush(userId: string, title: string, body: string) {

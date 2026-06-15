@@ -67,6 +67,7 @@ enum AttendanceStatus {
   LATE
   HALF_DAY
   ON_LEAVE
+  EARLY_DEP
 }
 
 enum WorkMode {
@@ -128,6 +129,39 @@ enum RoleScope {
   TEAM
 }
 
+enum EmployeeType {
+  FULL_TIME
+  PART_TIME
+  INTERN
+  CONTRACTOR
+}
+
+enum TaxRegime {
+  OLD
+  NEW
+}
+
+enum SalaryBand {
+  BAND_A
+  BAND_B
+  BAND_C
+  BAND_D
+  BAND_E
+}
+
+enum TaskScope {
+  PERSONAL
+  TEAM
+  DEPARTMENT
+  ORG
+}
+
+enum AdjustmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Organization {
   id          String   @id @default(cuid())
   name        String
@@ -148,6 +182,8 @@ model Organization {
   assets       Asset[]
   auditLogs    AuditLog[]
   permissions  RolePermission[]
+  shiftConfigs ShiftConfig[]
+  holidays     Holiday[]
 }
 
 model Department {
@@ -195,13 +231,29 @@ model User {
   departmentId     String?
   managerId        String?
   systemRole       SystemRole @default(EMPLOYEE)
-  salaryBand       String?
+  salaryBand       SalaryBand?
   joinDate         DateTime?
   status           UserStatus @default(ACTIVE)
   isDeleted        Boolean    @default(false)
   deletedAt        DateTime?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+
+  // New onboarding fields
+  dateOfBirth      DateTime?  @db.Date
+  gender           String?
+  bloodGroup       String?
+  personalEmail    String?
+  personalPhone    String?
+  address          Json?
+  employeeType     EmployeeType @default(FULL_TIME)
+  workLocation     String?
+  shiftId          String?
+  basicSalary      Float?
+  pfApplicable     Boolean    @default(true)
+  taxRegime        TaxRegime  @default(NEW)
+  probationEndDate DateTime?
+  ctcAnnual        Float?
 
   organization       Organization     @relation(fields: [organizationId], references: [id])
   department         Department?      @relation("DepartmentMembers", fields: [departmentId], references: [id])
@@ -229,6 +281,9 @@ model User {
   documents          EmployeeDocument[]
   leaveBalances      LeaveBalance[]
   roles              UserRole[]
+  bankDetail         BankDetail?
+  emergencyContact   EmergencyContact?
+  shift              ShiftConfig?     @relation(fields: [shiftId], references: [id])
 }
 
 model UserRole {
@@ -284,16 +339,54 @@ model RolePermission {
   @@unique([roleId, resource, action])
 }
 
+model BankDetail {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  bankName            String
+  accountNumber       String
+  ifscCode            String
+  accountHolderName   String
+  panNumber           String
+  aadhaarLast4        String?
+  isVerified          Boolean  @default(false)
+  verifiedBy          String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id])
+}
+
+model EmergencyContact {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  name        String
+  relation    String
+  phone       String
+  altPhone    String?
+  user        User    @relation(fields: [userId], references: [id])
+}
+
+model ShiftConfig {
+  id              String   @id @default(cuid())
+  organizationId  String
+  name            String
+  checkInStart    String
+  checkInDeadline String
+  checkOutMin     String
+  breakMaxMins    Int      @default(60)
+  workingHoursMin Float    @default(8.0)
+  isDefault       Boolean  @default(false)
+  isDeleted       Boolean  @default(false)
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  users           User[]
+}
+
 model Attendance {
   id            String           @id @default(cuid())
   userId        String
   date          DateTime         @db.Date
   checkIn       DateTime?
   checkOut      DateTime?
-  breakStart    DateTime?
-  breakEnd      DateTime?
-  lunchStart    DateTime?
-  lunchEnd      DateTime?
   totalHours    Float?
   status        AttendanceStatus @default(PRESENT)
   workMode      WorkMode         @default(WFO)
@@ -308,8 +401,45 @@ model Attendance {
   updatedAt     DateTime         @updatedAt
 
   user          User             @relation(fields: [userId], references: [id])
+  breaks        AttendanceBreak[]
+  adjustmentRequests AttendanceAdjustmentRequest[]
 
   @@unique([userId, date])
+}
+
+model AttendanceBreak {
+  id           String     @id @default(cuid())
+  attendanceId String
+  breakStart   DateTime
+  breakEnd     DateTime?
+
+  attendance   Attendance @relation(fields: [attendanceId], references: [id])
+}
+
+model AttendanceAdjustmentRequest {
+  id               String   @id @default(cuid())
+  attendanceId     String
+  requestedBy      String
+  approvedBy       String?
+  status           AdjustmentStatus @default(PENDING)
+  reason           String
+  proposedCheckIn  DateTime?
+  proposedCheckOut DateTime?
+  proposedStatus   AttendanceStatus?
+  createdAt        DateTime @default(now())
+
+  attendance       Attendance @relation(fields: [attendanceId], references: [id])
+}
+
+model Holiday {
+  id             String   @id @default(cuid())
+  organizationId String
+  date           DateTime @db.Date
+  name           String
+  isOptional     Boolean  @default(false)
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  @@unique([organizationId, date])
 }
 
 model LeavePolicy {
@@ -401,6 +531,12 @@ model Task {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
+  scope        TaskScope    @default(PERSONAL)
+  orgId        String       @default("")
+  teamId       String?
+  departmentId String?
+  reviewerIds  String[]
+
   creator      User         @relation("TaskCreator", fields: [creatorId], references: [id])
   assignee     User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
   parentTask   Task?        @relation("Subtasks", fields: [parentTaskId], references: [id])
@@ -411,6 +547,18 @@ model Task {
   dependencies TaskDependency[] @relation("DependentTask")
   dependents   TaskDependency[] @relation("DependencyTask")
   labels       TaskLabel[]
+  statusHistory TaskStatusHistory[]
+}
+
+model TaskStatusHistory {
+  id         String     @id @default(cuid())
+  taskId     String
+  fromStatus TaskStatus?
+  toStatus   TaskStatus
+  changedBy  String
+  changedAt  DateTime   @default(now())
+
+  task       Task       @relation(fields: [taskId], references: [id])
 }
 
 model TaskReview {
@@ -486,6 +634,19 @@ model PerformanceReview {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  hrCollaboration Float?
+  hrCommunication Float?
+  hrDiscipline    Float?
+  hrInitiative    Float?
+  hrConduct       Float?
+  hrFeedbackNote  String?
+  hrFeedbackBy    String?
+  hrFeedbackAt    DateTime?
+  weightConfig    Json?
+  finalScore      Float?
+  scoreBand       String?
+  isPublished     Boolean  @default(false)
+
   subject      User     @relation("ReviewSubject", fields: [subjectId], references: [id])
   reviewer     User     @relation("Reviewer", fields: [reviewerId], references: [id])
 }
@@ -529,6 +690,11 @@ model PayrollRecord {
   isDeleted     Boolean    @default(false)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+
+  lopDays                Float      @default(0)
+  lopDeduction           Float      @default(0)
+  pfEmployerContribution Float      @default(0)
+  esic                   Float      @default(0)
 
   payrollRun    PayrollRun @relation(fields: [payrollRunId], references: [id])
   user          User       @relation(fields: [userId], references: [id])

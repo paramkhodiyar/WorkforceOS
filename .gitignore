@@ -29,3 +29,5 @@ backend/uploads/
 *.db-journal
 *.sqlite
 backend/scratch/
+
+WorkforceOS_Complete_Redesign_Spec.md

@@ -54,8 +54,8 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
 
 export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
-  const actorId = req.user!.id;
-  await TasksService.deleteTask(req.params.id, orgId, actorId, req);
+  const user = req.user!;
+  await TasksService.deleteTask(req.params.id, orgId, user, req);
   return sendSuccess(res, null, "Task deleted successfully");
 });
 

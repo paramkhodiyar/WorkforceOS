@@ -18,7 +18,9 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().min(1),
   AWS_SECRET_ACCESS_KEY: z.string().min(1),
   S3_BASE_URL: z.string().url(),
-  CORS_ORIGINS: z.string().default("*")
+  S3_ENDPOINT: z.string().url().optional(),
+  CORS_ORIGINS: z.string().default("*"),
+  ENCRYPTION_KEY: z.string().default("df06bc5258e72753ffc1ab1f0cdcdbfb876a3f0190a424e8d35759ef62cdab12")
 });
 
 const parsed = envSchema.safeParse(process.env);

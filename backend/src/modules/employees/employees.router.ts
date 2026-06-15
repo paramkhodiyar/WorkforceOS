@@ -19,7 +19,16 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get("/", requirePermission("employee", "read"), listEmployees);
+router.get(
+  "/",
+  (req, res, next) => {
+    if (String(req.query.taskAssignees) === "true") {
+      return next();
+    }
+    return requirePermission("employee", "read")(req, res, next);
+  },
+  listEmployees
+);
 router.post("/", requirePermission("employee", "create"), validate(createEmployeeSchema), createEmployee);
 router.get("/:id", requirePermission("employee", "read"), getEmployeeById);
 router.patch("/:id", requirePermission("employee", "update"), validate(updateEmployeeSchema), updateEmployee);

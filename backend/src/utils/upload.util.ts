@@ -25,6 +25,8 @@ if (config.AWS_ACCESS_KEY_ID === "awsaccesskeyplaceholder") {
 } else {
   const s3 = new S3Client({
     region: config.AWS_REGION,
+    endpoint: config.S3_ENDPOINT,
+    forcePathStyle: config.S3_ENDPOINT ? true : undefined,
     credentials: {
       accessKeyId: config.AWS_ACCESS_KEY_ID,
       secretAccessKey: config.AWS_SECRET_ACCESS_KEY

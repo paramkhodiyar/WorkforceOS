@@ -1,64 +1,56 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
-
-interface Goal {
-  id: string;
-  title: string;
-  category: string;
-  progress: number;
-  dueDate: string;
-}
+import { api } from '../../../lib/api/client';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 export default function PerformancePage() {
   const { user } = useAuth();
-  const [goals, setGoals] = useState<Goal[]>([
-    { id: '1', title: 'Achieve 95% test coverage on frontend package', category: 'Engineering', progress: 80, dueDate: '2026-06-30' },
-    { id: '2', title: 'Complete compliance audit preparations', category: 'Compliance', progress: 100, dueDate: '2026-05-15' },
-    { id: '3', title: 'Deliver UI/UX design specs for mobile layouts', category: 'Design', progress: 45, dueDate: '2026-07-15' }
-  ]);
-  const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState('Engineering');
-  const [newDueDate, setNewDueDate] = useState('');
+  const toast = useToast();
+  
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [teamReviews, setTeamReviews] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReview, setSelectedReview] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState<'my-reviews' | 'team-reviews'>('my-reviews');
 
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
   const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
+  const showManagementFeatures = isAdmin || isHR || isManager;
 
-  const mockReviews = [
-    { id: 'rev-1', cycle: 'H1 2026 Mid-Year Review', reviewer: 'Sarah Jenkins', rating: 'Exceeds Expectations', status: 'Completed', date: '2026-06-01' },
-    { id: 'rev-2', cycle: 'FY 2025 Annual Review', reviewer: 'Michael Cho', rating: 'Meets Expectations', status: 'Completed', date: '2025-12-15' }
-  ];
+  async function loadData() {
+    try {
+      setLoading(true);
+      // Fetch my reviews (regular user or subject view)
+      const myReviewsRes = await api.performance.listReviews(false);
+      setReviews(myReviewsRes.data || []);
 
-  const mockTeamPerformance = [
-    { id: 'emp-1', name: 'Alice Vance', rating: 4.8, completedGoals: 5, activeGoals: 2, status: 'Completed' },
-    { id: 'emp-2', name: 'Bobby Vance', rating: 4.2, completedGoals: 4, activeGoals: 3, status: 'In Review' },
-    { id: 'emp-3', name: 'Charlie Dave', rating: 3.9, completedGoals: 3, activeGoals: 4, status: 'Pending Self Assessment' }
-  ];
-
-  function handleAddGoal(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-
-    const newGoal: Goal = {
-      id: Date.now().toString(),
-      title: newTitle,
-      category: newCategory,
-      progress: 0,
-      dueDate: newDueDate || new Date().toISOString().split('T')[0]
-    };
-
-    setGoals([...goals, newGoal]);
-    setNewTitle('');
-    setNewDueDate('');
+      // If manager/admin/HR, fetch team reviews
+      if (showManagementFeatures) {
+        const teamReviewsRes = await api.performance.listReviews(true);
+        setTeamReviews(teamReviewsRes.data || []);
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to load performance data');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleProgressChange(id: string, progress: number) {
-    setGoals(goals.map(g => g.id === id ? { ...g, progress: Math.min(100, Math.max(0, progress)) } : g));
-  }
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const validReviews = reviews.filter(r => r.finalScore !== null && r.finalScore !== undefined);
+  const averageScore = validReviews.length > 0 
+    ? (validReviews.reduce((sum, r) => sum + r.finalScore, 0) / validReviews.length).toFixed(2)
+    : 'N/A';
 
   return (
     <div className="space-y-6 font-sans">
@@ -67,181 +59,390 @@ export default function PerformancePage() {
         <p className="text-body-sm text-outline">Track professional objectives, review cycles, and performance feedback</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Objectives & Key Results (OKRs)</h2>
-            </div>
-
-            <div className="space-y-4 mb-6">
-              {goals.length === 0 ? (
-                <p className="text-body-sm text-outline text-center py-6">No performance objectives configured yet.</p>
-              ) : (
-                goals.map(goal => (
-                  <div key={goal.id} className="p-4 bg-surface-container-low border border-outline-variant rounded-lg space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                          {goal.category}
-                        </span>
-                        <h4 className="text-body-md font-bold text-on-surface mt-1.5">{goal.title}</h4>
-                      </div>
-                      <span className="text-body-sm text-outline font-mono">Due {goal.dueDate}</span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-body-sm">
-                        <span className="text-outline">Progress</span>
-                        <span className="font-semibold text-on-surface font-mono">{goal.progress}%</span>
-                      </div>
-                      <div className="w-full bg-surface-container-high rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="bg-primary h-2 transition-all duration-300"
-                          style={{ width: `${goal.progress}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-1">
-                      <button
-                        onClick={() => handleProgressChange(goal.id, goal.progress - 10)}
-                        className="p-1 border border-outline-variant rounded hover:bg-surface-container transition-colors text-on-surface"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">remove</span>
-                      </button>
-                      <button
-                        onClick={() => handleProgressChange(goal.id, goal.progress + 10)}
-                        className="p-1 border border-outline-variant rounded hover:bg-surface-container transition-colors text-on-surface"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">add</span>
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <form onSubmit={handleAddGoal} className="pt-4 border-t border-outline-variant space-y-4">
-              <h3 className="text-label-sm font-bold text-on-surface uppercase">Create Objective</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-2">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter objective title"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <select
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
-                  >
-                    <option value="Engineering">Engineering</option>
-                    <option value="Compliance">Compliance</option>
-                    <option value="Design">Design</option>
-                    <option value="Operations">Operations</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4 items-end justify-between">
-                <div className="w-full sm:w-1/3">
-                  <input
-                    type="date"
-                    required
-                    value={newDueDate}
-                    onChange={(e) => setNewDueDate(e.target.value)}
-                    className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
-                  />
-                </div>
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <span className="material-symbols-outlined animate-spin text-[32px] text-primary">progress_activity</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-6">
+            
+            {showManagementFeatures && (
+              <div className="flex border-b border-outline-variant">
                 <button
-                  type="submit"
-                  className="bg-primary hover:bg-blue-700 text-on-primary px-5 py-2.5 rounded-lg text-label-md font-bold shadow-sm transition-all active:scale-[0.98] w-full sm:w-auto"
+                  onClick={() => setActiveTab('my-reviews')}
+                  className={`px-4 py-2.5 font-semibold text-body-md transition-colors border-b-2 -mb-[2px] ${
+                    activeTab === 'my-reviews' 
+                      ? 'border-primary text-primary' 
+                      : 'border-transparent text-outline hover:text-on-surface'
+                  }`}
                 >
-                  Add Objective
+                  My Reviews
+                </button>
+                <button
+                  onClick={() => setActiveTab('team-reviews')}
+                  className={`px-4 py-2.5 font-semibold text-body-md transition-colors border-b-2 -mb-[2px] ${
+                    activeTab === 'team-reviews' 
+                      ? 'border-primary text-primary' 
+                      : 'border-transparent text-outline hover:text-on-surface'
+                  }`}
+                >
+                  Team Evaluations & Drafts
                 </button>
               </div>
-            </form>
+            )}
+
+            {activeTab === 'my-reviews' ? (
+              <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">My Review History</h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-container-low/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Review Cycle</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Evaluator</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Score / Band</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant text-body-sm">
+                      {reviews.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center text-outline">
+                            No approved performance reviews are currently visible. Reviews must be approved and published by the administration to be visible here.
+                          </td>
+                        </tr>
+                      ) : (
+                        reviews.map((rev) => (
+                          <tr key={rev.id} className="hover:bg-surface-container-low transition-colors">
+                            <td className="px-4 py-3 font-semibold text-on-surface">
+                              <div>
+                                <p>{rev.period}</p>
+                                <p className="text-[10px] text-outline mt-0.5">
+                                  Evaluated on {new Date(rev.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-on-surface-variant">
+                              {rev.reviewer ? `${rev.reviewer.firstName} ${rev.reviewer.lastName}` : 'System'}
+                            </td>
+                            <td className="px-4 py-3 font-medium text-primary">
+                              {rev.finalScore !== null && rev.finalScore !== undefined ? (
+                                <span>{rev.finalScore.toFixed(2)} / 5.0 <span className="text-on-surface-variant font-bold text-xs ml-1">({rev.scoreBand})</span></span>
+                              ) : (
+                                'Pending Evaluation'
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="bg-green-100 text-green-800 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                                Approved & Published
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <button
+                                onClick={() => setSelectedReview(rev)}
+                                className="text-primary hover:underline font-bold text-xs"
+                              >
+                                View Details
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              // Team Reviews Tab (Managers / HR / Admin only)
+              <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Team Reviews Dashboard</h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-container-low/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Cycle</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Score / Band</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant text-body-sm">
+                      {teamReviews.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center text-outline">
+                            No team reviews have been created or assigned to you.
+                          </td>
+                        </tr>
+                      ) : (
+                        teamReviews.map((rev) => (
+                          <tr key={rev.id} className="hover:bg-surface-container-low transition-colors">
+                            <td className="px-4 py-3 font-semibold text-on-surface">
+                              {rev.subject ? `${rev.subject.firstName} ${rev.subject.lastName}` : 'Unknown'}
+                            </td>
+                            <td className="px-4 py-3 text-on-surface-variant">
+                              {rev.period}
+                            </td>
+                            <td className="px-4 py-3 font-medium text-primary">
+                              {rev.finalScore !== null && rev.finalScore !== undefined ? (
+                                <span>{rev.finalScore.toFixed(2)} / 5.0 <span className="text-on-surface-variant font-bold text-xs ml-1">({rev.scoreBand})</span></span>
+                              ) : (
+                                'Pending Evaluation'
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                                rev.isPublished 
+                                  ? 'bg-green-50 text-green-700 border-green-200' 
+                                  : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                              }`}>
+                                {rev.isPublished ? 'Published' : 'Draft / Unapproved'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <button
+                                onClick={() => setSelectedReview(rev)}
+                                className="text-primary hover:underline font-bold text-xs"
+                              >
+                                View Detailed Score
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">My Review History</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-surface-container-low/50">
-                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Review Cycle</th>
-                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Evaluator</th>
-                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Rating</th>
-                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant text-body-sm">
-                  {mockReviews.map(rev => (
-                    <tr key={rev.id} className="hover:bg-surface-container-low transition-colors">
-                      <td className="px-4 py-3 font-semibold text-on-surface">
-                        <div>
-                          <p>{rev.cycle}</p>
-                          <p className="text-[10px] text-outline mt-0.5">Signed off on {rev.date}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-on-surface-variant">{rev.reviewer}</td>
-                      <td className="px-4 py-3 font-medium text-primary">{rev.rating}</td>
-                      <td className="px-4 py-3">
-                        <span className="bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
-                          {rev.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="md:col-span-1 space-y-6">
+            <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Quick Summary</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-surface-container-low border border-outline-variant rounded-lg text-center">
+                  <p className="text-[10px] text-outline font-bold uppercase">Average Score</p>
+                  <p className="text-headline-md font-bold text-on-surface mt-1">{averageScore}</p>
+                </div>
+                <div className="p-4 bg-surface-container-low border border-outline-variant rounded-lg text-center">
+                  <p className="text-[10px] text-outline font-bold uppercase">Total Reviews</p>
+                  <p className="text-headline-md font-bold text-on-surface mt-1">{reviews.length}</p>
+                </div>
+              </div>
             </div>
+
+            {showManagementFeatures && teamReviews.length > 0 && (
+              <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Team Performance Feed</h2>
+                <div className="space-y-4">
+                  {teamReviews.slice(0, 5).map(rev => (
+                    <div key={rev.id} className="p-3 bg-surface-container-low border border-outline-variant rounded-lg space-y-2">
+                      <div className="flex justify-between items-center">
+                        <p className="text-label-md font-bold text-on-surface">
+                          {rev.subject ? `${rev.subject.firstName} ${rev.subject.lastName}` : 'Employee'}
+                        </p>
+                        <span className="text-body-sm font-semibold font-mono text-primary">
+                          {rev.finalScore !== null && rev.finalScore !== undefined ? `${rev.finalScore.toFixed(2)} / 5.0` : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-[11px] text-outline">
+                        <span>Period: {rev.period}</span>
+                        <span className="font-semibold uppercase text-xs">{rev.scoreBand || '-'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
+      )}
 
-        <div className="md:col-span-1 space-y-6">
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Quick Summary</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-surface-container-low border border-outline-variant rounded-lg text-center">
-                <p className="text-[10px] text-outline font-bold uppercase">Average Score</p>
-                <p className="text-headline-md font-bold text-on-surface mt-1">4.5 / 5.0</p>
+      {/* Review Details Modal */}
+      {selectedReview && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar animate-slide-in-up">
+            <div className="flex justify-between items-start border-b border-outline-variant pb-4">
+              <div>
+                <h3 className="text-headline-sm font-bold text-on-surface">Performance Review Details</h3>
+                <p className="text-body-sm text-outline">
+                  Period: {selectedReview.period} | Evaluated by {selectedReview.reviewer ? `${selectedReview.reviewer.firstName} ${selectedReview.reviewer.lastName}` : 'System'}
+                </p>
               </div>
-              <div className="p-4 bg-surface-container-low border border-outline-variant rounded-lg text-center">
-                <p className="text-[10px] text-outline font-bold uppercase">Objectives</p>
-                <p className="text-headline-md font-bold text-on-surface mt-1">
-                  {goals.filter(g => g.progress === 100).length} / {goals.length}
+              <button 
+                onClick={() => setSelectedReview(null)}
+                className="p-1 hover:bg-surface-container rounded-lg transition-colors text-outline hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 bg-primary-container border border-primary/20 rounded-xl text-center">
+                <p className="text-[10px] text-on-primary-container font-bold uppercase">Composite Score</p>
+                <p className="text-headline-lg font-extrabold text-primary mt-1">
+                  {selectedReview.finalScore !== null && selectedReview.finalScore !== undefined ? selectedReview.finalScore.toFixed(2) : 'N/A'}
+                </p>
+              </div>
+              <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl text-center">
+                <p className="text-[10px] text-outline font-bold uppercase">Score Band</p>
+                <p className="text-headline-lg font-extrabold text-on-surface mt-1">{selectedReview.scoreBand || 'N/A'}</p>
+              </div>
+              <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl text-center flex flex-col justify-center">
+                <p className="text-[10px] text-outline font-bold uppercase">Status</p>
+                <span className={`mt-2 mx-auto px-3 py-1 rounded-full text-xs font-bold uppercase ${selectedReview.isPublished ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                  {selectedReview.isPublished ? 'Published' : 'Draft / Unapproved'}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Evaluation Components</h4>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Task Completion */}
+                <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-body-sm font-semibold text-on-surface">Task Completion</span>
+                    <span className="text-body-sm font-bold font-mono text-primary">
+                      {selectedReview.completionRate !== null && selectedReview.completionRate !== undefined ? `${(selectedReview.completionRate * 100).toFixed(0)}%` : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all" 
+                      style={{ width: `${(selectedReview.completionRate || 0) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-outline">Weight: 25% of composite score</p>
+                </div>
+
+                {/* Deadline Adherence */}
+                <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-body-sm font-semibold text-on-surface">Deadline Adherence</span>
+                    <span className="text-body-sm font-bold font-mono text-primary">
+                      {selectedReview.deadlinesMet !== null && selectedReview.deadlinesMet !== undefined ? `${(selectedReview.deadlinesMet * 100).toFixed(0)}%` : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all" 
+                      style={{ width: `${(selectedReview.deadlinesMet || 0) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-outline">Weight: 20% of composite score</p>
+                </div>
+
+                {/* Quality & Rework */}
+                <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-body-sm font-semibold text-on-surface">Rework Count</span>
+                    <span className="text-body-sm font-bold font-mono text-primary">
+                      {selectedReview.reworkCount !== null && selectedReview.reworkCount !== undefined ? `${selectedReview.reworkCount} issues` : 'N/A'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-outline">Total rework tasks assigned. Weight: 25%</p>
+                </div>
+
+                {/* Attendance */}
+                <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-body-sm font-semibold text-on-surface">Attendance Rate</span>
+                    <span className="text-body-sm font-bold font-mono text-primary">
+                      {selectedReview.attendancePct !== null && selectedReview.attendancePct !== undefined ? `${(selectedReview.attendancePct * 100).toFixed(0)}%` : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all" 
+                      style={{ width: `${(selectedReview.attendancePct || 0) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-outline">Weight: 20% of composite score</p>
+                </div>
+              </div>
+
+              {/* HR Qualitative Feedback */}
+              <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl space-y-3">
+                <div className="flex justify-between items-center border-b border-outline-variant pb-2">
+                  <span className="text-body-sm font-semibold text-on-surface">HR Qualitative Evaluation (Weight: 10%)</span>
+                  <span className="text-body-sm font-bold font-mono text-primary">
+                    {(() => {
+                      const vals = [
+                        selectedReview.hrCollaboration,
+                        selectedReview.hrCommunication,
+                        selectedReview.hrDiscipline,
+                        selectedReview.hrInitiative,
+                        selectedReview.hrConduct
+                      ].filter(v => v !== null && v !== undefined);
+                      if (vals.length === 0) return 'N/A';
+                      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                      return `${avg.toFixed(1)} / 5.0`;
+                    })()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+                  <div className="p-2 bg-surface-container-high rounded">
+                    <p className="text-[8px] text-outline font-bold uppercase">Collab</p>
+                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrCollaboration ?? '-'}</p>
+                  </div>
+                  <div className="p-2 bg-surface-container-high rounded">
+                    <p className="text-[8px] text-outline font-bold uppercase">Comm</p>
+                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrCommunication ?? '-'}</p>
+                  </div>
+                  <div className="p-2 bg-surface-container-high rounded">
+                    <p className="text-[8px] text-outline font-bold uppercase">Discipline</p>
+                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrDiscipline ?? '-'}</p>
+                  </div>
+                  <div className="p-2 bg-surface-container-high rounded">
+                    <p className="text-[8px] text-outline font-bold uppercase">Initiative</p>
+                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrInitiative ?? '-'}</p>
+                  </div>
+                  <div className="p-2 bg-surface-container-high rounded">
+                    <p className="text-[8px] text-outline font-bold uppercase">Conduct</p>
+                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrConduct ?? '-'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Evaluator Notes */}
+            <div className="space-y-2">
+              <h4 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Manager Evaluation Notes</h4>
+              <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl">
+                <p className="text-body-sm text-on-surface-variant italic">
+                  "{selectedReview.comments || 'No evaluation notes provided.'}"
                 </p>
               </div>
             </div>
-          </div>
 
-          {(isAdmin || isHR || isManager) && (
-            <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Team Performance Logs</h2>
-              <div className="space-y-4">
-                {mockTeamPerformance.map(emp => (
-                  <div key={emp.id} className="p-3 bg-surface-container-low border border-outline-variant rounded-lg space-y-2">
-                    <div className="flex justify-between items-center">
-                      <p className="text-label-md font-bold text-on-surface">{emp.name}</p>
-                      <span className="text-body-sm font-semibold font-mono text-primary">{emp.rating} / 5.0</span>
-                    </div>
-                    <div className="flex justify-between text-[11px] text-outline">
-                      <span>Goals: {emp.completedGoals} completed / {emp.activeGoals} active</span>
-                      <span className="font-semibold">{emp.status}</span>
-                    </div>
-                  </div>
-                ))}
+            {/* HR Feedback Remarks */}
+            {selectedReview.hrFeedbackNote && (
+              <div className="space-y-2">
+                <h4 className="text-label-md font-bold text-on-surface uppercase tracking-wider">HR General Remarks</h4>
+                <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl">
+                  <p className="text-body-sm text-on-surface-variant italic">
+                    "{selectedReview.hrFeedbackNote}"
+                  </p>
+                </div>
               </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setSelectedReview(null)}
+                className="bg-primary hover:bg-blue-700 text-on-primary px-5 py-2 rounded-lg text-label-md font-bold transition-all"
+              >
+                Dismiss
+              </button>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

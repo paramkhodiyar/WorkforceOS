@@ -279,4 +279,29 @@ export const api = {
         method: 'DELETE',
       }),
   },
+  performance: {
+    listReviews: (isManager = false, period?: string, type?: string): Promise<any> => {
+      const params = new URLSearchParams();
+      if (isManager) params.append('isManager', 'true');
+      if (period) params.append('period', period);
+      if (type) params.append('type', type);
+      return request(`/performance/reviews?${params.toString()}`);
+    },
+    getReview: (id: string): Promise<any> => request(`/performance/reviews/${id}`),
+    createReview: (data: any): Promise<any> =>
+      request('/performance/reviews', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    submitHrFeedback: (id: string, data: any): Promise<any> =>
+      request(`/performance/reviews/${id}/hr-feedback`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    recalculate: (id: string, data: any): Promise<any> =>
+      request(`/performance/reviews/${id}/recalculate`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
 };

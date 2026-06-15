@@ -22,6 +22,7 @@ export class PerformanceService {
       where.reviewerId = userId;
     } else {
       where.subjectId = userId;
+      where.isPublished = true;
     }
 
     if (period) where.period = period;

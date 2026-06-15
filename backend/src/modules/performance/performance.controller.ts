@@ -82,8 +82,10 @@ export const getReviewById = asyncHandler(async (req: Request, res: Response) =>
     }
 
     const hasGlobalAccess = orgScopes.isGlobal || reviewScopes.isGlobal;
+    const isSubject = review.subjectId === req.user!.id;
+    const canSubjectView = isSubject && review.isPublished;
 
-    if (!hasGlobalAccess && !isTargetManager && !isDeptHeadOfTarget && !isTeamLeadOfTarget) {
+    if (!hasGlobalAccess && !isTargetManager && !isDeptHeadOfTarget && !isTeamLeadOfTarget && !canSubjectView) {
       throw AppError.forbidden("Access denied: insufficient permissions to view this performance review");
     }
 

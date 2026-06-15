@@ -1,63 +1,63 @@
-import React from 'react';
-import Link from 'next/link';
+'use client';
 
-export const metadata = {
-  title: 'Disclaimer | WorkforceOS',
-  description: 'Legal disclaimer for the WorkforceOS Enterprise Management Platform.',
-};
+import React from 'react';
+import { LandingHeader } from '../../components/layout/LandingHeader';
+import { LandingFooter } from '../../components/layout/LandingFooter';
 
 export default function DisclaimerPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10 py-4 px-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="h-7 w-7 rounded bg-blue-600 text-white flex items-center justify-center font-bold text-sm">W</span>
-          <span className="font-bold text-lg tracking-wider text-white">WorkforceOS</span>
-        </div>
-        <Link 
-          id="back-home-link"
-          href="/" 
-          className="text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-blue-300 transition-colors border border-blue-500/30 px-3 py-1.5 rounded-lg bg-blue-500/5 hover:bg-blue-500/10 cursor-pointer"
-        >
-          Back to Portal
-        </Link>
-      </header>
+    <div className="min-h-screen bg-white text-slate-800 flex flex-col font-sans selection:bg-blue-600/10 selection:text-blue-900">
+      {/* Navigation Header */}
+      <LandingHeader />
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-6 py-12 space-y-8">
+      {/* Main Document Content */}
+      <main className="flex-1 max-w-[720px] w-full mx-auto px-6 pt-28 pb-16 space-y-8">
         <article className="space-y-6">
-          <h1 className="text-3xl font-extrabold text-white tracking-tight border-b border-slate-800 pb-4">
-            Legal Disclaimer
+          <h1 
+            className="text-3xl font-[800] text-slate-900 tracking-tight border-b border-slate-200 pb-4"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            Compliance & Payroll Disclaimer
           </h1>
-          <p className="text-slate-400 text-sm leading-relaxed">
+          <p className="text-slate-400 text-xs font-semibold">
             Last updated: June 15, 2026
           </p>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-bold text-white">1. General Information</h2>
-            <p className="text-slate-300 text-sm leading-relaxed">
-              The information provided by WorkforceOS ("we", "us", or "our") on this platform is for general informational and enterprise operations management purposes only. All information is provided in good faith, however, we make no representation or warranty of any kind, express or implied, regarding the accuracy, adequacy, validity, reliability, availability, or completeness of any information on the platform.
+            <h2 className="text-xl font-bold text-slate-900">1. Not Legal or Certified Financial Advice</h2>
+            <p className="text-slate-600 text-[15px] leading-relaxed">
+              WorkforceOS provides software engines designed to assist organizations in tracking attendance, managing leave limits, rating performance, and calculating salaries. The platform, its codebases, calculations, and descriptive articles do not constitute certified financial, legal, CA (Chartered Accountant), or professional tax advice.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-bold text-white">2. Professional & Legal Advice</h2>
-            <p className="text-slate-300 text-sm leading-relaxed">
-              This platform does not contain legal, financial, tax, or professional human resources advice. The payroll, statutory deduction calculations (including PF, ESIC, and Professional Tax), and attendance policy rules are configured based on typical templates and specific user inputs. They should not be relied upon without verification from certified financial or human resources professionals.
+            <h2 className="text-xl font-bold text-slate-900">2. Statutory Deductions & Tax Slabs Accuracy</h2>
+            <p className="text-slate-600 text-[15px] leading-relaxed">
+              Our payroll systems process Indian statutory deductions—including Provident Fund (PF) calculations subject to ₹1,800 thresholds, Employee State Insurance (ESIC) rates, state-level Professional Tax (PT) parameters, and TDS slabs. 
+            </p>
+            <p className="text-slate-600 text-[15px] leading-relaxed">
+              Calculations are dependent on the organizational parameters, salary bands, and settings configured by your administrator. Subscribing organizations are strictly responsible for conducting complete audit checks on all salary register calculations before scheduling payouts or executing bank transfers. We make no warranties regarding complete liability for manual input config mismatches.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-bold text-white">3. System Downtime & Data Loss</h2>
-            <p className="text-slate-300 text-sm leading-relaxed">
-              Under no circumstance shall we have any liability to you for any loss or damage of any kind incurred as a result of the use of the platform or reliance on any information provided. Your use of the platform and your reliance on any information is solely at your own risk.
+            <h2 className="text-xl font-bold text-slate-900">3. Shift Clocks & Automated CRON Actions</h2>
+            <p className="text-slate-600 text-[15px] leading-relaxed">
+              Attendance calculations (such as late deductions, break tracking, and automatic nightly absent marks) are managed by automated CRON scripts based on the ShiftConfig parameters (including grace margins) defined by the organization. WorkforceOS is not liable for LOP salary losses resulting from employees failing to check-in properly or submit timely double-approval adjustment requests.
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">4. Performance Scorecard Evaluations</h2>
+            <p className="text-slate-600 text-[15px] leading-relaxed">
+              The composite performance scores (calculated from task ratios, quality reviews, deadline logs, and qualitative HR points) are mathematical models running on weights chosen by the organization. They represent general metric indexes for management decision-support, not binding recommendations.
             </p>
           </section>
         </article>
       </main>
 
-      <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        <p>&copy; {new Date().getFullYear()} WorkforceOS. All rights reserved. Enterprise Redesign Template.</p>
-      </footer>
+      {/* Navigation Footer */}
+      <LandingFooter />
     </div>
   );
 }

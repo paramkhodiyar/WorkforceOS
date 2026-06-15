@@ -4,10 +4,56 @@ import { ToastProvider } from "../lib/toast/ToastProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "WorkforceOS Management Platform",
-  description: "Enterprise workforce management and operations system",
+  title: "WorkforceOS | Next-Gen Enterprise HRMS & Operations Platform",
+  description: "WorkforceOS is the ultimate Human Resource Management System (HRMS) for modern teams. Streamline shift attendance, double-approval leaves, task state machines, composite performance reviews, and automated payroll with PF, ESIC, and PT calculations.",
+  keywords: [
+    "HRMS",
+    "HRMS Software",
+    "Human Resource Management System",
+    "Workforce Operating System",
+    "Attendance Tracker",
+    "Shift Management",
+    "Leave Double-Approval",
+    "Performance Review Scorecard",
+    "Automated Payroll",
+    "Statutory Deductions",
+    "PF ESIC Calculations",
+    "Professional Tax Software",
+    "Task State Machine"
+  ].join(", "),
+  openGraph: {
+    title: "WorkforceOS | Next-Gen Enterprise HRMS & Operations Platform",
+    description: "Streamline human resources, shift attendance, leaves, performance scorecard, and statutory payroll in a single unified platform.",
+    url: "https://workforceos.com",
+    siteName: "WorkforceOS",
+    images: [
+      {
+        url: "/workforceoslogo.png",
+        width: 800,
+        height: 800,
+        alt: "WorkforceOS Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   icons: {
-    icon: "/workforceoslogo.png",
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
   },
 };
 

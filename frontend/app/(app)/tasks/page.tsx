@@ -5,9 +5,11 @@ import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { CommentDialog } from '../../../components/ui/CommentDialog';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 export default function TasksPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [tasks, setTasks] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -23,6 +25,12 @@ export default function TasksPage() {
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState('');
 
+  // Task Scope Form State
+  const [scope, setScope] = useState<'PERSONAL' | 'TEAM' | 'DEPARTMENT' | 'ORG'>('PERSONAL');
+  const [targetTeamId, setTargetTeamId] = useState<string>('');
+  const [targetDeptId, setTargetDeptId] = useState<string>('');
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'board' | 'dashboard'>('board');
 
@@ -36,7 +44,18 @@ export default function TasksPage() {
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
   const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+  const isIntern = systemRole === 'INTERN' || userRoles.some((r: any) => r.roleName === 'INTERN');
   const canSeeOperations = isAdmin || isHR || isManager;
+
+  const myLedTeams = isAdmin || isHR ? teams : teams.filter(t => t.leadId === user?.id);
+  const myHeadedDepts = isAdmin || isHR ? departments : departments.filter(d => d.headId === user?.id);
+
+  const scopeOptions = [
+    { value: 'PERSONAL', label: 'Personal (Self)' },
+    ...(isAdmin || isHR || myLedTeams.length > 0 ? [{ value: 'TEAM', label: 'Team' }] : []),
+    ...(isAdmin || isHR || myHeadedDepts.length > 0 ? [{ value: 'DEPARTMENT', label: 'Department' }] : []),
+    ...(isAdmin || isHR ? [{ value: 'ORG', label: 'Organization-wide' }] : [])
+  ];
 
   async function loadInitialData() {
     try {
@@ -80,6 +99,28 @@ export default function TasksPage() {
     loadTasks();
   }, [selectedDeptId, selectedTeamId]);
 
+  useEffect(() => {
+    if (scope === 'PERSONAL') {
+      setAssigneeId(user?.id || null);
+    } else {
+      setAssigneeId(null);
+    }
+    setTargetTeamId('');
+    setTargetDeptId('');
+  }, [scope, user]);
+
+  useEffect(() => {
+    if (scope === 'TEAM' && targetTeamId) {
+      api.teams.get(targetTeamId)
+        .then(res => {
+          setTeamMembers(res.data?.members || []);
+        })
+        .catch(console.error);
+    } else {
+      setTeamMembers([]);
+    }
+  }, [targetTeamId, scope]);
+
   async function handleCreateTask(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
@@ -90,8 +131,11 @@ export default function TasksPage() {
         title,
         description,
         priority,
+        scope,
         assigneeId: assigneeId || undefined,
-        dueDate: dueDate ? new Date(dueDate) : undefined
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        teamId: scope === 'TEAM' ? targetTeamId : undefined,
+        departmentId: scope === 'DEPARTMENT' ? targetDeptId : undefined
       });
       setShowModal(false);
       setTitle('');
@@ -99,9 +143,12 @@ export default function TasksPage() {
       setPriority('MEDIUM');
       setAssigneeId(null);
       setDueDate('');
+      setScope('PERSONAL');
+      setTargetTeamId('');
+      setTargetDeptId('');
       loadTasks();
     } catch (err: any) {
-      alert(err.message || 'Failed to create task');
+      toast.error(err.message || 'Failed to create task');
     } finally {
       setSubmitting(false);
     }
@@ -112,7 +159,7 @@ export default function TasksPage() {
       await api.tasks.updateStatus(id, newStatus);
       loadTasks();
     } catch (err: any) {
-      alert(err.message || 'Failed to update task status');
+      toast.error(err.message || 'Failed to update task status');
     }
   }
 
@@ -128,7 +175,7 @@ export default function TasksPage() {
       setReviewingTaskId(null);
       loadTasks();
     } catch (err: any) {
-      alert(err.message || 'Failed to submit review request');
+      toast.error(err.message || 'Failed to submit review request');
     }
   }
 
@@ -185,13 +232,15 @@ export default function TasksPage() {
           <h1 className="text-headline-md font-extrabold text-on-surface">Tasks Center</h1>
           <p className="text-body-sm text-outline">Manage tasks, assign projects, and monitor organizational milestones.</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-primary hover:bg-blue-700 text-on-primary px-5 py-2.5 rounded-xl text-label-sm font-bold shadow-sm transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer self-start md:self-auto"
-        >
-          <span className="material-symbols-outlined text-[18px]">add_task</span>
-          Create Task
-        </button>
+        {!isIntern && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-primary hover:bg-blue-700 text-on-primary px-5 py-2.5 rounded-xl text-label-sm font-bold shadow-sm transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer self-start md:self-auto"
+          >
+            <span className="material-symbols-outlined text-[18px]">add_task</span>
+            Create Task
+          </button>
+        )}
       </div>
 
       {canSeeOperations && (
@@ -499,16 +548,85 @@ export default function TasksPage() {
                 </div>
               </div>
 
+              {/* Task Scope Selection */}
               <div className="space-y-1">
-                <label className="text-label-xs font-bold text-slate-700 uppercase">Assignee</label>
+                <label className="text-label-xs font-bold text-slate-700 uppercase">Task Scope</label>
                 <CustomSelect
-                  options={employeeOptions}
-                  value={assigneeId}
-                  onChange={(val) => setAssigneeId(val || null)}
-                  placeholder="Select assignee..."
-                  searchPlaceholder="Search employees..."
+                  options={scopeOptions}
+                  value={scope}
+                  onChange={(val) => setScope(val as any)}
                 />
               </div>
+
+              {/* Scope-specific dropdowns */}
+              {scope === 'TEAM' && (
+                <div className="space-y-1">
+                  <label className="text-label-xs font-bold text-slate-700 uppercase">Target Team</label>
+                  <CustomSelect
+                    options={myLedTeams.map(t => ({ value: t.id, label: t.name }))}
+                    value={targetTeamId}
+                    onChange={(val) => setTargetTeamId(val)}
+                    placeholder="Select team you lead..."
+                  />
+                </div>
+              )}
+
+              {scope === 'DEPARTMENT' && (
+                <div className="space-y-1">
+                  <label className="text-label-xs font-bold text-slate-700 uppercase">Target Department</label>
+                  <CustomSelect
+                    options={myHeadedDepts.map(d => ({ value: d.id, label: d.name }))}
+                    value={targetDeptId}
+                    onChange={(val) => setTargetDeptId(val)}
+                    placeholder="Select department you head..."
+                  />
+                </div>
+              )}
+
+              {/* Assignee Selection */}
+              {scope !== 'PERSONAL' && (
+                <div className="space-y-1">
+                  <label className="text-label-xs font-bold text-slate-700 uppercase">Assignee</label>
+                  <CustomSelect
+                    options={
+                      scope === 'TEAM'
+                        ? [
+                            { value: '', label: 'Unassigned' },
+                            ...teamMembers.map(emp => ({
+                              value: emp.id,
+                              label: `${emp.firstName} ${emp.lastName}`
+                            }))
+                          ]
+                        : scope === 'DEPARTMENT'
+                        ? [
+                            { value: '', label: 'Unassigned' },
+                            ...employees.filter(emp => emp.departmentId === targetDeptId).map(emp => ({
+                              value: emp.id,
+                              label: `${emp.firstName} ${emp.lastName}`
+                            }))
+                          ]
+                        : [
+                            { value: '', label: 'Unassigned' },
+                            ...employees.map(emp => ({
+                              value: emp.id,
+                              label: `${emp.firstName} ${emp.lastName}`
+                            }))
+                          ]
+                    }
+                    value={assigneeId}
+                    onChange={(val) => setAssigneeId(val || null)}
+                    placeholder="Select assignee..."
+                    disabled={scope === 'TEAM' ? !targetTeamId : scope === 'DEPARTMENT' ? !targetDeptId : false}
+                  />
+                </div>
+              )}
+
+              {scope === 'PERSONAL' && (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  <span className="text-[10px] text-outline font-bold uppercase block">Auto-Assignee</span>
+                  <p className="text-body-sm font-semibold text-slate-700 mt-1">Assigned to yourself ({user?.firstName} {user?.lastName})</p>
+                </div>
+              )}
 
               <div className="pt-4 border-t border-slate-100 flex gap-3">
                 <button

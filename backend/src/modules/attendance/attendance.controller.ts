@@ -79,10 +79,33 @@ export const getExceptions = asyncHandler(async (req: Request, res: Response) =>
 
 export const adjust = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
-  const adjustedBy = req.user!.id;
+  const requestedBy = req.user!.id;
   const recordId = req.params.id;
-  const record = await AttendanceService.adjust(orgId, recordId, req.body, adjustedBy, req);
-  return sendSuccess(res, record, "Attendance record adjusted successfully");
+  const request = await AttendanceService.adjust(orgId, recordId, req.body, requestedBy, req);
+  return sendSuccess(res, request, "Attendance adjustment request submitted successfully");
+});
+
+export const listAdjustments = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const status = req.query.status as any;
+  const list = await AttendanceService.listAdjustmentRequests(orgId, status);
+  return sendSuccess(res, list);
+});
+
+export const approveAdjustment = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const approverId = req.user!.id;
+  const requestId = req.params.id;
+  const result = await AttendanceService.approveAdjustment(orgId, requestId, approverId, req);
+  return sendSuccess(res, result, "Adjustment request approved successfully");
+});
+
+export const rejectAdjustment = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const approverId = req.user!.id;
+  const requestId = req.params.id;
+  const result = await AttendanceService.rejectAdjustment(orgId, requestId, approverId, req);
+  return sendSuccess(res, result, "Adjustment request rejected successfully");
 });
 
 export const getSummary = asyncHandler(async (req: Request, res: Response) => {

@@ -81,6 +81,25 @@ export const api = {
     getCurrentStatus: (): Promise<any> => request('/attendance/today'),
     team: (): Promise<any> => request('/attendance/team'),
     shifts: (): Promise<any> => request('/attendance/shifts'),
+    adjust: (id: string, data: any): Promise<any> =>
+      request(`/attendance/adjust/${id}`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    listAdjustments: (status?: string): Promise<any> => {
+      const query = status ? `?status=${status}` : '';
+      return request(`/attendance/adjustments${query}`);
+    },
+    approveAdjustment: (id: string): Promise<any> =>
+      request(`/attendance/adjustments/${id}/approve`, {
+        method: 'POST',
+      }),
+    rejectAdjustment: (id: string): Promise<any> =>
+      request(`/attendance/adjustments/${id}/reject`, {
+        method: 'POST',
+      }),
+    exceptions: (page = 1, limit = 10): Promise<any> =>
+      request(`/attendance/exceptions?page=${page}&limit=${limit}`),
   },
   leave: {
     list: (): Promise<any> => request('/leave/my-requests'),
@@ -103,6 +122,10 @@ export const api = {
         body: JSON.stringify({ comment: data.comment }),
       });
     },
+    cancel: (id: string): Promise<any> =>
+      request(`/leave/${id}/cancel`, {
+        method: 'DELETE',
+      }),
   },
   payroll: {
     list: (): Promise<any> => request('/payroll/my-payslips'),

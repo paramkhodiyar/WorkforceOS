@@ -8,6 +8,8 @@ import {
   createReview,
   getReviewById,
   updateReview,
+  submitHrFeedback,
+  recalculateScore,
   getLeaderboard
 } from "./performance.controller";
 import {
@@ -30,6 +32,8 @@ router.get("/reviews", validate(getReviewsSchema, "query"), listReviews);
 router.post("/reviews", requirePermission("performance", "review"), validate(createReviewSchema), createReview);
 router.get("/reviews/:id", getReviewById);
 router.patch("/reviews/:id", validate(updateReviewSchema), updateReview);
+router.post("/reviews/:id/hr-feedback", requirePermission("performance", "hr-feedback"), submitHrFeedback);
+router.post("/reviews/:id/recalculate", requirePermission("performance", "review"), recalculateScore);
 router.get("/leaderboard", requirePermission("performance", "leaderboard"), validate(getLeaderboardSchema, "query"), getLeaderboard);
 
 export const performanceRouter = router;

@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 export default function AssetsPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -45,9 +47,9 @@ export default function AssetsPage() {
       setName('');
       setReason('');
       await loadData();
-      alert('Asset request submitted successfully');
+      toast.success('Asset request submitted successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to submit asset request');
+      toast.error(err.message || 'Failed to submit asset request');
     } finally {
       setSubmitting(false);
     }

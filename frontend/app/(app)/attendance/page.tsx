@@ -3,12 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 export default function AttendancePage() {
   const { user } = useAuth();
+  const toast = useToast();
+  const [activeTab, setActiveTab] = useState('my-attendance');
   const [currentStatus, setCurrentStatus] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [teamAttendance, setTeamAttendance] = useState<any[]>([]);
+  const [adjustmentRequests, setAdjustmentRequests] = useState<any[]>([]);
+  const [exceptions, setExceptions] = useState<any[]>([]);
+  const [totalExceptions, setTotalExceptions] = useState(0);
+  const [currentPageExceptions, setCurrentPageExceptions] = useState(1);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
   const [checkType, setCheckType] = useState('WFO');
@@ -17,6 +24,16 @@ export default function AttendancePage() {
   const [currentPageHistory, setCurrentPageHistory] = useState(1);
   const [searchTeam, setSearchTeam] = useState('');
   const [currentPageTeam, setCurrentPageTeam] = useState(1);
+  
+  // Adjustment modal state
+  const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
+  const [selectedRecordForAdjustment, setSelectedRecordForAdjustment] = useState<any>(null);
+  const [proposedCheckIn, setProposedCheckIn] = useState('');
+  const [proposedCheckOut, setProposedCheckOut] = useState('');
+  const [proposedStatus, setProposedStatus] = useState('PRESENT');
+  const [adjustmentNotes, setAdjustmentNotes] = useState('');
+  const [submittingAdjustment, setSubmittingAdjustment] = useState(false);
+
   const itemsPerPage = 8;
 
   const systemRole = user?.systemRole;
@@ -26,6 +43,18 @@ export default function AttendancePage() {
   const isTeamManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER');
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
   const showTeamAttendance = isAdmin || isHR || isDeptHead || isTeamManager;
+
+  const formatDateTime = (dStr: string | null | undefined) => {
+    if (!dStr) return '-';
+    const d = new Date(dStr);
+    return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  const formatTime = (dStr: string | null | undefined) => {
+    if (!dStr) return '-';
+    const d = new Date(dStr);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   async function loadData() {
     try {
@@ -43,6 +72,18 @@ export default function AttendancePage() {
           console.error(err);
         }
       }
+
+      if (isAdmin || isHR) {
+        try {
+          const adjRes = await api.attendance.listAdjustments();
+          setAdjustmentRequests(adjRes.data || []);
+          const excRes = await api.attendance.exceptions(currentPageExceptions, itemsPerPage);
+          setExceptions(excRes.records || []);
+          setTotalExceptions(excRes.total || 0);
+        } catch (err) {
+          console.error(err);
+        }
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -54,6 +95,17 @@ export default function AttendancePage() {
     loadData();
   }, [user]);
 
+  useEffect(() => {
+    if (isAdmin || isHR) {
+      api.attendance.exceptions(currentPageExceptions, itemsPerPage)
+        .then(res => {
+          setExceptions(res.records || []);
+          setTotalExceptions(res.total || 0);
+        })
+        .catch(console.error);
+    }
+  }, [currentPageExceptions]);
+
   async function handleCheckIn() {
     if (checking) return;
     setChecking(true);
@@ -62,9 +114,9 @@ export default function AttendancePage() {
         workMode: checkType,
         ipAddress: location
       });
-      await loadData();
+      toast.success('Successfully checked in!');
     } catch (err: any) {
-      alert(err.message || 'Check-in failed');
+      toast.error(err.message || 'Check-in failed');
     } finally {
       setChecking(false);
     }
@@ -75,11 +127,78 @@ export default function AttendancePage() {
     setChecking(true);
     try {
       await api.attendance.checkOut();
-      await loadData();
+      toast.success('Successfully checked out!');
     } catch (err: any) {
-      alert(err.message || 'Check-out failed');
+      toast.error(err.message || 'Check-out failed');
     } finally {
       setChecking(false);
+    }
+  }
+
+  function openAdjustmentModal(record: any) {
+    setSelectedRecordForAdjustment(record);
+    
+    const formatDateForInput = (dStr: string | null, defaultHour = 9) => {
+      const d = dStr ? new Date(dStr) : new Date(record.date);
+      if (!dStr) {
+        d.setHours(defaultHour, 0, 0, 0);
+      }
+      const pad = (num: number) => String(num).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    setProposedCheckIn(record.checkIn ? formatDateForInput(record.checkIn) : formatDateForInput(null, 9));
+    setProposedCheckOut(record.checkOut ? formatDateForInput(record.checkOut) : formatDateForInput(null, 18));
+    setProposedStatus(record.status || 'PRESENT');
+    setAdjustmentNotes('');
+    setIsAdjustmentModalOpen(true);
+  }
+
+  async function handleAdjustmentSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!adjustmentNotes.trim()) {
+      toast.warning('Reason/notes are required');
+      return;
+    }
+    setSubmittingAdjustment(true);
+    try {
+      const payload: any = {
+        notes: adjustmentNotes,
+        status: proposedStatus,
+      };
+      if (proposedCheckIn) payload.checkIn = new Date(proposedCheckIn).toISOString();
+      if (proposedCheckOut) payload.checkOut = new Date(proposedCheckOut).toISOString();
+
+      await api.attendance.adjust(selectedRecordForAdjustment.id, payload);
+      toast.success('Adjustment request submitted successfully!');
+      setIsAdjustmentModalOpen(false);
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to submit request');
+    } finally {
+      setSubmittingAdjustment(false);
+    }
+  }
+
+  async function handleApproveAdjustment(id: string) {
+    if (!confirm('Are you sure you want to approve this adjustment?')) return;
+    try {
+      await api.attendance.approveAdjustment(id);
+      toast.success('Adjustment approved successfully!');
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to approve adjustment');
+    }
+  }
+
+  async function handleRejectAdjustment(id: string) {
+    if (!confirm('Are you sure you want to reject this adjustment?')) return;
+    try {
+      await api.attendance.rejectAdjustment(id);
+      toast.success('Adjustment rejected successfully!');
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to reject adjustment');
     }
   }
 
@@ -126,158 +245,219 @@ export default function AttendancePage() {
         <p className="text-body-sm text-outline">Record daily shifts and inspect check-in history</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm h-fit">
-          <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Daily Actions</h2>
-          
-          {currentStatus && !currentStatus.checkOut ? (
-            <div className="space-y-4">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <span className="text-[10px] text-green-800 font-bold uppercase block">Current Shift Status</span>
-                <p className="text-label-md font-bold text-green-900 mt-1">Checked In ({currentStatus.workMode})</p>
-                {currentStatus.checkIn && (
-                  <p className="text-[11px] text-green-700 mt-0.5">Since {new Date(currentStatus.checkIn).toLocaleTimeString()}</p>
-                )}
-                {currentStatus.ipAddress && (
-                  <p className="text-[11px] text-green-600 mt-1">Location: {currentStatus.ipAddress}</p>
-                )}
-              </div>
-              <button
-                onClick={handleCheckOut}
-                disabled={checking}
-                className="w-full py-3 bg-error hover:bg-red-700 text-on-error rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50 cursor-pointer"
-              >
-                {checking ? 'Processing...' : 'Check Out Now'}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-lg">
-                <span className="text-[10px] text-outline font-bold uppercase block">Current Shift Status</span>
-                <p className="text-label-md font-bold text-on-surface mt-1">Not Checked In</p>
-              </div>
-
-              <div>
-                <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Shift Mode</label>
-                <select
-                  value={checkType}
-                  onChange={(e) => setCheckType(e.target.value)}
-                  className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
-                >
-                  <option value="WFO">Work From Office (WFO)</option>
-                  <option value="WFM">Work From Home (WFM)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Location / Notes</label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
-                />
-              </div>
-
-              <button
-                onClick={handleCheckIn}
-                disabled={checking}
-                className="w-full py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50 cursor-pointer"
-              >
-                {checking ? 'Processing...' : 'Check In Now'}
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="md:col-span-2 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-          <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Shift Logs History</h2>
-            <div className="relative w-48">
-              <input
-                type="text"
-                placeholder="Search logs..."
-                value={searchHistory}
-                onChange={(e) => {
-                  setSearchHistory(e.target.value);
-                  setCurrentPageHistory(1);
-                }}
-                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
-              />
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
-            </div>
-          </div>
-          
-          {paginatedHistory.length === 0 ? (
-            <p className="text-body-sm text-outline py-8 text-center">No attendance logs recorded yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-surface-container-low/50">
-                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
-                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">In</th>
-                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Out</th>
-                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Type</th>
-                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Location</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant">
-                  {paginatedHistory.map(log => (
-                    <tr key={log.id} className="hover:bg-surface-container-low transition-colors text-body-sm">
-                      <td className="px-4 py-3 text-on-surface font-semibold">
-                        {new Date(log.date).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-on-surface-variant font-mono">
-                        {log.checkIn ? new Date(log.checkIn).toLocaleTimeString() : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-on-surface-variant font-mono">
-                        {log.checkOut ? new Date(log.checkOut).toLocaleTimeString() : '-'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          log.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
-                        }`}>
-                          {log.workMode}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">
-                        {log.ipAddress || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {totalPagesHistory > 1 && (
-                <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
-                  <span className="text-[11px] text-outline">
-                    Showing {(currentPageHistory - 1) * itemsPerPage + 1} to {Math.min(currentPageHistory * itemsPerPage, filteredHistory.length)} of {filteredHistory.length} logs
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      disabled={currentPageHistory === 1}
-                      onClick={() => setCurrentPageHistory(currentPageHistory - 1)}
-                      className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
-                    >
-                      Prev
-                    </button>
-                    <button
-                      disabled={currentPageHistory === totalPagesHistory}
-                      onClick={() => setCurrentPageHistory(currentPageHistory + 1)}
-                      className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+      {/* Tabs */}
+      <div className="flex border-b border-outline-variant gap-4">
+        <button
+          onClick={() => setActiveTab('my-attendance')}
+          className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+            activeTab === 'my-attendance'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-outline hover:text-on-surface'
+          }`}
+        >
+          My Attendance
+        </button>
+        {showTeamAttendance && (
+          <button
+            onClick={() => setActiveTab('team-attendance')}
+            className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+              activeTab === 'team-attendance'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-outline hover:text-on-surface'
+            }`}
+          >
+            Team Attendance
+          </button>
+        )}
+        {(isAdmin || isHR) && (
+          <button
+            onClick={() => setActiveTab('adjustments')}
+            className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+              activeTab === 'adjustments'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-outline hover:text-on-surface'
+            }`}
+          >
+            Adjustments & Exceptions
+          </button>
+        )}
       </div>
 
-      {showTeamAttendance && (
+      {/* Tab: My Attendance */}
+      {activeTab === 'my-attendance' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm h-fit">
+            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Daily Actions</h2>
+            
+            {currentStatus && !currentStatus.checkOut ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <span className="text-[10px] text-green-800 font-bold uppercase block">Current Shift Status</span>
+                  <p className="text-label-md font-bold text-green-900 mt-1">Checked In ({currentStatus.workMode})</p>
+                  {currentStatus.checkIn && (
+                    <p className="text-[11px] text-green-700 mt-0.5">Since {new Date(currentStatus.checkIn).toLocaleTimeString()}</p>
+                  )}
+                  {currentStatus.ipAddress && (
+                    <p className="text-[11px] text-green-600 mt-1">Location: {currentStatus.ipAddress}</p>
+                  )}
+                </div>
+                <button
+                  onClick={handleCheckOut}
+                  disabled={checking}
+                  className="w-full py-3 bg-error hover:bg-red-700 text-on-error rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {checking ? 'Processing...' : 'Check Out Now'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-lg">
+                  <span className="text-[10px] text-outline font-bold uppercase block">Current Shift Status</span>
+                  <p className="text-label-md font-bold text-on-surface mt-1">Not Checked In</p>
+                </div>
+
+                <div>
+                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Shift Mode</label>
+                  <select
+                    value={checkType}
+                    onChange={(e) => setCheckType(e.target.value)}
+                    className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="WFO">Work From Office (WFO)</option>
+                    <option value="WFM">Work From Home (WFM)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Location / Notes</label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+
+                <button
+                  onClick={handleCheckIn}
+                  disabled={checking}
+                  className="w-full py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {checking ? 'Processing...' : 'Check In Now'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="md:col-span-2 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Shift Logs History</h2>
+              <div className="relative w-48">
+                <input
+                  type="text"
+                  placeholder="Search logs..."
+                  value={searchHistory}
+                  onChange={(e) => {
+                    setSearchHistory(e.target.value);
+                    setCurrentPageHistory(1);
+                  }}
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                />
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+              </div>
+            </div>
+            
+            {paginatedHistory.length === 0 ? (
+              <p className="text-body-sm text-outline py-8 text-center">No attendance logs recorded yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-surface-container-low/50">
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">In</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Out</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Type</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Location</th>
+                      {(isHR || isAdmin) && (
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant">
+                    {paginatedHistory.map(log => (
+                      <tr key={log.id} className="hover:bg-surface-container-low transition-colors text-body-sm">
+                        <td className="px-4 py-3 text-on-surface font-semibold">
+                          {new Date(log.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3 text-on-surface-variant font-mono">
+                          {log.checkIn ? new Date(log.checkIn).toLocaleTimeString() : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-on-surface-variant font-mono">
+                          {log.checkOut ? new Date(log.checkOut).toLocaleTimeString() : '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            log.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                          }`}>
+                            {log.workMode}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">
+                          {log.ipAddress || '-'}
+                        </td>
+                        {(isHR || isAdmin) && (
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => openAdjustmentModal({
+                                ...log,
+                                user: {
+                                  firstName: user?.firstName || 'Self',
+                                  lastName: user?.lastName || ''
+                                }
+                              })}
+                              className="text-primary hover:text-blue-700 font-bold text-[11px] underline cursor-pointer"
+                            >
+                              Adjust
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {totalPagesHistory > 1 && (
+                  <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
+                    <span className="text-[11px] text-outline">
+                      Showing {(currentPageHistory - 1) * itemsPerPage + 1} to {Math.min(currentPageHistory * itemsPerPage, filteredHistory.length)} of {filteredHistory.length} logs
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        disabled={currentPageHistory === 1}
+                        onClick={() => setCurrentPageHistory(currentPageHistory - 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        disabled={currentPageHistory === totalPagesHistory}
+                        onClick={() => setCurrentPageHistory(currentPageHistory + 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Team Attendance */}
+      {activeTab === 'team-attendance' && showTeamAttendance && (
         <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
           <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
             <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Active Staff Check-ins</h2>
@@ -309,6 +489,9 @@ export default function AttendancePage() {
                     <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Check Out</th>
                     <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Mode</th>
                     <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Location / Notes</th>
+                    {(isHR || isAdmin) && (
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant text-body-sm">
@@ -363,6 +546,26 @@ export default function AttendancePage() {
                         <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">
                           {todayRecord?.ipAddress || '-'}
                         </td>
+                        {(isHR || isAdmin) && (
+                          <td className="px-4 py-3 text-right">
+                            {todayRecord ? (
+                              <button
+                                onClick={() => openAdjustmentModal({
+                                  ...todayRecord,
+                                  user: {
+                                    firstName: member.firstName,
+                                    lastName: member.lastName
+                                  }
+                                })}
+                                className="text-primary hover:text-blue-700 font-bold text-[11px] underline cursor-pointer"
+                              >
+                                Adjust
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-outline italic">No log</span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -394,6 +597,325 @@ export default function AttendancePage() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Tab: Adjustments & Exceptions */}
+      {activeTab === 'adjustments' && (isAdmin || isHR) && (
+        <div className="space-y-6">
+          {/* Pending Adjustments Section */}
+          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Pending Adjustment Requests</h2>
+            {adjustmentRequests.filter(req => req.status === 'PENDING').length === 0 ? (
+              <p className="text-body-sm text-outline py-4 text-center">No pending adjustment requests.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-body-sm">
+                  <thead>
+                    <tr className="bg-surface-container-low/50">
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Original Times</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Proposed Times</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Reason</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant">
+                    {adjustmentRequests.filter(req => req.status === 'PENDING').map(req => {
+                      const emp = req.attendance?.user;
+                      const isOwnRequest = req.requestedBy === user?.id;
+                      
+                      return (
+                        <tr key={req.id} className="hover:bg-surface-container-low transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="font-semibold text-on-surface">{emp?.firstName} {emp?.lastName}</p>
+                            <p className="text-[10px] text-outline">{emp?.employeeId}</p>
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-on-surface">
+                            {new Date(req.attendance?.date).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3 text-outline font-mono text-[11px]">
+                            In: {formatTime(req.attendance?.checkIn)}<br />
+                            Out: {formatTime(req.attendance?.checkOut)}<br />
+                            Status: <span className="font-bold text-[10px]">{req.attendance?.status}</span>
+                          </td>
+                          <td className="px-4 py-3 text-primary font-mono text-[11px] bg-blue-50/30">
+                            In: {formatTime(req.proposedCheckIn)}<br />
+                            Out: {formatTime(req.proposedCheckOut)}<br />
+                            Status: <span className="font-bold text-[10px]">{req.proposedStatus || req.attendance?.status}</span>
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate" title={req.reason}>
+                            {req.reason}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => handleRejectAdjustment(req.id)}
+                                className="px-2.5 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                              >
+                                Reject
+                              </button>
+                              {isOwnRequest ? (
+                                <span className="px-2.5 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[11px] font-bold border border-slate-200 select-none cursor-not-allowed" title="Two-person rule: Cannot approve own request">
+                                  Self-Request
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => handleApproveAdjustment(req.id)}
+                                  className="px-2.5 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm"
+                                >
+                                  Approve
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Exceptions Section */}
+          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Attendance Exceptions Log</h2>
+            {exceptions.length === 0 ? (
+              <p className="text-body-sm text-outline py-4 text-center">No attendance exceptions found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-body-sm">
+                  <thead>
+                    <tr className="bg-surface-container-low/50">
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">In</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Out</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant">
+                    {exceptions.map(exc => (
+                      <tr key={exc.id} className="hover:bg-surface-container-low transition-colors">
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-on-surface">{exc.firstName} {exc.lastName}</p>
+                          <p className="text-[10px] text-outline">{exc.email}</p>
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-on-surface">
+                          {new Date(exc.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-on-surface-variant">
+                          {exc.checkIn ? new Date(exc.checkIn).toLocaleTimeString() : '-'}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-on-surface-variant">
+                          {exc.checkOut ? new Date(exc.checkOut).toLocaleTimeString() : (
+                            <span className="text-error font-bold text-[10px] uppercase">Missing Out</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            exc.status === 'LATE'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : exc.status === 'ABSENT'
+                              ? 'bg-red-50 text-red-700 border border-red-200'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}>
+                            {exc.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => openAdjustmentModal({
+                              ...exc,
+                              user: {
+                                firstName: exc.firstName,
+                                lastName: exc.lastName
+                              }
+                            })}
+                            className="px-2.5 py-1.5 border border-outline-variant hover:bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                          >
+                            Adjust
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Exceptions Pagination */}
+                {Math.ceil(totalExceptions / itemsPerPage) > 1 && (
+                  <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
+                    <span className="text-[11px] text-outline">
+                      Showing {(currentPageExceptions - 1) * itemsPerPage + 1} to {Math.min(currentPageExceptions * itemsPerPage, totalExceptions)} of {totalExceptions} exceptions
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        disabled={currentPageExceptions === 1}
+                        onClick={() => setCurrentPageExceptions(currentPageExceptions - 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        disabled={currentPageExceptions === Math.ceil(totalExceptions / itemsPerPage)}
+                        onClick={() => setCurrentPageExceptions(currentPageExceptions + 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* All Historical Adjustments Section */}
+          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Resolved Adjustment History</h2>
+            {adjustmentRequests.filter(req => req.status !== 'PENDING').length === 0 ? (
+              <p className="text-body-sm text-outline py-4 text-center">No resolved adjustments.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-body-sm">
+                  <thead>
+                    <tr className="bg-surface-container-low/50">
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Adjusted Values</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant">
+                    {adjustmentRequests.filter(req => req.status !== 'PENDING').map(req => {
+                      const emp = req.attendance?.user;
+                      
+                      return (
+                        <tr key={req.id} className="hover:bg-surface-container-low transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="font-semibold text-on-surface">{emp?.firstName} {emp?.lastName}</p>
+                            <p className="text-[10px] text-outline">{emp?.employeeId}</p>
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-on-surface">
+                            {new Date(req.attendance?.date).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              req.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                            }`}>
+                              {req.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-[11px] text-on-surface-variant">
+                            In: {formatTime(req.proposedCheckIn)}<br />
+                            Out: {formatTime(req.proposedCheckOut)}<br />
+                            Status: <span className="font-bold text-[10px]">{req.proposedStatus || req.attendance?.status}</span>
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate" title={req.reason}>
+                            {req.reason}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Request Adjustment Modal */}
+      {isAdjustmentModalOpen && selectedRecordForAdjustment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full p-6 space-y-4 text-on-surface">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-label-md font-bold uppercase tracking-wider">Request Attendance Adjustment</h3>
+                <p className="text-body-sm text-outline mt-0.5">
+                  For {selectedRecordForAdjustment.user?.firstName || 'Employee'} {selectedRecordForAdjustment.user?.lastName || ''} on {new Date(selectedRecordForAdjustment.date).toLocaleDateString()}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsAdjustmentModalOpen(false)}
+                className="text-outline hover:text-on-surface cursor-pointer flex items-center justify-center h-8 w-8 rounded-full hover:bg-slate-100"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleAdjustmentSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Proposed Check-In</label>
+                  <input
+                    type="datetime-local"
+                    value={proposedCheckIn}
+                    onChange={(e) => setProposedCheckIn(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary text-on-surface font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Proposed Check-Out</label>
+                  <input
+                    type="datetime-local"
+                    value={proposedCheckOut}
+                    onChange={(e) => setProposedCheckOut(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary text-on-surface font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Proposed Status</label>
+                <select
+                  value={proposedStatus}
+                  onChange={(e) => setProposedStatus(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary text-on-surface font-medium"
+                >
+                  <option value="PRESENT">PRESENT</option>
+                  <option value="LATE">LATE</option>
+                  <option value="ABSENT">ABSENT</option>
+                  <option value="HALF_DAY">HALF_DAY</option>
+                  <option value="ON_LEAVE">ON_LEAVE</option>
+                  <option value="EARLY_DEP">EARLY_DEP</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Reason / Notes (Required)</label>
+                <textarea
+                  value={adjustmentNotes}
+                  onChange={(e) => setAdjustmentNotes(e.target.value)}
+                  placeholder="Explain why this adjustment is needed..."
+                  required
+                  rows={3}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none text-on-surface font-medium resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAdjustmentModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-label-sm font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingAdjustment}
+                  className="px-4 py-2 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-sm font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {submittingAdjustment ? 'Submitting...' : 'Submit Request'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

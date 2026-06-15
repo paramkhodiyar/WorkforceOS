@@ -4,9 +4,11 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 function ProfileContent() {
   const { user } = useAuth();
+  const toast = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
   const profileId = searchParams.get('id');
@@ -198,7 +200,7 @@ function ProfileContent() {
       setEditing(false);
       loadProfileData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update profile');
+      toast.error(err.message || 'Failed to update profile');
     }
   }
 

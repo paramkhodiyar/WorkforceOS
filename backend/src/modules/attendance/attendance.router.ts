@@ -13,7 +13,10 @@ import {
   getExceptions,
   adjust,
   getSummary,
-  getShifts
+  getShifts,
+  listAdjustments,
+  approveAdjustment,
+  rejectAdjustment
 } from "./attendance.controller";
 import { checkInSchema, adjustSchema, getHistorySchema, getSummarySchema } from "./attendance.validation";
 
@@ -34,6 +37,9 @@ router.get("/history", validate(getHistorySchema, "query"), getHistory);
 router.get("/team", requirePermission("attendance", "read_team"), getTeam);
 router.get("/exceptions", requirePermission("attendance", "read_team"), getExceptions);
 router.post("/adjust/:id", requirePermission("attendance", "adjust"), validate(adjustSchema), adjust);
+router.get("/adjustments", requirePermission("attendance", "adjust"), listAdjustments);
+router.post("/adjustments/:id/approve", requirePermission("attendance", "adjust"), approveAdjustment);
+router.post("/adjustments/:id/reject", requirePermission("attendance", "adjust"), rejectAdjustment);
 router.get("/summary/:userId", validate(getSummarySchema, "query"), getSummary);
 
 export const attendanceRouter = router;

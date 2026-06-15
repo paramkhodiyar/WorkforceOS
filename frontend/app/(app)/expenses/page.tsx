@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 export default function ExpensesPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -52,8 +54,9 @@ export default function ExpensesPage() {
       setAmount('');
       setDescription('');
       await loadData();
+      toast.success('Expense claim filed successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to submit expense claim');
+      toast.error(err.message || 'Failed to submit expense claim');
     } finally {
       setSubmitting(false);
     }
@@ -63,8 +66,9 @@ export default function ExpensesPage() {
     try {
       await api.expenses.approve(id, status);
       await loadData();
+      toast.success(`Expense claim ${status.toLowerCase()} successfully`);
     } catch (err: any) {
-      alert(err.message || 'Action failed');
+      toast.error(err.message || 'Action failed');
     }
   }
 

@@ -97,6 +97,26 @@ export const updateReview = asyncHandler(async (req: Request, res: Response) => 
   return sendSuccess(res, review, "Performance review updated successfully");
 });
 
+export const submitHrFeedback = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const hrId = req.user!.id;
+  const result = await PerformanceService.submitHrFeedback(req.params.id, orgId, hrId, req.body, req);
+  return sendSuccess(res, result, "HR feedback submitted and score recalculated successfully");
+});
+
+export const recalculateScore = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const actorId = req.user!.id;
+  const result = await PerformanceService.recalculateScore(
+    req.params.id,
+    orgId,
+    actorId,
+    req.body.weightConfig,
+    req
+  );
+  return sendSuccess(res, result, "Performance score recalculated successfully");
+});
+
 export const getLeaderboard = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
   const departmentId = req.query.departmentId as string;

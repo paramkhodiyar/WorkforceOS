@@ -30,7 +30,10 @@ async function main() {
   await prisma.taskReview.deleteMany();
   await prisma.taskAttachment.deleteMany();
   await prisma.taskLabel.deleteMany();
+  await prisma.taskStatusHistory.deleteMany();
   await prisma.task.deleteMany();
+  await prisma.attendanceAdjustmentRequest.deleteMany();
+  await prisma.attendanceBreak.deleteMany();
   await prisma.attendance.deleteMany();
   await prisma.userRole.deleteMany();
   await prisma.team.deleteMany();
@@ -377,13 +380,13 @@ async function main() {
 
   const taskData = [
     { title: "Organize the 8th Annual Dundie Awards", description: "Book Chilli's party room, prepare Dundie trophies and plan Michael's opening set.", assigneeId: employeesList[0].id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS },
-    { title: "Audit Dwight's Beet Farm Travel claims", description: "Dwight claimed beet manure transport cost under business travel. Needs compliance audit.", assigneeId: employeesList[2].id, priority: TaskPriority.MEDIUM, status: TaskStatus.TODO },
-    { title: "Reconcile Scranton quarterly ledger", description: "Audit ledger sheet and make sure Keleven is not used as a number.", assigneeId: employeesList[3].id, priority: TaskPriority.HIGH, status: TaskStatus.TODO },
-    { title: "Perform watermark Quality Assurance on incoming shipments", description: "Ensure that watermarks do not contain offensive material.", assigneeId: employeesList[4].id, priority: TaskPriority.HIGH, status: TaskStatus.DONE },
+    { title: "Audit Dwight's Beet Farm Travel claims", description: "Dwight claimed beet manure transport cost under business travel. Needs compliance audit.", assigneeId: employeesList[2].id, priority: TaskPriority.MEDIUM, status: TaskStatus.ASSIGNED },
+    { title: "Reconcile Scranton quarterly ledger", description: "Audit ledger sheet and make sure Keleven is not used as a number.", assigneeId: employeesList[3].id, priority: TaskPriority.HIGH, status: TaskStatus.ASSIGNED },
+    { title: "Perform watermark Quality Assurance on incoming shipments", description: "Ensure that watermarks do not contain offensive material.", assigneeId: employeesList[4].id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED },
     { title: "Clean Michael's coffee maker", description: "Must scrub the inside of the coffee maker carefully.", assigneeId: ryan.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED },
     { title: "Re-negotiate paper contract with Lackawanna County", description: "Prepare sales materials and client contract sheets.", assigneeId: jim.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS },
-    { title: "Water Dwight's desk beets", description: "Give beets exactly 200ml of water every morning.", assigneeId: ryan.id, priority: TaskPriority.LOW, status: TaskStatus.TODO },
-    { title: "Draft new corporate leave handbook", description: "Draft the leave guidelines and policies for the Scranton branch.", assigneeId: toby.id, priority: TaskPriority.MEDIUM, status: TaskStatus.DONE }
+    { title: "Water Dwight's desk beets", description: "Give beets exactly 200ml of water every morning.", assigneeId: ryan.id, priority: TaskPriority.LOW, status: TaskStatus.ASSIGNED },
+    { title: "Draft new corporate leave handbook", description: "Draft the leave guidelines and policies for the Scranton branch.", assigneeId: toby.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED }
   ];
 
   for (let i = 0; i < taskData.length; i++) {

@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { CommentDialog } from '../../../components/ui/CommentDialog';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 export default function LeavePage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [balances, setBalances] = useState<any[]>([]);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
@@ -70,8 +72,9 @@ export default function LeavePage() {
       setStartDate('');
       setEndDate('');
       setReason('');
+      toast.success('Leave request submitted successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to apply for leave');
+      toast.error(err.message || 'Failed to apply for leave');
     } finally {
       setSubmitting(false);
     }
@@ -96,8 +99,20 @@ export default function LeavePage() {
         comment: comment.trim() || `${status === 'APPROVED' ? 'Approved' : 'Rejected'} via operations dashboard` 
       });
       await loadData();
+      toast.success(`Leave request successfully ${status === 'APPROVED' ? 'approved' : 'rejected'}`);
     } catch (err: any) {
-      alert(err.message || 'Approval action failed');
+      toast.error(err.message || 'Approval action failed');
+    }
+  }
+
+  async function handleCancel(id: string) {
+    if (!confirm('Are you sure you want to cancel this leave request?')) return;
+    try {
+      await api.leave.cancel(id);
+      await loadData();
+      toast.success('Leave request cancelled successfully');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to cancel leave request');
     }
   }
 
@@ -251,6 +266,13 @@ export default function LeavePage() {
                             {req.leaveType} ({new Date(req.startDate).toLocaleDateString()} to {new Date(req.endDate).toLocaleDateString()})
                           </p>
                           <p className="text-body-sm text-outline italic mt-1">"{req.reason}"</p>
+                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold mt-1.5 border ${
+                            req.status === 'MANAGER_APPROVED'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}>
+                            {req.status === 'MANAGER_APPROVED' ? 'Pending HR Approval' : 'Pending Manager Approval'}
+                          </span>
                         </div>
                         <div className="flex gap-2 shrink-0">
                           <button
@@ -327,6 +349,7 @@ export default function LeavePage() {
                       <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Duration</th>
                       <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Reason</th>
                       <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant">
@@ -339,14 +362,28 @@ export default function LeavePage() {
                         <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">{req.reason}</td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                            req.status === 'APPROVED'
+                            req.status === 'HR_APPROVED'
                               ? 'bg-green-50 text-green-700 border-green-200'
+                              : req.status === 'MANAGER_APPROVED'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
                               : req.status === 'REJECTED'
                               ? 'bg-red-50 text-red-700 border-red-200'
-                              : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                              : req.status === 'CANCELLED'
+                              ? 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
                           }`}>
-                            {req.status}
+                            {req.status === 'HR_APPROVED' ? 'APPROVED' : req.status}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {(req.status === 'PENDING' || req.status === 'MANAGER_APPROVED') && (
+                            <button
+                              onClick={() => handleCancel(req.id)}
+                              className="text-error hover:text-red-700 font-semibold text-xs transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

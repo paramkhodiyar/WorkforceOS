@@ -332,62 +332,180 @@ export class AttendanceService {
 
   static async adjust(
     orgId: string,
-    id: string,
+    attendanceId: string,
     fields: { checkIn?: Date; checkOut?: Date; status?: AttendanceStatus; notes: string },
-    adjustedBy: string,
+    requestedBy: string,
     req?: any
   ) {
     const existing = await prisma.attendance.findUnique({
-      where: { id },
-      include: { breaks: true }
+      where: { id: attendanceId }
     });
 
     if (!existing) {
       throw AppError.notFound("Attendance record not found");
     }
 
-    let totalHours = existing.totalHours;
-    const checkInTime = fields.checkIn || existing.checkIn;
-    const checkOutTime = fields.checkOut || existing.checkOut;
-
-    if (checkInTime && checkOutTime) {
-      let calcHours = (new Date(checkOutTime).getTime() - new Date(checkInTime).getTime()) / (1000 * 60 * 60);
-      let totalBreakMs = 0;
-      for (const b of existing.breaks) {
-        const end = b.breakEnd || new Date();
-        totalBreakMs += (end.getTime() - b.breakStart.getTime());
-      }
-      const breakHours = totalBreakMs / (1000 * 60 * 60);
-      calcHours = Math.max(0, calcHours - breakHours);
-      totalHours = Math.round(calcHours * 100) / 100;
-    }
-
-    const updated = await prisma.attendance.update({
-      where: { id },
+    const request = await prisma.attendanceAdjustmentRequest.create({
       data: {
-        checkIn: fields.checkIn,
-        checkOut: fields.checkOut,
-        status: fields.status,
-        notes: fields.notes,
-        isManualEntry: true,
-        adjustedBy,
-        totalHours
+        attendanceId,
+        requestedBy,
+        reason: fields.notes,
+        proposedCheckIn: fields.checkIn ? new Date(fields.checkIn) : null,
+        proposedCheckOut: fields.checkOut ? new Date(fields.checkOut) : null,
+        proposedStatus: fields.status || null,
+        status: "PENDING"
       }
     });
 
     await AuditService.log({
       organizationId: orgId,
-      actorId: adjustedBy,
-      action: AuditAction.STATUS_CHANGED,
+      actorId: requestedBy,
+      action: AuditAction.CREATED,
       module: "attendance",
-      targetId: id,
-      targetType: "Attendance",
-      oldValue: existing,
-      newValue: updated,
+      targetId: request.id,
+      targetType: "AttendanceAdjustmentRequest",
+      newValue: request,
       req
     });
 
-    return updated;
+    return request;
+  }
+
+  static async listAdjustmentRequests(orgId: string, status?: any) {
+    return prisma.attendanceAdjustmentRequest.findMany({
+      where: {
+        attendance: {
+          user: { organizationId: orgId }
+        },
+        ...(status ? { status } : {})
+      },
+      include: {
+        attendance: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                employeeId: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
+  static async approveAdjustment(orgId: string, requestId: string, approverId: string, req?: any) {
+    const request = await prisma.attendanceAdjustmentRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        attendance: {
+          include: { breaks: true }
+        }
+      }
+    });
+
+    if (!request) {
+      throw AppError.notFound("Adjustment request not found");
+    }
+
+    if (request.status !== "PENDING") {
+      throw AppError.badRequest("Adjustment request is already resolved");
+    }
+
+    if (request.requestedBy === approverId) {
+      throw AppError.forbidden("Two-person rule violation: You cannot approve your own adjustment request");
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Calculate total hours
+      let totalHours = request.attendance.totalHours;
+      const checkInTime = request.proposedCheckIn || request.attendance.checkIn;
+      const checkOutTime = request.proposedCheckOut || request.attendance.checkOut;
+
+      if (checkInTime && checkOutTime) {
+        let calcHours = (new Date(checkOutTime).getTime() - new Date(checkInTime).getTime()) / (1000 * 60 * 60);
+        let totalBreakMs = 0;
+        for (const b of request.attendance.breaks) {
+          const end = b.breakEnd || new Date();
+          totalBreakMs += (end.getTime() - b.breakStart.getTime());
+        }
+        const breakHours = totalBreakMs / (1000 * 60 * 60);
+        calcHours = Math.max(0, calcHours - breakHours);
+        totalHours = Math.round(calcHours * 100) / 100;
+      }
+
+      // Update request status
+      const updatedRequest = await tx.attendanceAdjustmentRequest.update({
+        where: { id: requestId },
+        data: { status: "APPROVED", approvedBy: approverId }
+      });
+
+      // Update attendance record
+      const updatedAttendance = await tx.attendance.update({
+        where: { id: request.attendanceId },
+        data: {
+          checkIn: request.proposedCheckIn || undefined,
+          checkOut: request.proposedCheckOut || undefined,
+          status: request.proposedStatus || undefined,
+          notes: request.reason,
+          isManualEntry: true,
+          adjustedBy: request.requestedBy,
+          totalHours
+        }
+      });
+
+      return { updatedRequest, updatedAttendance };
+    });
+
+    await AuditService.log({
+      organizationId: orgId,
+      actorId: approverId,
+      action: AuditAction.APPROVED,
+      module: "attendance",
+      targetId: request.attendanceId,
+      targetType: "Attendance",
+      oldValue: request.attendance,
+      newValue: result.updatedAttendance,
+      req
+    });
+
+    return result;
+  }
+
+  static async rejectAdjustment(orgId: string, requestId: string, approverId: string, req?: any) {
+    const request = await prisma.attendanceAdjustmentRequest.findUnique({
+      where: { id: requestId }
+    });
+
+    if (!request) {
+      throw AppError.notFound("Adjustment request not found");
+    }
+
+    if (request.status !== "PENDING") {
+      throw AppError.badRequest("Adjustment request is already resolved");
+    }
+
+    const updatedRequest = await prisma.attendanceAdjustmentRequest.update({
+      where: { id: requestId },
+      data: { status: "REJECTED", approvedBy: approverId }
+    });
+
+    await AuditService.log({
+      organizationId: orgId,
+      actorId: approverId,
+      action: AuditAction.REJECTED,
+      module: "attendance",
+      targetId: request.attendanceId,
+      targetType: "AttendanceAdjustmentRequest",
+      oldValue: request,
+      newValue: updatedRequest,
+      req
+    });
+
+    return updatedRequest;
   }
 
   static async getSummaryStats(userId: string, month: number, year: number) {

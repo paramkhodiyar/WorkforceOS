@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../lib/api/client';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 export default function KnowledgePage() {
+  const toast = useToast();
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -29,7 +31,7 @@ export default function KnowledgePage() {
       const res = await api.knowledge.get(id);
       setSelectedArticle(res.data);
     } catch (err: any) {
-      alert(err.message || 'Failed to fetch article content');
+      toast.error(err.message || 'Failed to fetch article content');
     }
   }
 

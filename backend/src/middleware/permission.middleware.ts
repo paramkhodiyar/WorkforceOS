@@ -3,7 +3,8 @@ import { redis } from "../config/redis";
 import { prisma } from "../config/database";
 import { AppError } from "../utils/errors.util";
 
-export function requirePermission(resource: string, action: string) {
+export function requirePermission(resource: string, action: string | string[]) {
+  const actions = Array.isArray(action) ? action : [action];
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user || !req.org) {
@@ -17,7 +18,7 @@ export function requirePermission(resource: string, action: string) {
       const orgId = req.org.id;
       const roles = req.user.roles || [];
 
-      if (resource === "employee" && action === "read" && req.params.id === req.user.id) {
+      if (resource === "employee" && actions.includes("read") && req.params.id === req.user.id) {
         return next();
       }
 
@@ -89,7 +90,7 @@ export function requirePermission(resource: string, action: string) {
       for (const userRole of roles) {
         const perms = cachedPermissionsMap[userRole.roleId] || [];
         allPermissions.push(...perms);
-        const match = perms.some((p) => p.resource === resource && p.action === action);
+        const match = perms.some((p) => p.resource === resource && actions.includes(p.action));
         if (match) {
           hasPermission = true;
         }

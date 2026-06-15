@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TaskStatus, TaskPriority } from "@prisma/client";
+import { TaskStatus, TaskPriority, TaskScope } from "@prisma/client";
 
 export const createTaskSchema = z.object({
   title: z.string().min(1),
@@ -8,7 +8,11 @@ export const createTaskSchema = z.object({
   priority: z.nativeEnum(TaskPriority).optional(),
   dueDate: z.preprocess((val) => (val ? new Date(val as string) : undefined), z.date().optional()),
   parentTaskId: z.string().optional(),
-  dependencies: z.array(z.string()).optional()
+  dependencies: z.array(z.string()).optional(),
+  scope: z.nativeEnum(TaskScope).optional().default(TaskScope.PERSONAL),
+  teamId: z.string().optional(),
+  departmentId: z.string().optional(),
+  reviewerIds: z.array(z.string()).optional()
 });
 
 export const updateTaskSchema = z.object({
@@ -18,7 +22,11 @@ export const updateTaskSchema = z.object({
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(TaskPriority).optional(),
   dueDate: z.preprocess((val) => (val ? new Date(val as string) : undefined), z.date().optional()),
-  parentTaskId: z.string().optional()
+  parentTaskId: z.string().optional(),
+  scope: z.nativeEnum(TaskScope).optional(),
+  teamId: z.string().optional(),
+  departmentId: z.string().optional(),
+  reviewerIds: z.array(z.string()).optional()
 });
 
 export const commentSchema = z.object({

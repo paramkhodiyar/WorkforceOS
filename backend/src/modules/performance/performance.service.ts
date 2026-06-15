@@ -3,7 +3,11 @@ import { AuditAction, NotificationType } from "@prisma/client";
 import { AppError } from "../../utils/errors.util";
 import { AuditService } from "../audit/audit.service";
 import { NotificationService } from "../notifications/notifications.service";
-import { aggregatePerformanceMetrics } from "../../db/queries/performance.queries";
+import {
+  aggregatePerformanceMetrics,
+  DEFAULT_WEIGHT_CONFIG,
+  WeightConfig
+} from "../../db/queries/performance.queries";
 import { getDateRange } from "../../utils/date.util";
 
 export class PerformanceService {
@@ -36,11 +40,18 @@ export class PerformanceService {
   static async createReview(
     orgId: string,
     reviewerId: string,
-    data: { subjectId: string; period: string; periodType: string; comments?: string },
+    data: {
+      subjectId: string;
+      period: string;
+      periodType: string;
+      comments?: string;
+      weightConfig?: Partial<WeightConfig>;
+    },
     req?: any
   ) {
     const { startDate, endDate } = getDateRange(data.period, data.periodType);
-    const metrics = await aggregatePerformanceMetrics(data.subjectId, startDate, endDate);
+    const weights = { ...DEFAULT_WEIGHT_CONFIG, ...(data.weightConfig ?? {}) };
+    const metrics = await aggregatePerformanceMetrics(data.subjectId, startDate, endDate, weights);
 
     const review = await prisma.performanceReview.create({
       data: {
@@ -48,12 +59,15 @@ export class PerformanceService {
         reviewerId,
         period: data.period,
         periodType: data.periodType,
-        score: metrics.score,
-        comments: data.comments || null,
+        score: metrics.avgReviewScore,
+        comments: data.comments ?? null,
         completionRate: metrics.completionRate,
         deadlinesMet: metrics.deadlinesMet,
         reworkCount: metrics.reworkCount,
-        attendancePct: metrics.attendancePct
+        attendancePct: metrics.attendancePct,
+        weightConfig: metrics.weights as unknown as Record<string, number>,
+        finalScore: metrics.finalScore,
+        scoreBand: metrics.scoreBand
       }
     });
 
@@ -70,12 +84,12 @@ export class PerformanceService {
     await NotificationService.notify(
       data.subjectId,
       NotificationType.REVIEW_DUE,
-      "Performance Review Completed",
-      `Your manager completed your performance review for ${data.period}. Score: ${metrics.score}`,
+      "Performance Review Created",
+      `Your manager created a performance review for ${data.period}. Composite Score: ${metrics.finalScore} (${metrics.scoreBand})`,
       { reviewId: review.id }
     );
 
-    return review;
+    return { ...review, metrics };
   }
 
   static async getReviewById(id: string, orgId: string) {
@@ -133,36 +147,189 @@ export class PerformanceService {
     return updated;
   }
 
+  /**
+   * HR submits qualitative feedback (0–5 per dimension) on a review.
+   * After feedback is saved, the final composite score is recomputed and the
+   * review is optionally published.
+   */
+  static async submitHrFeedback(
+    id: string,
+    orgId: string,
+    hrId: string,
+    data: {
+      hrCollaboration: number;
+      hrCommunication: number;
+      hrDiscipline: number;
+      hrInitiative: number;
+      hrConduct: number;
+      hrFeedbackNote?: string;
+      publish?: boolean;
+      weightConfig?: Partial<WeightConfig>;
+    },
+    req?: any
+  ) {
+    const review = await prisma.performanceReview.findFirst({
+      where: { id, isDeleted: false, subject: { organizationId: orgId } }
+    });
+
+    if (!review) throw AppError.notFound("Performance review not found");
+
+    const { startDate, endDate } = getDateRange(review.period, review.periodType);
+
+    const hrFeedback = {
+      hrCollaboration: data.hrCollaboration,
+      hrCommunication: data.hrCommunication,
+      hrDiscipline: data.hrDiscipline,
+      hrInitiative: data.hrInitiative,
+      hrConduct: data.hrConduct
+    };
+
+    const weights = {
+      ...(review.weightConfig as Partial<WeightConfig> ?? DEFAULT_WEIGHT_CONFIG),
+      ...(data.weightConfig ?? {})
+    };
+
+    const metrics = await aggregatePerformanceMetrics(
+      review.subjectId,
+      startDate,
+      endDate,
+      weights,
+      hrFeedback
+    );
+
+    const updated = await prisma.performanceReview.update({
+      where: { id },
+      data: {
+        hrCollaboration: data.hrCollaboration,
+        hrCommunication: data.hrCommunication,
+        hrDiscipline: data.hrDiscipline,
+        hrInitiative: data.hrInitiative,
+        hrConduct: data.hrConduct,
+        hrFeedbackNote: data.hrFeedbackNote ?? null,
+        hrFeedbackBy: hrId,
+        hrFeedbackAt: new Date(),
+        weightConfig: metrics.weights as unknown as Record<string, number>,
+        finalScore: metrics.finalScore,
+        scoreBand: metrics.scoreBand,
+        isPublished: data.publish ?? false
+      }
+    });
+
+    await AuditService.log({
+      organizationId: orgId,
+      actorId: hrId,
+      action: AuditAction.UPDATED,
+      module: "performance",
+      targetId: id,
+      targetType: "PerformanceReview",
+      newValue: { finalScore: metrics.finalScore, scoreBand: metrics.scoreBand },
+      req
+    });
+
+    if (data.publish) {
+      await NotificationService.notify(
+        review.subjectId,
+        NotificationType.REVIEW_DUE,
+        "Performance Review Published",
+        `Your performance review for ${review.period} has been published. Final Score: ${metrics.finalScore} (${metrics.scoreBand})`,
+        { reviewId: review.id }
+      );
+    }
+
+    return { ...updated, metrics };
+  }
+
+  /**
+   * Recalculate and persist the composite score for an existing review.
+   * Useful after weight config changes.
+   */
+  static async recalculateScore(id: string, orgId: string, actorId: string, weightConfig?: Partial<WeightConfig>, req?: any) {
+    const review = await prisma.performanceReview.findFirst({
+      where: { id, isDeleted: false, subject: { organizationId: orgId } }
+    });
+
+    if (!review) throw AppError.notFound("Performance review not found");
+
+    const { startDate, endDate } = getDateRange(review.period, review.periodType);
+    const weights = { ...DEFAULT_WEIGHT_CONFIG, ...(weightConfig ?? {}) };
+
+    const hrFeedback = {
+      hrCollaboration: review.hrCollaboration,
+      hrCommunication: review.hrCommunication,
+      hrDiscipline: review.hrDiscipline,
+      hrInitiative: review.hrInitiative,
+      hrConduct: review.hrConduct
+    };
+
+    const metrics = await aggregatePerformanceMetrics(
+      review.subjectId,
+      startDate,
+      endDate,
+      weights,
+      hrFeedback
+    );
+
+    const updated = await prisma.performanceReview.update({
+      where: { id },
+      data: {
+        finalScore: metrics.finalScore,
+        scoreBand: metrics.scoreBand,
+        weightConfig: metrics.weights as unknown as Record<string, number>,
+        completionRate: metrics.completionRate,
+        deadlinesMet: metrics.deadlinesMet,
+        reworkCount: metrics.reworkCount,
+        attendancePct: metrics.attendancePct
+      }
+    });
+
+    await AuditService.log({
+      organizationId: orgId,
+      actorId,
+      action: AuditAction.UPDATED,
+      module: "performance",
+      targetId: id,
+      targetType: "PerformanceReview",
+      newValue: { finalScore: metrics.finalScore, scoreBand: metrics.scoreBand },
+      req
+    });
+
+    return { ...updated, metrics };
+  }
+
   static async getLeaderboard(orgId: string, departmentId?: string, period = "2026-Q1", type = "QUARTERLY") {
     const where: any = {
       organizationId: orgId,
-      isDeleted: false,
-      systemRole: "EMPLOYEE"
+      isDeleted: false
     };
 
     if (departmentId) {
       where.departmentId = departmentId;
     }
 
-    const users = await prisma.user.findMany({ where });
+    const users = await prisma.user.findMany({ where, take: 100 });
     const { startDate, endDate } = getDateRange(period, type);
 
-    const scoresList = [];
-    for (const u of users) {
-      const metrics = await aggregatePerformanceMetrics(u.id, startDate, endDate);
-      scoresList.push({
-        id: u.id,
-        firstName: u.firstName,
-        lastName: u.lastName,
-        email: u.email,
-        avatarUrl: u.avatarUrl,
-        score: metrics.score,
-        completionRate: metrics.completionRate,
-        attendancePct: metrics.attendancePct
-      });
-    }
+    const scoresList = await Promise.all(
+      users.map(async (u) => {
+        const metrics = await aggregatePerformanceMetrics(u.id, startDate, endDate);
+        return {
+          id: u.id,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          email: u.email,
+          avatarUrl: u.avatarUrl,
+          designation: u.designation,
+          finalScore: metrics.finalScore,
+          scoreBand: metrics.scoreBand,
+          completionRate: metrics.completionRate,
+          attendancePct: metrics.attendancePct,
+          qualityScore: metrics.qualityScore,
+          deadlinesMet: metrics.deadlinesMet
+        };
+      })
+    );
 
-    scoresList.sort((a, b) => b.score - a.score);
+    scoresList.sort((a, b) => b.finalScore - a.finalScore);
     return scoresList;
   }
 }

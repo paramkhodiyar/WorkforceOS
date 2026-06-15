@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 export default function PayrollPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [payslips, setPayslips] = useState<any[]>([]);
   const [runs, setRuns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,9 +55,9 @@ export default function PayrollPage() {
         year: Number(runYear)
       });
       await loadData();
-      alert('Payroll run generated successfully');
+      toast.success('Payroll run generated successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to generate payroll run');
+      toast.error(err.message || 'Failed to generate payroll run');
     } finally {
       setGenerating(false);
     }
@@ -66,7 +68,7 @@ export default function PayrollPage() {
       const res = await api.payroll.getPayslip(id);
       setSelectedPayslip(res.data);
     } catch (err: any) {
-      alert(err.message || 'Failed to fetch payslip details');
+      toast.error(err.message || 'Failed to fetch payslip details');
     }
   }
 

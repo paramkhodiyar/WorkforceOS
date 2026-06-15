@@ -25,16 +25,51 @@ export class LeaveService {
       throw AppError.badRequest("Start date must be before or equal to end date");
     }
 
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const days = Math.round((end.getTime() - start.getTime()) / msPerDay) + 1;
+    const startStr = start.toISOString().split("T")[0];
+    const endStr = end.toISOString().split("T")[0];
+
+    const currentDate = new Date(startStr);
+    const endDate = new Date(endStr);
+
+    const holidays = await prisma.holiday.findMany({
+      where: {
+        organizationId: orgId,
+        date: {
+          gte: currentDate,
+          lte: endDate
+        }
+      }
+    });
+
+    const holidayStrings = new Set(
+      holidays.map((h) => h.date.toISOString().split("T")[0])
+    );
+
+    let days = 0;
+    let tempDate = new Date(currentDate);
+    while (tempDate <= endDate) {
+      const dayOfWeek = tempDate.getUTCDay();
+      const dateStr = tempDate.toISOString().split("T")[0];
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isHoliday = holidayStrings.has(dateStr);
+
+      if (!isWeekend && !isHoliday) {
+        days++;
+      }
+      tempDate.setUTCDate(tempDate.getUTCDate() + 1);
+    }
+
+    if (days === 0) {
+      throw AppError.badRequest("Selected leave period does not contain any working days");
+    }
 
     const overlap = await prisma.leaveRequest.findFirst({
       where: {
         userId,
         isDeleted: false,
         status: { in: [LeaveStatus.PENDING, LeaveStatus.MANAGER_APPROVED, LeaveStatus.HR_APPROVED] },
-        startDate: { lte: end },
-        endDate: { gte: start }
+        startDate: { lte: endDate },
+        endDate: { gte: currentDate }
       }
     });
 
@@ -42,7 +77,7 @@ export class LeaveService {
       throw AppError.badRequest("Overlapping leave request exists");
     }
 
-    const year = start.getFullYear();
+    const year = currentDate.getFullYear();
     const balance = await prisma.leaveBalance.findUnique({
       where: { userId_leaveType_year: { userId, leaveType: data.leaveType, year } }
     });
@@ -55,8 +90,8 @@ export class LeaveService {
       data: {
         userId,
         leaveType: data.leaveType,
-        startDate: start,
-        endDate: end,
+        startDate: currentDate,
+        endDate,
         days,
         reason: data.reason,
         status: LeaveStatus.PENDING
@@ -129,8 +164,21 @@ export class LeaveService {
   }
 
   static async getPendingApprovals(user: any, orgId: string, page = 1, limit = 10) {
-    const hrScopes = await getPermissionScopes(user, orgId, "leave", "approve:hr");
-    const managerScopes = await getPermissionScopes(user, orgId, "leave", "approve:manager");
+    const hrScopes1 = await getPermissionScopes(user, orgId, "leave", "hr_approve");
+    const hrScopes2 = await getPermissionScopes(user, orgId, "leave", "approve:hr");
+    const hrScopes = {
+      isGlobal: hrScopes1.isGlobal || hrScopes2.isGlobal,
+      departmentIds: Array.from(new Set([...hrScopes1.departmentIds, ...hrScopes2.departmentIds])),
+      teamIds: Array.from(new Set([...hrScopes1.teamIds, ...hrScopes2.teamIds])),
+    };
+
+    const managerScopes1 = await getPermissionScopes(user, orgId, "leave", "approve");
+    const managerScopes2 = await getPermissionScopes(user, orgId, "leave", "approve:manager");
+    const managerScopes = {
+      isGlobal: managerScopes1.isGlobal || managerScopes2.isGlobal,
+      departmentIds: Array.from(new Set([...managerScopes1.departmentIds, ...managerScopes2.departmentIds])),
+      teamIds: Array.from(new Set([...managerScopes1.teamIds, ...managerScopes2.teamIds])),
+    };
 
     const conditions: any[] = [];
 
@@ -224,8 +272,24 @@ export class LeaveService {
       include: { user: true }
     });
 
-    if (!request || request.status !== LeaveStatus.PENDING) {
-      throw AppError.badRequest("Leave request not found or not in pending state");
+    if (!request) {
+      throw AppError.notFound("Leave request not found");
+    }
+
+    if (request.status === LeaveStatus.MANAGER_APPROVED) {
+      throw AppError.badRequest("Leave request has already been approved by a manager");
+    }
+    if (request.status === LeaveStatus.HR_APPROVED) {
+      throw AppError.badRequest("Leave request has already been approved by HR");
+    }
+    if (request.status === LeaveStatus.REJECTED) {
+      throw AppError.badRequest("Leave request has already been rejected");
+    }
+    if (request.status === LeaveStatus.CANCELLED) {
+      throw AppError.badRequest("Leave request has been cancelled");
+    }
+    if (request.status !== LeaveStatus.PENDING) {
+      throw AppError.badRequest("Leave request is not in a pending state");
     }
 
     const updated = await prisma.leaveRequest.update({
@@ -294,8 +358,24 @@ export class LeaveService {
       include: { user: true }
     });
 
-    if (!request || request.status !== LeaveStatus.MANAGER_APPROVED) {
-      throw AppError.badRequest("Leave request not found or not approved by manager");
+    if (!request) {
+      throw AppError.notFound("Leave request not found");
+    }
+
+    if (request.status === LeaveStatus.PENDING) {
+      throw AppError.badRequest("Leave request must be approved by a manager first");
+    }
+    if (request.status === LeaveStatus.HR_APPROVED) {
+      throw AppError.badRequest("Leave request has already been approved by HR");
+    }
+    if (request.status === LeaveStatus.REJECTED) {
+      throw AppError.badRequest("Leave request has already been rejected");
+    }
+    if (request.status === LeaveStatus.CANCELLED) {
+      throw AppError.badRequest("Leave request has been cancelled");
+    }
+    if (request.status !== LeaveStatus.MANAGER_APPROVED) {
+      throw AppError.badRequest("Leave request is not approved by manager");
     }
 
     const updated = await prisma.leaveRequest.update({
@@ -325,6 +405,73 @@ export class LeaveService {
           used: { increment: request.days }
         }
       });
+    }
+
+    // Leave + Attendance Integration
+    const startStr = request.startDate.toISOString().split("T")[0];
+    const endStr = request.endDate.toISOString().split("T")[0];
+
+    const currentDate = new Date(startStr);
+    const endDate = new Date(endStr);
+
+    const holidays = await prisma.holiday.findMany({
+      where: {
+        organizationId: orgId,
+        date: {
+          gte: currentDate,
+          lte: endDate
+        }
+      }
+    });
+
+    const holidayStrings = new Set(
+      holidays.map((h) => h.date.toISOString().split("T")[0])
+    );
+
+    let tempDate = new Date(currentDate);
+    while (tempDate <= endDate) {
+      const dayOfWeek = tempDate.getUTCDay();
+      const dateStr = tempDate.toISOString().split("T")[0];
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isHoliday = holidayStrings.has(dateStr);
+
+      if (!isWeekend && !isHoliday) {
+        const dateForDb = new Date(dateStr);
+        const existingAttendance = await prisma.attendance.findUnique({
+          where: {
+            userId_date: {
+              userId: request.userId,
+              date: dateForDb
+            }
+          }
+        });
+
+        if (existingAttendance) {
+          if (existingAttendance.status !== "ON_LEAVE") {
+            // Flag it in the adjustment request system
+            await prisma.attendanceAdjustmentRequest.create({
+              data: {
+                attendanceId: existingAttendance.id,
+                requestedBy: approverId,
+                proposedStatus: "ON_LEAVE",
+                reason: `System Auto-Flag: Leave approved from ${startStr} to ${endStr} conflicts with existing attendance record.`,
+                status: "PENDING"
+              }
+            });
+          }
+        } else {
+          // Create attendance record with status ON_LEAVE
+          await prisma.attendance.create({
+            data: {
+              userId: request.userId,
+              date: dateForDb,
+              status: "ON_LEAVE",
+              notes: `Auto-created: Leave approved from ${startStr} to ${endStr}`
+            }
+          });
+        }
+      }
+      tempDate.setUTCDate(tempDate.getUTCDate() + 1);
     }
 
     await AuditService.log({
@@ -357,7 +504,19 @@ export class LeaveService {
       }
     });
 
-    if (!request || (request.status !== LeaveStatus.PENDING && request.status !== LeaveStatus.MANAGER_APPROVED)) {
+    if (!request) {
+      throw AppError.notFound("Leave request not found");
+    }
+    if (request.status === LeaveStatus.HR_APPROVED) {
+      throw AppError.badRequest("Cannot reject a request that is already approved by HR");
+    }
+    if (request.status === LeaveStatus.REJECTED) {
+      throw AppError.badRequest("Leave request has already been rejected");
+    }
+    if (request.status === LeaveStatus.CANCELLED) {
+      throw AppError.badRequest("Leave request has been cancelled");
+    }
+    if (request.status !== LeaveStatus.PENDING && request.status !== LeaveStatus.MANAGER_APPROVED) {
       throw AppError.badRequest("Leave request cannot be rejected in its current state");
     }
 
@@ -413,11 +572,12 @@ export class LeaveService {
 
   static async cancel(userId: string, orgId: string, id: string, req?: any) {
     const request = await prisma.leaveRequest.findFirst({
-      where: { id, userId, isDeleted: false }
+      where: { id, userId, isDeleted: false },
+      include: { user: true }
     });
 
-    if (!request || request.status !== LeaveStatus.PENDING) {
-      throw AppError.badRequest("Only pending requests can be cancelled");
+    if (!request || (request.status !== LeaveStatus.PENDING && request.status !== LeaveStatus.MANAGER_APPROVED)) {
+      throw AppError.badRequest("Only pending or manager approved requests can be cancelled");
     }
 
     const updated = await prisma.leaveRequest.update({
@@ -450,6 +610,16 @@ export class LeaveService {
       newValue: { status: LeaveStatus.CANCELLED },
       req
     });
+
+    if (request.status === LeaveStatus.MANAGER_APPROVED && request.user.managerId) {
+      await NotificationService.notify(
+        request.user.managerId,
+        NotificationType.SYSTEM,
+        "Leave Request Cancelled",
+        `${request.user.firstName} ${request.user.lastName} has cancelled their leave request for ${request.days} day(s) which was previously approved by you.`,
+        { leaveRequestId: id }
+      );
+    }
 
     return updated;
   }

@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
+import { useToast } from '../../../lib/toast/ToastProvider';
 
 export default function EmployeesPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -183,10 +185,12 @@ export default function EmployeesPage() {
         loadEmployees();
         setShowModal(false);
         setEditingEmployee(null);
+        toast.success('Employee updated successfully');
       } else {
         const result = await api.employees.create(payload);
         setEnrollResult(result.data);
         loadEmployees();
+        toast.success('Employee enrolled successfully');
       }
 
       // Clear fields
@@ -231,7 +235,7 @@ export default function EmployeesPage() {
       setSystemRoleField('EMPLOYEE');
       setActiveStep(0);
     } catch (err: any) {
-      alert(err.message || 'Failed to process employee request');
+      toast.error(err.message || 'Failed to process employee request');
     }
   }
 
@@ -319,8 +323,9 @@ export default function EmployeesPage() {
     try {
       await api.employees.delete(id);
       loadEmployees();
+      toast.success('Employee deleted successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to delete employee');
+      toast.error(err.message || 'Failed to delete employee');
     }
   }
 
@@ -714,7 +719,7 @@ export default function EmployeesPage() {
                         type="button"
                         onClick={() => {
                           if (idx > 0 && (!firstName.trim() || !lastName.trim() || !email.trim())) {
-                            alert('Please fill out first name, last name, and work email before moving to other steps.');
+                            toast.warning('Please fill out first name, last name, and work email before moving to other steps.');
                             return;
                           }
                           setActiveStep(idx);
@@ -1275,21 +1280,21 @@ export default function EmployeesPage() {
                       onClick={() => {
                         if (activeStep === 0) {
                           if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-                            alert('Please fill out all required fields: First Name, Last Name, and Work Email.');
+                            toast.warning('Please fill out all required fields: First Name, Last Name, and Work Email.');
                             return;
                           }
                         }
                         if (activeStep === 3) {
                           const startedBank = bankName || accountNumber || ifscCode || accountHolderName || panNumber || aadhaarLast4;
                           if (startedBank && (!bankName || !accountNumber || !ifscCode || !accountHolderName || !panNumber)) {
-                            alert('If providing bank details, please fill out all required fields: Bank Name, Account Number, IFSC Code, Account Holder Name, and PAN.');
+                            toast.warning('If providing bank details, please fill out all required fields: Bank Name, Account Number, IFSC Code, Account Holder Name, and PAN.');
                             return;
                           }
                         }
                         if (activeStep === 4) {
                           const startedEmergency = emergencyName || emergencyRelation || emergencyPhone || emergencyAltPhone;
                           if (startedEmergency && (!emergencyName || !emergencyRelation || !emergencyPhone)) {
-                            alert('If providing emergency contact, please fill out Name, Relation, and Phone Number.');
+                            toast.warning('If providing emergency contact, please fill out Name, Relation, and Phone Number.');
                             return;
                           }
                         }

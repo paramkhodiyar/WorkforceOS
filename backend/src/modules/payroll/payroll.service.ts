@@ -3,7 +3,7 @@ import { PayrollStatus, AuditAction, NotificationType } from "@prisma/client";
 import { AppError } from "../../utils/errors.util";
 import { AuditService } from "../audit/audit.service";
 import { NotificationService } from "../notifications/notifications.service";
-import { computeSalaryBreakdown, fetchActiveEmployeesForPayroll } from "../../db/queries/payroll.queries";
+import { computeSalaryBreakdown, fetchActiveEmployeesForPayroll, computeLopDays } from "../../db/queries/payroll.queries";
 
 export class PayrollService {
   static async getRuns(orgId: string, filters: { year?: number; status?: PayrollStatus }) {
@@ -65,32 +65,56 @@ export class PayrollService {
     const employees = await fetchActiveEmployeesForPayroll(orgId);
 
     for (const emp of employees) {
-      let basic = 25000;
-      if (emp.salaryBand === "BAND_A") basic = 80000;
-      else if (emp.salaryBand === "BAND_B") basic = 50000;
-      else if (emp.salaryBand === "BAND_C") basic = 30000;
-      else if (emp.salaryBand) {
-        const parsed = parseInt(emp.salaryBand, 10);
-        if (!isNaN(parsed)) basic = parsed;
+      // ── Determine basic salary ─────────────────────────────────────────────
+      let basic = emp.basicSalary ?? 25000; // prefer user-level basic salary
+      if (!emp.basicSalary) {
+        // Fallback to salary band defaults
+        if (emp.salaryBand === "BAND_A") basic = 80000;
+        else if (emp.salaryBand === "BAND_B") basic = 50000;
+        else if (emp.salaryBand === "BAND_C") basic = 35000;
+        else if (emp.salaryBand === "BAND_D") basic = 25000;
+        else if (emp.salaryBand === "BAND_E") basic = 18000;
       }
 
-      let breakdown;
-      if (emp.systemRole === "INTERN") {
-        breakdown = {
-          basicSalary: basic,
-          hra: 0,
-          allowances: 0,
-          bonus: 0,
-          grossSalary: basic,
-          pf: 0,
-          tax: 0,
-          otherDeductions: 0,
-          totalDeductions: 0,
-          netSalary: basic
-        };
-      } else {
-        breakdown = computeSalaryBreakdown(basic);
+      // ── Interns: simple stipend, no statutory deductions ──────────────────
+      if (emp.employeeType === "INTERN" || emp.systemRole === "INTERN") {
+        await prisma.payrollRecord.create({
+          data: {
+            payrollRunId: run.id,
+            userId: emp.id,
+            basicSalary: basic,
+            hra: 0,
+            allowances: 0,
+            bonus: 0,
+            grossSalary: basic,
+            pf: 0,
+            pfEmployerContribution: 0,
+            esic: 0,
+            tax: 0,
+            lopDays: 0,
+            lopDeduction: 0,
+            otherDeductions: 0,
+            totalDeductions: 0,
+            netSalary: basic
+          }
+        });
+        continue;
       }
+
+      // ── LOP days from attendance ────────────────────────────────────────────
+      // Standard working days in a month = 26 (Mon–Sat). Adjust if needed.
+      const WORKING_DAYS_PER_MONTH = 26;
+      const lopDays = await computeLopDays(emp.id, month, year, WORKING_DAYS_PER_MONTH);
+
+      // ── Full statutory breakdown ────────────────────────────────────────────
+      const breakdown = computeSalaryBreakdown(basic, {
+        bonus: 0,
+        otherDeductions: 0,
+        pfApplicable: emp.pfApplicable ?? true,
+        taxRegime: (emp.taxRegime as "OLD" | "NEW") ?? "NEW",
+        lopDays,
+        workingDaysInMonth: WORKING_DAYS_PER_MONTH
+      });
 
       await prisma.payrollRecord.create({
         data: {
@@ -102,7 +126,12 @@ export class PayrollService {
           bonus: breakdown.bonus,
           grossSalary: breakdown.grossSalary,
           pf: breakdown.pf,
+          pfEmployerContribution: breakdown.pfEmployerContribution,
+          esic: breakdown.esic,
+          professionalTax: breakdown.professionalTax,
           tax: breakdown.tax,
+          lopDays: breakdown.lopDays,
+          lopDeduction: breakdown.lopDeduction,
           otherDeductions: breakdown.otherDeductions,
           totalDeductions: breakdown.totalDeductions,
           netSalary: breakdown.netSalary

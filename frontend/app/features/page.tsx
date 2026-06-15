@@ -238,7 +238,7 @@ export default function FeaturesPage() {
               How WorkforceOS Works
             </h2>
             <p className="text-slate-500 text-sm max-w-md mx-auto font-normal">
-              Simulate the core workflow of our HRMS platform in 5 quick interactive steps.
+              Simulate the core workflow of our HRMS platform in 4 quick interactive steps.
             </p>
           </div>
 
@@ -246,13 +246,12 @@ export default function FeaturesPage() {
           <div className="bg-white border border-slate-200 rounded-[20px] overflow-hidden flex flex-col">
             
             {/* Step Indicators */}
-            <div className="border-b border-slate-200 bg-slate-50/50 p-4 grid grid-cols-5 text-center gap-2">
+            <div className="border-b border-slate-200 bg-slate-50/50 p-4 grid grid-cols-4 text-center gap-2">
               {[
                 { step: 1, label: '1. Onboarding' },
-                { step: 2, label: '2. Geofence' },
-                { step: 3, label: '3. Leaves' },
-                { step: 4, label: '4. Payroll' },
-                { step: 5, label: '5. Audit Logs' },
+                { step: 2, label: '2. Leaves' },
+                { step: 3, label: '3. Payroll' },
+                { step: 4, label: '4. Audit Logs' },
               ].map((s) => (
                 <button
                   key={s.step}
@@ -358,107 +357,12 @@ export default function FeaturesPage() {
                 </div>
               )}
 
-              {/* STEP 2: GEOFENCE */}
+              {/* STEP 2: LEAVES */}
               {tourStep === 2 && (
                 <div className="space-y-6 animate-fade-in">
                   <div className="space-y-2">
                     <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                      Step 2: Geofenced Attendance Lock
-                    </h3>
-                    <p className="text-slate-500 text-xs leading-relaxed font-normal">
-                      Lock check-ins to exact geographical coordinates. Employees checking in outside defined bounds will be flagged for LOP.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                    {/* Interactive Geofence Grid */}
-                    <div className="space-y-3">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Office Area Boundary (Click to map)</span>
-                      <div className="grid grid-cols-5 gap-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl aspect-square max-w-[240px] mx-auto md:mx-0">
-                        {Array.from({ length: 25 }).map((_, idx) => {
-                          const r = Math.floor(idx / 5) - 2;
-                          const c = (idx % 5) - 2;
-                          const isCenter = r === 0 && c === 0;
-                          const isHQ = Math.abs(r) <= 1 && Math.abs(c) <= 1; // Default 3x3 geofence area
-                          return (
-                            <div
-                              key={idx}
-                              onClick={() => {
-                                if (isCenter) return;
-                                addWizardLog(`GEOFENCE-UPDATED: Toggled grid coordinate zone at (${r}, ${c}).`);
-                              }}
-                              className={`aspect-square rounded border flex items-center justify-center cursor-pointer transition-all select-none ${
-                                isCenter
-                                  ? 'bg-blue-600 border-blue-600 text-white font-bold text-xs'
-                                  : isHQ
-                                  ? 'bg-blue-50 border-blue-200 text-blue-600'
-                                  : 'bg-white hover:bg-slate-100 border-slate-200'
-                              }`}
-                              title={isCenter ? 'Main Office Center' : `Zone (${r}, ${c})`}
-                            >
-                              {isCenter ? (
-                                <span className="material-symbols-outlined text-[14px]">home</span>
-                              ) : (
-                                <span className="text-[7px] text-slate-400 font-mono">{r},{c}</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Check In Action Simulation */}
-                    <div className="space-y-4">
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase block">Clock In Simulator</span>
-                        <p className="text-xs text-slate-650 font-normal">Simulate checking in from different virtual coordinates:</p>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => {
-                              setWizardCheckInStatus('success');
-                              addWizardLog(`ATTENDANCE-LOG: Clock-in SUCCESS. Verified coordinates matching Bangalore HQ.`);
-                            }}
-                            className="bg-white border border-slate-200 hover:border-blue-600 hover:bg-blue-50/20 text-slate-700 py-2 rounded-lg text-[10px] font-bold cursor-pointer transition-all"
-                          >
-                            At Bangalore HQ
-                          </button>
-                          <button
-                            onClick={() => {
-                              setWizardCheckInStatus('failed');
-                              addWizardLog(`ATTENDANCE-WARNING: Geofence MISMATCH. Clock-in rejected from unauthorized coordinates (Distance 14.2km).`);
-                            }}
-                            className="bg-white border border-slate-200 hover:border-red-500 hover:bg-red-50/20 text-slate-700 py-2 rounded-lg text-[10px] font-bold cursor-pointer transition-all"
-                          >
-                            15km Away (Remote)
-                          </button>
-                        </div>
-
-                        {wizardCheckInStatus === 'success' && (
-                          <div className="bg-green-50 border border-green-150 p-2.5 rounded-lg flex items-center gap-2">
-                            <span className="material-symbols-outlined text-green-600 text-[18px]">verified</span>
-                            <span className="text-[10.5px] font-semibold text-green-700 font-mono">Clock In Approved: Within Geofence</span>
-                          </div>
-                        )}
-
-                        {wizardCheckInStatus === 'failed' && (
-                          <div className="bg-red-50 border border-red-150 p-2.5 rounded-lg flex items-center gap-2">
-                            <span className="material-symbols-outlined text-red-500 text-[18px]">warning</span>
-                            <span className="text-[10.5px] font-semibold text-red-700 font-mono">Flagged: Outside Bounds (LOP Rules Apply)</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: LEAVES */}
-              {tourStep === 3 && (
-                <div className="space-y-6 animate-fade-in">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                      Step 3: Custom Leave & Holiday Policies
+                      Step 2: Custom Leave & Holiday Policies
                     </h3>
                     <p className="text-slate-500 text-xs leading-relaxed font-normal">
                       Define organizational leaves and holidays. WorkforceOS automatically filters weekend overlaps and holiday calendar clashes.
@@ -539,12 +443,12 @@ export default function FeaturesPage() {
                 </div>
               )}
 
-              {/* STEP 4: PAYROLL */}
-              {tourStep === 4 && (
+              {/* STEP 3: PAYROLL */}
+              {tourStep === 3 && (
                 <div className="space-y-6 animate-fade-in">
                   <div className="space-y-2">
                     <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                      Step 4: Indian Statutory Payroll Ledger
+                      Step 3: Indian Statutory Payroll Ledger
                     </h3>
                     <p className="text-slate-500 text-xs leading-relaxed font-normal">
                       Live calculations of LOP, Provident Fund (PF capped at ₹1,800), Employee State Insurance (ESIC), and Net Salary.
@@ -620,22 +524,22 @@ export default function FeaturesPage() {
                 </div>
               )}
 
-              {/* STEP 5: AUDIT LOGS */}
-              {tourStep === 5 && (
+              {/* STEP 4: AUDIT LOGS */}
+              {tourStep === 4 && (
                 <div className="space-y-6 animate-fade-in">
                   <div className="space-y-2">
                     <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                      Step 5: Compliance Audit Stream
+                      Step 4: Compliance Audit Stream
                     </h3>
                     <p className="text-slate-500 text-xs leading-relaxed font-normal">
-                      Every administrative, payroll, and geofence action generates an immutable audit log timestamped in UTC.
+                      Every administrative, payroll, and organizational action generates an immutable audit log timestamped in UTC.
                     </p>
                   </div>
 
                   <div className="bg-slate-900 text-slate-100 rounded-xl overflow-hidden font-mono text-[9px] border border-slate-800">
                     <div className="bg-slate-800 px-4 py-2 flex justify-between items-center text-slate-400 font-bold">
                       <span>Immutable Audit Trail</span>
-                      <span className="text-[8px] bg-blue-500 text-white px-1.5 py-0.5 rounded font-mono select-none">SHA-256 Chain</span>
+                      <span className="text-[8px] bg-blue-50 text-white px-1.5 py-0.5 rounded font-mono select-none">SHA-256 Chain</span>
                     </div>
                     <div className="p-4 space-y-1.5 max-h-[160px] overflow-y-auto custom-scrollbar flex flex-col-reverse bg-slate-950">
                       {wizardLogs.map((log, index) => (
@@ -660,7 +564,7 @@ export default function FeaturesPage() {
               {/* Back / Next Controls */}
               <div className="border-t border-slate-200 pt-4 mt-6 flex justify-between items-center">
                 <span className="text-[10px] text-slate-400 font-bold uppercase">
-                  Simulation Step {tourStep} / 5
+                  Simulation Step {tourStep} / 4
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -672,7 +576,7 @@ export default function FeaturesPage() {
                   </button>
                   <button
                     onClick={() => {
-                      if (tourStep === 5) {
+                      if (tourStep === 4) {
                         setTourStep(1);
                       } else {
                         setTourStep(prev => prev + 1);
@@ -680,11 +584,10 @@ export default function FeaturesPage() {
                     }}
                     className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
                   >
-                    {tourStep === 5 ? 'Restart Walkthrough' : 'Next Step'}
+                    {tourStep === 4 ? 'Restart Walkthrough' : 'Next Step'}
                   </button>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -732,7 +635,6 @@ export default function FeaturesPage() {
         {/* DOCUMENTATION CONTENT AREA */}
         <main className="flex-1 space-y-20">
           
-          {/* 1. EMPLOYEES */}
           <section 
             id="employees" 
             ref={(el) => { sectionRefs.current['employees'] = el; }}
@@ -748,88 +650,116 @@ export default function FeaturesPage() {
             </div>
 
             {/* Dashboard Mockup - Fully Interactive */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/9] flex flex-col justify-between">
-              <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+              <div className="h-6 border-b border-slate-200 pb-2 mb-3 flex items-center justify-between text-[10px] font-bold text-slate-700">
                 <span>Employee Onboarding Wizard</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-              <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 flex flex-col justify-between">
-                {onboardStep === 1 && (
-                  <div className="space-y-2 py-1 flex-1 flex flex-col justify-center">
-                    <span className="text-[8.5px] text-slate-400 font-bold uppercase">Step 1: Personal Profile</span>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input 
-                        type="text" 
-                        value={onboardData.name} 
-                        onChange={(e) => setOnboardData({...onboardData, name: e.target.value})}
-                        className="bg-slate-55 border border-slate-200 p-2 text-[10px] rounded focus:border-blue-600" 
-                        placeholder="Full Name"
-                      />
-                      <input 
-                        type="text" 
-                        value={onboardData.role} 
-                        onChange={(e) => setOnboardData({...onboardData, role: e.target.value})}
-                        className="bg-slate-55 border border-slate-200 p-2 text-[10px] rounded focus:border-blue-600" 
-                        placeholder="Designation"
-                      />
-                    </div>
-                  </div>
-                )}
-                {onboardStep === 2 && (
-                  <div className="space-y-2 py-1 flex-1 flex flex-col justify-center">
-                    <span className="text-[8.5px] text-slate-400 font-bold uppercase">Step 2: Bank Compliance</span>
-                    <div className="flex items-center gap-2">
-                      <label className="text-[10px] text-slate-700 font-semibold flex items-center gap-1.5 cursor-pointer">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                {/* Left Side: Interactive controls */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px]">
+                  {onboardStep === 1 && (
+                    <div className="space-y-2 py-1 flex-1 flex flex-col justify-center">
+                      <span className="text-[8.5px] text-slate-400 font-bold uppercase">Step 1: Personal Profile</span>
+                      <div className="grid grid-cols-2 gap-2">
                         <input 
-                          type="checkbox" 
-                          checked={onboardData.bankVerified} 
-                          onChange={(e) => setOnboardData({...onboardData, bankVerified: e.target.checked})}
-                          className="cursor-pointer"
+                          type="text" 
+                          value={onboardData.name} 
+                          onChange={(e) => setOnboardData({...onboardData, name: e.target.value})}
+                          className="bg-slate-50 border border-slate-200 p-2 text-[10px] rounded focus:border-blue-600 font-medium" 
+                          placeholder="Full Name"
                         />
-                        Verify Indian bank account details (PAN/IFSC)
-                      </label>
+                        <input 
+                          type="text" 
+                          value={onboardData.role} 
+                          onChange={(e) => setOnboardData({...onboardData, role: e.target.value})}
+                          className="bg-slate-50 border border-slate-200 p-2 text-[10px] rounded focus:border-blue-600 font-medium" 
+                          placeholder="Designation"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {onboardStep === 2 && (
+                    <div className="space-y-2 py-1 flex-1 flex flex-col justify-center">
+                      <span className="text-[8.5px] text-slate-400 font-bold uppercase">Step 2: Bank Compliance</span>
+                      <div className="flex items-center gap-2">
+                        <label className="text-[10px] text-slate-750 font-semibold flex items-center gap-1.5 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={onboardData.bankVerified} 
+                            onChange={(e) => setOnboardData({...onboardData, bankVerified: e.target.checked})}
+                            className="cursor-pointer"
+                          />
+                          Verify Indian bank account details (PAN/IFSC)
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                  {onboardStep === 3 && (
+                    <div className="space-y-2 py-1 flex-1 flex flex-col justify-center text-center">
+                      <span className="material-symbols-outlined text-green-600 text-[24px]">verified</span>
+                      <span className="text-[11px] font-bold text-slate-900 block">Onboarding complete!</span>
+                      <p className="text-[8.5px] text-slate-500">Employee profile successfully written to SQL. Bank details encrypted using AES-256-GCM.</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between border-t border-slate-100 pt-2 shrink-0">
+                    <span className="text-[8.5px] text-slate-400 font-bold mt-1">Step {onboardStep} of 3</span>
+                    <div className="flex gap-2">
+                      <button 
+                        disabled={onboardStep === 1}
+                        onClick={() => setOnboardStep(prev => prev - 1)}
+                        className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-655 border border-slate-200 rounded text-[9px] font-bold cursor-pointer disabled:opacity-40"
+                      >
+                        Back
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (onboardStep === 3) {
+                            setOnboardStep(1);
+                            setOnboardData({ name: 'Aarav Mehta', role: 'SDE-II', bankVerified: false });
+                          } else {
+                            setOnboardStep(prev => prev + 1);
+                            if (onboardStep === 2) {
+                              addAudit(`Employee Onboard Wizard complete: ${onboardData.name} (${onboardData.role}).`);
+                            }
+                          }
+                        }}
+                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-750 text-white rounded text-[9px] font-bold cursor-pointer"
+                      >
+                        {onboardStep === 3 ? 'Reset Sandbox' : 'Next Step'}
+                      </button>
                     </div>
                   </div>
-                )}
-                {onboardStep === 3 && (
-                  <div className="space-y-2 py-1 flex-1 flex flex-col justify-center text-center">
-                    <span className="material-symbols-outlined text-green-600 text-[24px]">verified</span>
-                    <span className="text-[11px] font-bold text-slate-900 block">Onboarding complete!</span>
-                    <p className="text-[8px] text-slate-400">Employee profile successfully written to SQL. Bank details encrypted using AES-256-GCM.</p>
-                  </div>
-                )}
+                </div>
 
-                <div className="flex justify-between border-t border-slate-100 pt-2 shrink-0">
-                  <span className="text-[8.5px] text-slate-400 font-bold mt-1">Step {onboardStep} of 3</span>
-                  <div className="flex gap-2">
-                    <button 
-                      disabled={onboardStep === 1}
-                      onClick={() => setOnboardStep(prev => prev - 1)}
-                      className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-650 border border-slate-200 rounded text-[9px] font-bold cursor-pointer disabled:opacity-40"
-                    >
-                      Back
-                    </button>
-                    <button 
-                      onClick={() => {
-                        if (onboardStep === 3) {
-                          setOnboardStep(1);
-                          setOnboardData({ name: 'Aarav Mehta', role: 'SDE-II', bankVerified: false });
-                        } else {
-                          setOnboardStep(prev => prev + 1);
-                          if (onboardStep === 2) {
-                            addAudit(`Employee Onboard Wizard complete: ${onboardData.name} (${onboardData.role}).`);
-                          }
-                        }
-                      }}
-                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-750 text-white rounded text-[9px] font-bold cursor-pointer"
-                    >
-                      {onboardStep === 3 ? 'Reset Sandbox' : 'Next Step'}
-                    </button>
+                {/* Right Side: Visual Flow Chart / Org Graphic */}
+                <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
+                  <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Database Directory Architecture</span>
+                  <div className="w-full space-y-2 font-mono text-[9px] py-1">
+                    <div className="bg-slate-100 border border-slate-200 p-1.5 rounded text-slate-700 font-semibold max-w-[140px] mx-auto">
+                      Org Root: WorkforceOS
+                    </div>
+                    <div className="w-0.5 h-3 bg-slate-200 mx-auto"></div>
+                    <div className="flex justify-center items-center gap-2">
+                      <div className="bg-blue-50 border border-blue-150 p-1 rounded text-blue-700 w-[95px] truncate">
+                        Vikram (CEO)
+                      </div>
+                      <div className="bg-blue-50 border border-blue-150 p-1 rounded text-blue-700 w-[95px] truncate">
+                        Ananya (Ops)
+                      </div>
+                      <div className="bg-blue-600 text-white p-1 rounded font-bold w-[95px] border border-blue-600 truncate animate-pulse">
+                        {onboardStep === 3 ? onboardData.name : 'New Slot...'}
+                      </div>
+                    </div>
                   </div>
+                  <span className="text-[8.5px] text-slate-405 leading-normal max-w-[280px]">
+                    Automatic compliance checking writes a new node schema linked to payroll & leave structures.
+                  </span>
                 </div>
               </div>
             </div>
-
             {/* Feature List */}
             <div className="space-y-6">
               {[
@@ -875,69 +805,118 @@ export default function FeaturesPage() {
             </div>
 
             {/* Dashboard Mockup - Fully Interactive */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/9] flex flex-col justify-between">
-              <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+              <div className="h-6 border-b border-slate-200 pb-2 mb-3 flex items-center justify-between text-[10px] font-bold text-slate-700">
                 <span>Attendance Check In & Breaks</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-              <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 flex flex-col justify-between gap-2">
-                <div className="flex justify-between items-center text-[10px]">
-                  <div>
-                    <span className="text-[9px] text-slate-400 block font-bold uppercase">Daily Shift Marker</span>
-                    <span className="font-semibold text-slate-700">Status: {
-                      attendState === 'out' ? 'Checked Out' : attendState === 'in' ? 'Clocked In' : 'On Tea Break'
-                    }</span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                {/* Left Column: Simulator Controls */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-2">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <div>
+                      <span className="text-[9px] text-slate-400 block font-bold uppercase">Daily Shift Marker</span>
+                      <span className="font-semibold text-slate-700">Status: {
+                        attendState === 'out' ? 'Checked Out' : attendState === 'in' ? 'Clocked In' : 'On Tea Break'
+                      }</span>
+                    </div>
+                    <div className="flex gap-2">
+                      {attendState === 'out' ? (
+                        <button 
+                          onClick={() => {
+                            setAttendState('in');
+                            setAttendLogs(prev => [`Clocked In (Office IP) - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
+                            addAudit("Attendance check-in logged: Lat 12.97, Lng 77.59");
+                          }}
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold rounded cursor-pointer"
+                        >
+                          Clock In
+                        </button>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => {
+                              if (attendState === 'in') {
+                                setAttendState('break');
+                                setAttendLogs(prev => [`Started Break - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
+                              } else {
+                                setAttendState('in');
+                                setAttendLogs(prev => [`Ended Break - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
+                              }
+                            }}
+                            className="px-3 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-655 text-[9px] font-bold rounded cursor-pointer"
+                          >
+                            {attendState === 'break' ? 'End Break' : 'Tea Break'}
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setAttendState('out');
+                              setAttendLogs(prev => [`Clocked Out - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
+                              addAudit("Attendance check-out logged.");
+                            }}
+                            className="px-3 py-1 bg-red-500 hover:bg-red-650 text-white text-[9px] font-bold rounded cursor-pointer"
+                          >
+                            Clock Out
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    {attendState === 'out' ? (
-                      <button 
-                        onClick={() => {
-                          setAttendState('in');
-                          setAttendLogs(prev => [`Clocked In (Office IP) - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
-                          addAudit("Attendance check-in logged: Lat 12.97, Lng 77.59");
-                        }}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold rounded cursor-pointer"
-                      >
-                        Clock In
-                      </button>
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => {
-                            if (attendState === 'in') {
-                              setAttendState('break');
-                              setAttendLogs(prev => [`Started Break - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
-                            } else {
-                              setAttendState('in');
-                              setAttendLogs(prev => [`Ended Break - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
-                            }
-                          }}
-                          className="px-3 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-650 text-[9px] font-bold rounded cursor-pointer"
-                        >
-                          {attendState === 'break' ? 'End Break' : 'Tea Break'}
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setAttendState('out');
-                            setAttendLogs(prev => [`Clocked Out - ${new Date().toLocaleTimeString()}`, ...prev.slice(0, 1)]);
-                            addAudit("Attendance check-out logged.");
-                          }}
-                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-[9px] font-bold rounded cursor-pointer"
-                        >
-                          Clock Out
-                        </button>
-                      </>
-                    )}
+                  
+                  <div className="border-t border-slate-100 pt-2.5 flex-1 flex flex-col justify-end gap-1.5 overflow-hidden">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase">Attendance Logs Tracker</span>
+                    <div className="space-y-1 font-mono text-[8px] text-slate-500">
+                      {attendLogs.map((log, index) => (
+                        <div key={index}>● {log}</div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                
-                <div className="border-t border-slate-100 pt-2.5 flex-1 flex flex-col justify-end gap-1.5 overflow-hidden">
-                  <span className="text-[8px] text-slate-400 font-bold uppercase">Attendance Logs Tracker</span>
-                  <div className="space-y-1 font-mono text-[8px] text-slate-500">
-                    {attendLogs.map((log, index) => (
-                      <div key={index}>● {log}</div>
-                    ))}
+
+                {/* Right Column: Shift Timeline Visualizer */}
+                <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
+                  <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Active Shift Timeline Logs</span>
+                  
+                  {/* Shift Progress Timeline Bar */}
+                  <div className="w-full space-y-3 font-mono text-[8.5px] py-1.5 max-w-[180px] text-left">
+                    <div className="flex justify-between items-center text-[7.5px] text-slate-400">
+                      <span>Shift: 09:00 - 18:00</span>
+                      <span className="font-bold uppercase text-slate-500">WFO Mode</span>
+                    </div>
+
+                    {/* Timeline visualization */}
+                    <div className="w-full bg-slate-100 h-6 rounded border border-slate-200 overflow-hidden flex relative select-none font-bold text-[7.5px]">
+                      {attendState === 'out' ? (
+                        <div className="w-full bg-slate-50 text-slate-400 flex items-center justify-center italic">
+                          Shift Not Started
+                        </div>
+                      ) : (
+                        <>
+                          <div className="bg-teal-600 text-white flex items-center justify-center px-1 border-r border-white/20" style={{ width: '45%' }}>
+                            Checked In (09:15)
+                          </div>
+                          <div className={`text-white flex items-center justify-center transition-all duration-300 ${
+                            attendState === 'break' ? 'bg-orange-500 w-[25%]' : 'bg-teal-600 w-[15%] border-r border-white/20'
+                          }`}>
+                            {attendState === 'break' ? 'Tea Break' : 'Working'}
+                          </div>
+                          <div className="bg-slate-100 flex-1 text-slate-400 flex items-center justify-center font-normal">
+                            Remaining
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="text-[8px] text-slate-500 space-y-0.5">
+                      <div>● Logged Lat/Lng: <span className="font-bold text-slate-700">12.9716, 77.5946 (Bangalore HQ)</span></div>
+                      <div>● Active Break Duration: <span className="font-bold text-slate-700">{attendState === 'break' ? '12m (In bounds)' : '0m'}</span></div>
+                    </div>
                   </div>
+
+                  <span className="text-[8.5px] text-slate-405 leading-normal max-w-[280px]">
+                    Logs coordinates and device IP at clock-in, automatically auditing break times for precise payroll calculations.
+                  </span>
                 </div>
               </div>
             </div>
@@ -946,7 +925,7 @@ export default function FeaturesPage() {
             <div className="space-y-6">
               {[
                 { title: 'Shift-Aware Late Thresholds', desc: 'Define check-in grace margins (e.g., 15 minutes) per shift, with automated alerts triggered when thresholds are breached.' },
-                { title: 'Geofenced Check-In modes', desc: 'Allow tap-based check-ins for Office (WF) or Remote (WFH) locations, backed by IP & coordinates matching.' },
+                { title: 'Work Mode Verification', desc: 'Capture IP address, client environment signature, and work-mode selection (WFO/WFH) to audit attendance integrity.' },
                 { title: 'Micro-Break Tracker', desc: 'Log individual daily breaks (lunch, coffee, tea) to accurately track net working hours.' },
                 { title: 'Double-Approval Adjustments', desc: 'Allows employees to submit adjustment requests for forgotten checks, subject to review by manager and HR.' },
                 { title: 'Automated Nightly Absentees', desc: 'CRON worker automatically flags employees absent at midnight if no check-in was recorded for a working day.' },
@@ -987,78 +966,124 @@ export default function FeaturesPage() {
             </div>
 
             {/* Dashboard Mockup - Fully Interactive */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/9] flex flex-col justify-between">
-              <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+              <div className="h-6 border-b border-slate-200 pb-2 mb-3 flex items-center justify-between text-[10px] font-bold text-slate-700">
                 <span>Leave Balance & Submission form</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-              <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 flex flex-col justify-between gap-3">
-                <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-slate-400 font-bold uppercase">Leave Balance:</span>
-                  <span className="font-extrabold text-blue-600 text-sm">{leaveBalance} Days remaining</span>
-                </div>
-                
-                {/* Form to submit a leave request */}
-                <div className="grid grid-cols-3 gap-2 border-y border-slate-100 py-2 items-center">
-                  <select 
-                    value={newLeaveType}
-                    onChange={(e) => setNewLeaveType(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 p-1 rounded text-[9px] cursor-pointer"
-                  >
-                    <option value="Casual Leave">Casual Leave</option>
-                    <option value="Sick Leave">Sick Leave</option>
-                    <option value="Earned Leave">Earned Leave</option>
-                  </select>
-                  <input 
-                    type="number"
-                    value={newLeaveDays}
-                    onChange={(e) => setNewLeaveDays(Number(e.target.value))}
-                    min={1}
-                    max={10}
-                    className="bg-slate-50 border border-slate-200 p-1 rounded text-[9px] w-full"
-                  />
-                  <button 
-                    onClick={() => {
-                      if (leaveBalance >= newLeaveDays) {
-                        setLeaveHistory(prev => [
-                          { id: Date.now(), type: newLeaveType, duration: newLeaveDays, status: 'Pending Approval' },
-                          ...prev
-                        ]);
-                        addAudit(`Leave request filed: ${newLeaveType} for ${newLeaveDays} days.`);
-                      } else {
-                        alert('Insufficient leave balance!');
-                      }
-                    }}
-                    className="bg-blue-600 hover:bg-blue-750 text-white font-bold rounded p-1 text-[9px] cursor-pointer"
-                  >
-                    Apply Leave
-                  </button>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                {/* Left Column: Form & History */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-2">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-400 font-bold uppercase">Leave Balance:</span>
+                    <span className="font-extrabold text-blue-600 text-xs">{leaveBalance} Days remaining</span>
+                  </div>
+                  
+                  {/* Form to submit a leave request */}
+                  <div className="grid grid-cols-3 gap-2 border-y border-slate-100 py-1.5 items-center">
+                    <select 
+                      value={newLeaveType}
+                      onChange={(e) => setNewLeaveType(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 p-1 rounded text-[9px] cursor-pointer"
+                    >
+                      <option value="Casual Leave">Casual Leave</option>
+                      <option value="Sick Leave">Sick Leave</option>
+                      <option value="Earned Leave">Earned Leave</option>
+                    </select>
+                    <input 
+                      type="number"
+                      value={newLeaveDays}
+                      onChange={(e) => setNewLeaveDays(Number(e.target.value))}
+                      min={1}
+                      max={10}
+                      className="bg-slate-50 border border-slate-200 p-1 rounded text-[9px] w-full"
+                    />
+                    <button 
+                      onClick={() => {
+                        if (leaveBalance >= newLeaveDays) {
+                          setLeaveHistory(prev => [
+                            { id: Date.now(), type: newLeaveType, duration: newLeaveDays, status: 'Pending Approval' },
+                            ...prev
+                          ]);
+                          addAudit(`Leave request filed: ${newLeaveType} for ${newLeaveDays} days.`);
+                        } else {
+                          alert('Insufficient leave balance!');
+                        }
+                      }}
+                      className="bg-blue-600 hover:bg-blue-750 text-white font-bold rounded p-1 text-[9px] cursor-pointer"
+                    >
+                      Apply Leave
+                    </button>
+                  </div>
+
+                  {/* Queue list */}
+                  <div className="flex-1 overflow-y-auto text-[8px] space-y-1.5 max-h-[50px] custom-scrollbar">
+                    {leaveHistory.map((leave) => (
+                      <div key={leave.id} className="flex justify-between items-center border-b border-slate-50 pb-1">
+                        <span>{leave.type} ({leave.duration} Days)</span>
+                        <div className="flex gap-1.5 items-center">
+                          <span className={`px-1.5 py-0.5 rounded font-bold ${
+                            leave.status === 'Approved' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-600'
+                          }`}>{leave.status}</span>
+                          {leave.status === 'Pending Approval' && (
+                            <button 
+                              onClick={() => {
+                                setLeaveHistory(prev => prev.map(l => l.id === leave.id ? { ...l, status: 'Approved' } : l));
+                                setLeaveBalance(prev => Math.max(0, prev - leave.duration));
+                                addAudit(`Leave approved. Balance decremented by ${leave.duration} days.`);
+                              }}
+                              className="bg-slate-100 hover:bg-slate-250 border border-slate-250 text-slate-700 font-bold rounded px-1.5 py-0.5 text-[7px]"
+                            >
+                              Approve
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Queue list */}
-                <div className="flex-1 overflow-y-auto text-[8px] space-y-1.5 max-h-[60px]">
-                  {leaveHistory.map((leave) => (
-                    <div key={leave.id} className="flex justify-between items-center border-b border-slate-50 pb-1">
-                      <span>{leave.type} ({leave.duration} Days)</span>
-                      <div className="flex gap-1.5 items-center">
-                        <span className={`px-1.5 py-0.5 rounded font-bold ${
-                          leave.status === 'Approved' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-600'
-                        }`}>{leave.status}</span>
-                        {leave.status === 'Pending Approval' && (
-                          <button 
-                            onClick={() => {
-                              setLeaveHistory(prev => prev.map(l => l.id === leave.id ? { ...l, status: 'Approved' } : l));
-                              setLeaveBalance(prev => Math.max(0, prev - leave.duration));
-                              addAudit(`Leave approved. Balance decremented by ${leave.duration} days.`);
-                            }}
-                            className="bg-slate-100 hover:bg-slate-250 border border-slate-250 text-slate-700 font-bold rounded px-1.5 py-0.5 text-[7px]"
-                          >
-                            Approve
-                          </button>
-                        )}
+                {/* Right Column: Allowances Breakdown Diagram */}
+                <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
+                  <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Policy Allowances</span>
+                  
+                  {/* Flat breakdown bars visual */}
+                  <div className="w-full space-y-2.5 font-mono text-[9px] py-1 max-w-[180px]">
+                    <div className="space-y-1 text-left">
+                      <div className="flex justify-between text-slate-500 text-[8px]">
+                        <span>Casual Leave</span>
+                        <span className="font-bold">8 / 12 Days remaining</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-1.5 rounded overflow-hidden">
+                        <div className="bg-sky-500 h-full" style={{ width: '66%' }}></div>
                       </div>
                     </div>
-                  ))}
+                    
+                    <div className="space-y-1 text-left">
+                      <div className="flex justify-between text-slate-500 text-[8px]">
+                        <span>Sick Leave</span>
+                        <span className="font-bold">{leaveBalance} / 12 Days remaining</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-1.5 rounded overflow-hidden">
+                        <div className="bg-blue-600 h-full transition-all duration-500" style={{ width: `${(leaveBalance / 12) * 100}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 text-left">
+                      <div className="flex justify-between text-slate-500 text-[8px]">
+                        <span>Earned Leave</span>
+                        <span className="font-bold">15 / 15 Days remaining</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-1.5 rounded overflow-hidden">
+                        <div className="bg-teal-500 h-full" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className="text-[8.5px] text-slate-405 leading-normal max-w-[280px]">
+                    Automatically subtracts weekends and public holidays before updating DB counts.
+                  </span>
                 </div>
               </div>
             </div>
@@ -1108,68 +1133,114 @@ export default function FeaturesPage() {
             </div>
 
             {/* Dashboard Mockup - Fully Interactive */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/9] flex flex-col justify-between">
-              <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+              <div className="h-6 border-b border-slate-200 pb-2 mb-3 flex items-center justify-between text-[10px] font-bold text-slate-700">
                 <span>Task State Machine Sandbox</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-              <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 flex flex-col justify-between gap-3">
-                <div className="text-[10px] font-bold text-slate-700 border-b border-slate-100 pb-2 flex justify-between items-center">
-                  <span>Task: Build PostgreSQL Shards</span>
-                  <span className="text-blue-600 font-mono text-[9px]">Priority: High</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 flex-1 pt-1.5">
-                  <div className="space-y-1.5">
-                    <span className="text-[8.5px] text-slate-400 font-bold uppercase block">State Transition</span>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 bg-violet-100 text-violet-700 rounded text-[9.5px] font-bold border border-violet-150">
-                        {taskState}
-                      </span>
-                    </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                {/* Left side: Interactive controls */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-3">
+                  <div className="text-[10px] font-bold text-slate-700 border-b border-slate-100 pb-2 flex justify-between items-center">
+                    <span>Task: Build PostgreSQL Shards</span>
+                    <span className="text-violet-600 font-mono text-[9px] font-bold">Priority: High</span>
                   </div>
-                  {taskState === 'REVIEW' && (
-                    <div className="space-y-1 flex flex-col justify-center">
-                      <label className="text-[8px] text-slate-400 font-bold uppercase block">Quality Evaluation Score</label>
-                      <select 
-                        value={taskRating}
-                        onChange={(e) => setTaskRating(Number(e.target.value))}
-                        className="bg-slate-50 border border-slate-200 rounded text-[9px] p-1 cursor-pointer w-full"
-                      >
-                        {[5, 6, 7, 8, 9, 10].map(s => <option key={s} value={s}>{s} / 10 Points</option>)}
-                      </select>
+                  
+                  <div className="grid grid-cols-2 gap-4 flex-1 pt-1">
+                    <div className="space-y-1.5">
+                      <span className="text-[8.5px] text-slate-400 font-bold uppercase block">State Transition</span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 bg-violet-100 text-violet-700 rounded text-[9.5px] font-bold border border-violet-150">
+                          {taskState}
+                        </span>
+                      </div>
                     </div>
-                  )}
+                    {taskState === 'REVIEW' && (
+                      <div className="space-y-1 flex flex-col justify-center animate-fade-in">
+                        <label className="text-[8px] text-slate-400 font-bold uppercase block">Quality Evaluation Score</label>
+                        <select 
+                          value={taskRating}
+                          onChange={(e) => setTaskRating(Number(e.target.value))}
+                          className="bg-slate-50 border border-slate-200 rounded text-[9px] p-1 cursor-pointer w-full"
+                        >
+                          {[5, 6, 7, 8, 9, 10].map(s => <option key={s} value={s}>{s} / 10 Points</option>)}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end gap-2 shrink-0 border-t border-slate-100 pt-2">
+                    <button 
+                      onClick={() => {
+                        setTaskState('DRAFT');
+                        addAudit("Reset task back to DRAFT state.");
+                      }}
+                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-655 border border-slate-200 rounded text-[8.5px] font-bold cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (taskState === 'DRAFT') {
+                          setTaskState('IN_PROGRESS');
+                          addAudit("Advanced task state: DRAFT -> IN_PROGRESS.");
+                        } else if (taskState === 'IN_PROGRESS') {
+                          setTaskState('REVIEW');
+                          addAudit("Advanced task state: IN_PROGRESS -> REVIEW.");
+                        } else if (taskState === 'REVIEW') {
+                          setTaskState('CLOSED');
+                          addAudit(`Task CLOSED. Quality Score logged: ${taskRating}/10.`);
+                        }
+                      }}
+                      disabled={taskState === 'CLOSED'}
+                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-750 text-white rounded text-[8.5px] font-bold cursor-pointer disabled:opacity-40 transition-colors"
+                    >
+                      {taskState === 'REVIEW' ? 'Review & Close' : 'Advance State →'}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex justify-end gap-2 shrink-0 border-t border-slate-100 pt-2">
-                  <button 
-                    onClick={() => {
-                      setTaskState('DRAFT');
-                      addAudit("Reset task back to DRAFT state.");
-                    }}
-                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded text-[8.5px] font-bold cursor-pointer"
-                  >
-                    Reset
-                  </button>
-                  <button 
-                    onClick={() => {
-                      if (taskState === 'DRAFT') {
-                        setTaskState('IN_PROGRESS');
-                        addAudit("Advanced task state: DRAFT -> IN_PROGRESS.");
-                      } else if (taskState === 'IN_PROGRESS') {
-                        setTaskState('REVIEW');
-                        addAudit("Advanced task state: IN_PROGRESS -> REVIEW.");
-                      } else if (taskState === 'REVIEW') {
-                        setTaskState('CLOSED');
-                        addAudit(`Task CLOSED. Quality Score logged: ${taskRating}/10.`);
-                      }
-                    }}
-                    disabled={taskState === 'CLOSED'}
-                    className="px-2.5 py-1 bg-blue-600 hover:bg-blue-750 text-white rounded text-[8.5px] font-bold cursor-pointer disabled:opacity-40"
-                  >
-                    {taskState === 'REVIEW' ? 'Review & Close' : 'Advance State &rarr;'}
-                  </button>
+                {/* Right side: State timeline visual pipeline */}
+                <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
+                  <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Workflow State Pipeline</span>
+                  
+                  <div className="w-full flex items-center justify-between max-w-[220px] py-2 font-mono text-[8px]">
+                    {['DRAFT', 'IN_PROGRESS', 'REVIEW', 'CLOSED'].map((state, idx, arr) => {
+                      const statesMap: Record<string, number> = { DRAFT: 1, IN_PROGRESS: 2, REVIEW: 3, CLOSED: 4 };
+                      const currentIdx = statesMap[taskState];
+                      const targetIdx = statesMap[state];
+                      const isPassed = currentIdx > targetIdx;
+                      const isCurrent = currentIdx === targetIdx;
+                      
+                      return (
+                        <React.Fragment key={state}>
+                          <div className="flex flex-col items-center gap-1.5">
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300 font-bold ${
+                              isCurrent 
+                                ? 'bg-violet-600 border-violet-600 text-white animate-pulse' 
+                                : isPassed 
+                                ? 'bg-violet-50 border-violet-300 text-violet-700' 
+                                : 'bg-slate-50 border-slate-200 text-slate-400'
+                            }`}>
+                              {idx + 1}
+                            </div>
+                            <span className={`text-[6px] font-bold tracking-tight ${isCurrent ? 'text-violet-650' : 'text-slate-400'}`}>
+                              {state.replace('_', ' ')}
+                            </span>
+                          </div>
+                          {idx < arr.length - 1 && (
+                            <div className={`flex-1 h-0.5 mx-1 transition-all duration-300 ${
+                              currentIdx > idx + 1 ? 'bg-violet-600' : 'bg-slate-200'
+                            }`}></div>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                  <span className="text-[8.5px] text-slate-405 leading-normal max-w-[280px]">
+                    Strict state transition rules block illegal flows, automatically updating employee performance records on task closure.
+                  </span>
                 </div>
               </div>
             </div>
@@ -1219,73 +1290,118 @@ export default function FeaturesPage() {
             </div>
 
             {/* Dashboard Mockup - Fully Interactive */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/9] flex flex-col justify-between">
-              <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+              <div className="h-6 border-b border-slate-200 pb-2 mb-3 flex items-center justify-between text-[10px] font-bold text-slate-700">
                 <span>Weighted Composite Review Engine</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-              <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 flex flex-col justify-between gap-2">
-                <span className="text-[10px] font-bold text-slate-800">Weights configuration: Task rate, Quality, Attendance</span>
-                
-                {/* Weight slider simulations */}
-                <div className="grid grid-cols-3 gap-2 border-y border-slate-100 py-2">
-                  <div className="space-y-1">
-                    <span className="text-[8px] text-slate-400 font-bold block uppercase">Task Weight ({weightTask}%)</span>
-                    <input 
-                      type="range" 
-                      min="10" 
-                      max="60" 
-                      value={weightTask} 
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setWeightTask(val);
-                        setWeightQuality(Math.round((100 - val) / 2));
-                        setWeightAttendance(100 - val - Math.round((100 - val) / 2));
-                      }}
-                      className="w-full cursor-pointer" 
-                    />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                {/* Left Column: Interactive sliders */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-2">
+                  <span className="text-[10px] font-bold text-slate-800">Weights configuration: Task rate, Quality, Attendance</span>
+                  
+                  {/* Weight slider simulations */}
+                  <div className="grid grid-cols-3 gap-2 border-y border-slate-100 py-2">
+                    <div className="space-y-1">
+                      <span className="text-[8px] text-slate-400 font-bold block uppercase">Task Weight ({weightTask}%)</span>
+                      <input 
+                        type="range" 
+                        min="10" 
+                        max="60" 
+                        value={weightTask} 
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setWeightTask(val);
+                          setWeightQuality(Math.round((100 - val) / 2));
+                          setWeightAttendance(100 - val - Math.round((100 - val) / 2));
+                        }}
+                        className="w-full cursor-pointer" 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[8px] text-slate-400 font-bold block uppercase">Quality ({weightQuality}%)</span>
+                      <input 
+                        type="range" 
+                        min="10" 
+                        max="60" 
+                        value={weightQuality} 
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setWeightQuality(val);
+                          setWeightTask(Math.round((100 - val) / 2));
+                          setWeightAttendance(100 - val - Math.round((100 - val) / 2));
+                        }}
+                        className="w-full cursor-pointer" 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[8px] text-slate-400 font-bold block uppercase">Attendance ({weightAttendance}%)</span>
+                      <input 
+                        type="range" 
+                        min="10" 
+                        max="60" 
+                        value={weightAttendance} 
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setWeightAttendance(val);
+                          setWeightTask(Math.round((100 - val) / 2));
+                          setWeightQuality(100 - val - Math.round((100 - val) / 2));
+                        }}
+                        className="w-full cursor-pointer" 
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <span className="text-[8px] text-slate-400 font-bold block uppercase">Quality ({weightQuality}%)</span>
-                    <input 
-                      type="range" 
-                      min="10" 
-                      max="60" 
-                      value={weightQuality} 
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setWeightQuality(val);
-                        setWeightTask(Math.round((100 - val) / 2));
-                        setWeightAttendance(100 - val - Math.round((100 - val) / 2));
-                      }}
-                      className="w-full cursor-pointer" 
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[8px] text-slate-400 font-bold block uppercase">Attendance ({weightAttendance}%)</span>
-                    <input 
-                      type="range" 
-                      min="10" 
-                      max="60" 
-                      value={weightAttendance} 
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setWeightAttendance(val);
-                        setWeightTask(Math.round((100 - val) / 2));
-                        setWeightQuality(100 - val - Math.round((100 - val) / 2));
-                      }}
-                      className="w-full cursor-pointer" 
-                    />
+
+                  <div className="flex justify-between items-center pt-2 text-[10px]">
+                    <div>
+                      <span className="text-[8px] text-slate-450 block uppercase">Composite Score Output:</span>
+                      <span className="text-lg font-bold text-slate-800 font-mono">{calcPerformanceScore()} / 100 Points</span>
+                    </div>
+                    <span className="px-2.5 py-1 bg-green-50 text-green-700 rounded-full font-bold border border-green-150 text-[8.5px]">
+                      {calcGradeBand(calcPerformanceScore())}
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-2 text-[10px]">
-                  <div>
-                    <span className="text-[8px] text-slate-450 block uppercase">Composite Score Output:</span>
-                    <span className="text-lg font-bold text-slate-800 font-mono">{calcPerformanceScore()} / 100 Points</span>
+                {/* Right Column: Weight breakdown diagram */}
+                <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
+                  <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Weight Config vs Grade</span>
+                  
+                  <div className="w-full space-y-2.5 font-mono text-[9px] py-1 max-w-[180px]">
+                    <div className="space-y-1 text-left">
+                      <div className="flex justify-between text-slate-550 text-[8px]">
+                        <span>Task completion:</span>
+                        <span className="font-bold text-amber-600">{weightTask}% (Factor: 90)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-1.5 rounded overflow-hidden">
+                        <div className="bg-amber-500 h-full transition-all duration-300 animate-pulse" style={{ width: `${weightTask}%` }}></div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1 text-left">
+                      <div className="flex justify-between text-slate-550 text-[8px]">
+                        <span>Quality Index:</span>
+                        <span className="font-bold text-amber-700">{weightQuality}% (Factor: 85)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-1.5 rounded overflow-hidden">
+                        <div className="bg-amber-600 h-full transition-all duration-300 animate-pulse" style={{ width: `${weightQuality}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 text-left">
+                      <div className="flex justify-between text-slate-550 text-[8px]">
+                        <span>Attendance Rate:</span>
+                        <span className="font-bold text-amber-850">{weightAttendance}% (Factor: 98)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-1.5 rounded overflow-hidden">
+                        <div className="bg-amber-700 h-full transition-all duration-300 animate-pulse" style={{ width: `${weightAttendance}%` }}></div>
+                      </div>
+                    </div>
                   </div>
-                  <span className="px-2.5 py-1 bg-green-50 text-green-700 rounded-full font-bold border border-green-100 text-[8.5px]">
-                    {calcGradeBand(calcPerformanceScore())}
+                  
+                  <span className="text-[8.5px] text-slate-405 leading-normal max-w-[280px]">
+                    Adjust weights on the left to recalculate performance indices and auto-assign organization grade bands.
                   </span>
                 </div>
               </div>
@@ -1336,48 +1452,95 @@ export default function FeaturesPage() {
             </div>
 
             {/* Dashboard Mockup - Fully Interactive */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/9] flex flex-col justify-between">
-              <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+              <div className="h-6 border-b border-slate-200 pb-2 mb-3 flex items-center justify-between text-[10px] font-bold text-slate-700">
                 <span>Statutory Deduction & Net Payout Calculator</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-              <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 flex flex-col justify-between gap-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <span className="text-[8px] text-slate-400 font-bold block uppercase">Monthly Gross (₹)</span>
-                    <input 
-                      type="number"
-                      step={5000}
-                      value={payrollGross}
-                      onChange={(e) => setPayrollGross(Number(e.target.value))}
-                      className="bg-slate-50 border border-slate-200 p-1.5 text-[9.5px] rounded w-full"
-                    />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                {/* Left Column: Interactive Inputs */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <span className="text-[8px] text-slate-400 font-bold block uppercase">Monthly Gross (₹)</span>
+                      <input 
+                        type="number"
+                        step={5000}
+                        value={payrollGross}
+                        onChange={(e) => setPayrollGross(Number(e.target.value))}
+                        className="bg-slate-50 border border-slate-200 p-1.5 text-[9.5px] rounded w-full font-medium"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[8px] text-slate-400 font-bold block uppercase">LOP Unpaid Days</span>
+                      <input 
+                        type="number"
+                        min="0"
+                        max="15"
+                        step="0.5"
+                        value={payrollLopDays}
+                        onChange={(e) => setPayrollLopDays(Number(e.target.value))}
+                        className="bg-slate-50 border border-slate-200 p-1.5 text-[9.5px] rounded w-full font-medium"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <span className="text-[8px] text-slate-400 font-bold block uppercase">LOP Unpaid Days</span>
-                    <input 
-                      type="number"
-                      min="0"
-                      max="15"
-                      step="0.5"
-                      value={payrollLopDays}
-                      onChange={(e) => setPayrollLopDays(Number(e.target.value))}
-                      className="bg-slate-50 border border-slate-200 p-1.5 text-[9.5px] rounded w-full"
-                    />
+
+                  <div className="border-t border-slate-100 pt-2 grid grid-cols-2 gap-4 text-[9px] text-slate-650">
+                    <div className="space-y-1 font-mono">
+                      <div className="flex justify-between"><span>LOP Deduct:</span> <span>-₹{Math.round(payrollResult.lopAmount)}</span></div>
+                      <div className="flex justify-between"><span>PF (12% cap):</span> <span>-₹{payrollResult.pf}</span></div>
+                      <div className="flex justify-between"><span>ESIC:</span> <span>-₹{payrollResult.esic}</span></div>
+                      <div className="flex justify-between"><span>Prof Tax:</span> <span>-₹{payrollResult.pt}</span></div>
+                    </div>
+                    <div className="flex flex-col justify-center items-end border-l border-slate-100 pl-4">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase">Net Payout:</span>
+                      <span className="text-base font-black text-blue-600 font-mono">₹{payrollResult.netSalary}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="border-t border-slate-100 pt-2 grid grid-cols-2 gap-4 text-[9px] text-slate-650">
-                  <div className="space-y-1 font-mono">
-                    <div className="flex justify-between"><span>LOP Deducts:</span> <span>-₹{Math.round(payrollResult.lopAmount)}</span></div>
-                    <div className="flex justify-between"><span>PF (12% cap):</span> <span>₹{payrollResult.pf}</span></div>
-                    <div className="flex justify-between"><span>ESIC:</span> <span>₹{payrollResult.esic}</span></div>
-                    <div className="flex justify-between"><span>Prof Tax:</span> <span>₹{payrollResult.pt}</span></div>
+                {/* Right Column: Visual payslip block */}
+                <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
+                  <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Net Take-Home vs Deductions</span>
+                  
+                  <div className="w-full space-y-2.5 font-mono text-[9px] py-1 max-w-[180px]">
+                    {/* Visual Stacked bar */}
+                    <div className="w-full bg-red-150 h-5 rounded border border-slate-250 overflow-hidden flex text-[7.5px] font-bold">
+                      <div 
+                        className="bg-green-600 text-white flex items-center justify-center truncate transition-all duration-300"
+                        style={{ width: `${Math.max(10, Math.min(100, (payrollResult.netSalary / payrollGross) * 100))}%` }}
+                        title={`Take Home: ₹${payrollResult.netSalary}`}
+                      >
+                        {Math.round((payrollResult.netSalary / payrollGross) * 100)}% Pay
+                      </div>
+                      <div 
+                        className="bg-red-500 text-white flex items-center justify-center truncate transition-all duration-300 flex-1"
+                        title={`Deductions: ₹${payrollGross - payrollResult.netSalary}`}
+                      >
+                        Deduct
+                      </div>
+                    </div>
+                    
+                    {/* Monospace breakdown */}
+                    <div className="text-[8.5px] text-slate-600 text-left space-y-1">
+                      <div className="flex justify-between">
+                        <span>Gross Monthly CTC:</span>
+                        <span className="font-bold">₹{payrollGross.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between text-red-600">
+                        <span>Total Deductions:</span>
+                        <span className="font-bold">-₹{(payrollGross - payrollResult.netSalary).toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between text-green-700 border-t border-dashed border-slate-200 pt-1 font-bold text-[9px]">
+                        <span>Net Salary Payout:</span>
+                        <span>₹{payrollResult.netSalary.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col justify-center items-end border-l border-slate-100 pl-4">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase">Net Payout:</span>
-                    <span className="text-base font-black text-blue-600 font-mono">₹{payrollResult.netSalary}</span>
-                  </div>
+                  <span className="text-[8.5px] text-slate-405 leading-normal max-w-[280px]">
+                    PF (capped at ₹1,800), ESIC, and Professional Tax calculations sync automatically to compute net disbursement.
+                  </span>
                 </div>
               </div>
             </div>
@@ -1427,69 +1590,112 @@ export default function FeaturesPage() {
             </div>
 
             {/* Dashboard Mockup - Fully Interactive */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/9] flex flex-col justify-between">
-              <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+              <div className="h-6 border-b border-slate-200 pb-2 mb-3 flex items-center justify-between text-[10px] font-bold text-slate-700">
                 <span>Claims Ledger Sandbox</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-              <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 flex flex-col justify-between gap-2">
-                
-                {/* Form to submit an expense */}
-                <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2 items-center">
-                  <input 
-                    type="text"
-                    value={newExpenseTitle}
-                    onChange={(e) => setNewExpenseTitle(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 p-1 rounded text-[9px] w-full"
-                    placeholder="Title (e.g. Travel)"
-                  />
-                  <input 
-                    type="number"
-                    value={newExpenseAmount}
-                    onChange={(e) => setNewExpenseAmount(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 p-1 rounded text-[9px] w-full"
-                    placeholder="Amount (₹)"
-                  />
-                  <button 
-                    onClick={() => {
-                      if (newExpenseTitle.trim() && newExpenseAmount) {
-                        setExpenseList(prev => [
-                          { title: newExpenseTitle, amount: Number(newExpenseAmount), status: 'Pending Manager' },
-                          ...prev
-                        ]);
-                        addAudit(`Expense claim submitted: ${newExpenseTitle} (₹${newExpenseAmount}).`);
-                        setNewExpenseTitle('');
-                        setNewExpenseAmount('');
-                      }
-                    }}
-                    className="bg-blue-600 hover:bg-blue-750 text-white font-bold rounded p-1 text-[9px] cursor-pointer"
-                  >
-                    File Claim
-                  </button>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                {/* Left Column: Form & Claims list */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-2">
+                  {/* Form to submit an expense */}
+                  <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-2 items-center">
+                    <input 
+                      type="text"
+                      value={newExpenseTitle}
+                      onChange={(e) => setNewExpenseTitle(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 p-1.5 rounded text-[9px] w-full font-medium"
+                      placeholder="Title (e.g. Travel)"
+                    />
+                    <input 
+                      type="number"
+                      value={newExpenseAmount}
+                      onChange={(e) => setNewExpenseAmount(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 p-1.5 rounded text-[9px] w-full font-medium"
+                      placeholder="Amount (₹)"
+                    />
+                    <button 
+                      onClick={() => {
+                        if (newExpenseTitle.trim() && newExpenseAmount) {
+                          setExpenseList(prev => [
+                            { title: newExpenseTitle, amount: Number(newExpenseAmount), status: 'Pending Manager' },
+                            ...prev
+                          ]);
+                          addAudit(`Expense claim submitted: ${newExpenseTitle} (₹${newExpenseAmount}).`);
+                          setNewExpenseTitle('');
+                          setNewExpenseAmount('');
+                        }
+                      }}
+                      className="bg-blue-600 hover:bg-blue-755 text-white font-bold rounded p-1.5 text-[9px] cursor-pointer"
+                    >
+                      File Claim
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto text-[8.5px] space-y-1.5 max-h-[80px] custom-scrollbar">
+                    {expenseList.map((exp, idx) => (
+                      <div key={idx} className="flex justify-between items-center border-b border-slate-50 pb-1">
+                        <span className="font-medium">{exp.title} (₹{exp.amount})</span>
+                        <div className="flex gap-1.5 items-center">
+                          <span className={`px-1.5 py-0.5 rounded font-bold text-[7px] ${
+                            exp.status === 'Paid' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-600'
+                          }`}>{exp.status}</span>
+                          {exp.status === 'Pending Manager' && (
+                            <button 
+                              onClick={() => {
+                                setExpenseList(prev => prev.map((e, i) => i === idx ? { ...e, status: 'Paid' } : e));
+                                addAudit(`Expense approved by manager & processed as Paid.`);
+                              }}
+                              className="bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-700 font-bold rounded px-1.5 py-0.5 text-[7px] cursor-pointer"
+                            >
+                              Approve
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto text-[8.5px] space-y-1.5 max-h-[60px]">
-                  {expenseList.map((exp, idx) => (
-                    <div key={idx} className="flex justify-between items-center border-b border-slate-50 pb-1">
-                      <span>{exp.title} (₹{exp.amount})</span>
-                      <div className="flex gap-1.5 items-center">
-                        <span className={`px-1.5 py-0.5 rounded font-bold ${
-                          exp.status === 'Paid' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-600'
-                        }`}>{exp.status}</span>
-                        {exp.status === 'Pending Manager' && (
-                          <button 
-                            onClick={() => {
-                              setExpenseList(prev => prev.map((e, i) => i === idx ? { ...e, status: 'Paid' } : e));
-                              addAudit(`Expense approved by manager & processed as Paid.`);
-                            }}
-                            className="bg-slate-100 hover:bg-slate-250 border border-slate-250 text-slate-700 font-bold rounded px-1.5 py-0.5 text-[7px]"
-                          >
-                            Approve
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                {/* Right Column: Visual audit timeline */}
+                <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
+                  <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Expense Claim Audit Trail</span>
+                  
+                  <div className="w-full space-y-3 font-mono text-[8px] py-1 max-w-[180px] text-left">
+                    {[
+                      { step: 'Claimed', label: 'Claim Submitted', desc: expenseList.length > 0 ? `${expenseList[0].title} (₹${expenseList[0].amount})` : 'No active claim' },
+                      { step: 'ManagerApproved', label: 'Manager Checked', desc: expenseList.length > 0 ? (expenseList[0].status === 'Paid' ? 'Approved & Passed' : 'Awaiting Review') : '-' },
+                      { step: 'FinanceAudited', label: 'Finance Verified', desc: expenseList.length > 0 ? (expenseList[0].status === 'Paid' ? 'Audited & Cleared' : 'Pending Audit') : '-' },
+                      { step: 'Disbursed', label: 'Bank Payout Issued', desc: expenseList.length > 0 ? (expenseList[0].status === 'Paid' ? 'Paid (IMPS/NEFT)' : 'Awaiting Release') : '-' }
+                    ].map((flow, idx, arr) => {
+                      const isActive = expenseList.length > 0 && (
+                        idx === 0 || 
+                        (idx === 1 && expenseList[0].status === 'Paid') ||
+                        (idx === 2 && expenseList[0].status === 'Paid') ||
+                        (idx === 3 && expenseList[0].status === 'Paid')
+                      );
+                      return (
+                        <div key={idx} className="flex gap-2.5 items-start relative">
+                          {idx < arr.length - 1 && (
+                            <div className={`absolute left-1.5 top-3.5 w-0.5 h-6 transition-all duration-300 ${isActive ? 'bg-orange-500' : 'bg-slate-200'}`}></div>
+                          )}
+                          <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 text-[6.5px] font-black transition-all duration-300 ${
+                            isActive ? 'bg-orange-500 border-orange-500 text-white animate-pulse' : 'bg-white border-slate-200 text-slate-400'
+                          }`}>
+                            {isActive ? '✓' : idx + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className={`font-bold block text-[8.5px] ${isActive ? 'text-slate-800' : 'text-slate-400'}`}>{flow.label}</span>
+                            <span className="text-[7.5px] text-slate-500 truncate block">{flow.desc}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <span className="text-[8.5px] text-slate-405 leading-normal max-w-[280px]">
+                    Live verification traces claims from creation to direct IMPS organization payout.
+                  </span>
                 </div>
               </div>
             </div>
@@ -1539,42 +1745,79 @@ export default function FeaturesPage() {
             </div>
 
             {/* Dashboard Mockup - Fully Interactive */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/9] flex flex-col justify-between">
-              <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+              <div className="h-6 border-b border-slate-200 pb-2 mb-3 flex items-center justify-between text-[10px] font-bold text-slate-700">
                 <span>Asset Inventory Manager</span>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Simulator Sandbox</span>
               </div>
-              <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 flex flex-col justify-between gap-3">
-                <div className="text-[10px] flex justify-between items-center">
-                  <span className="font-bold text-slate-800">{assetList[0].type}</span>
-                  <span className="font-mono text-slate-400">{assetList[0].id}</span>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                {/* Left Column: Asset details and actions */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between min-h-[160px] gap-3">
+                  <div className="text-[10px] flex justify-between items-center border-b border-slate-100 pb-1.5">
+                    <span className="font-bold text-slate-800">{assetList[0].type}</span>
+                    <span className="font-mono text-slate-400 font-bold">{assetList[0].id}</span>
+                  </div>
+                  <div className="py-2.5 flex justify-between items-center text-[9.5px]">
+                    <span>Status: <strong className={assetList[0].status === 'Assigned' ? 'text-blue-600' : 'text-green-600'}>{assetList[0].status}</strong></span>
+                    {assetList[0].status === 'Assigned' && <span>Held by: <strong>{assetList[0].assignee}</strong></span>}
+                  </div>
+                  <div className="flex justify-end gap-2 border-t border-slate-100 pt-2 shrink-0">
+                    {assetList[0].status === 'Available' ? (
+                      <button 
+                        onClick={() => {
+                          setAssetList([{ ...assetList[0], status: 'Assigned', assignee: 'Aarav Mehta' }]);
+                          addAudit(`Asset AST-2026-04 assigned to Aarav Mehta.`);
+                        }}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-755 text-white rounded text-[9.5px] font-bold cursor-pointer transition-colors"
+                      >
+                        Assign to Aarav
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          setAssetList([{ ...assetList[0], status: 'Available', assignee: '-' }]);
+                          addAudit(`Asset AST-2026-04 returned and logged available.`);
+                        }}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-700 rounded text-[9.5px] font-bold cursor-pointer transition-colors"
+                      >
+                        Process Return Check
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="border-y border-slate-100 py-2.5 flex justify-between items-center text-[9.5px]">
-                  <span>Status: <strong className={assetList[0].status === 'Assigned' ? 'text-blue-600' : 'text-green-600'}>{assetList[0].status}</strong></span>
-                  {assetList[0].status === 'Assigned' && <span>Held by: <strong>{assetList[0].assignee}</strong></span>}
-                </div>
-                <div className="flex justify-end gap-2">
-                  {assetList[0].status === 'Available' ? (
-                    <button 
-                      onClick={() => {
-                        setAssetList([{ ...assetList[0], status: 'Assigned', assignee: 'Aarav Mehta' }]);
-                        addAudit(`Asset AST-2026-04 assigned to Aarav Mehta.`);
-                      }}
-                      className="px-3 py-1 bg-blue-600 hover:bg-blue-750 text-white rounded text-[9.5px] font-bold cursor-pointer"
-                    >
-                      Assign to Aarav
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => {
-                        setAssetList([{ ...assetList[0], status: 'Available', assignee: '-' }]);
-                        addAudit(`Asset AST-2026-04 returned and logged available.`);
-                      }}
-                      className="px-3 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-700 rounded text-[9.5px] font-bold cursor-pointer"
-                    >
-                      Process Return Check
-                    </button>
-                  )}
+
+                {/* Right Column: Visual shelf inventory allocation */}
+                <div className="border border-slate-200 bg-white rounded-lg p-3 flex flex-col justify-center items-center text-center space-y-2 min-h-[160px]">
+                  <span className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider block">Visual Asset Allocation Shelf</span>
+                  
+                  <div className="w-full grid grid-cols-3 gap-2 py-1 max-w-[200px] font-mono text-[8px]">
+                    {[
+                      { name: 'MacBook Pro', id: 'AST-2026-04', type: 'laptop', status: assetList[0].status, assignee: assetList[0].assignee },
+                      { name: 'iPhone 15', id: 'AST-2026-09', type: 'phone', status: 'Available', assignee: '-' },
+                      { name: 'Dell 27" Display', id: 'AST-2026-15', type: 'monitor', status: 'Assigned', assignee: 'Ananya Patel' }
+                    ].map((asset, idx) => (
+                      <div key={idx} className={`border rounded p-2 flex flex-col justify-between gap-1 transition-all duration-300 ${
+                        asset.status === 'Assigned' 
+                          ? 'bg-slate-55 border-slate-200 text-slate-450' 
+                          : 'bg-green-50/50 border-green-200 text-green-700 font-bold'
+                      }`}>
+                        <div className="flex justify-center select-none text-[15px] text-slate-500 py-0.5">
+                          {asset.type === 'laptop' ? '💻' : asset.type === 'phone' ? '📱' : '🖥️'}
+                        </div>
+                        <div className="truncate font-sans font-bold text-[7px] text-slate-700">{asset.name}</div>
+                        <div className="text-[5.5px] text-slate-400 truncate">{asset.id}</div>
+                        <div className={`text-[6px] py-0.5 rounded text-center uppercase font-black tracking-wider ${
+                          asset.status === 'Assigned' ? 'bg-slate-150 text-slate-600' : 'bg-green-600 text-white animate-pulse'
+                        }`}>
+                          {asset.status === 'Assigned' ? 'Held' : 'Free'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-[8.5px] text-slate-405 leading-normal max-w-[280px]">
+                    Integrates physical tracking codes with onboarding and offboarding compliance checks.
+                  </span>
                 </div>
               </div>
             </div>

@@ -35,7 +35,7 @@ export default function ContactPage() {
     const newErrors: Record<string, string> = {};
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Work email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -70,7 +70,7 @@ export default function ContactPage() {
 
       {/* Main split-screen container */}
       <div className="flex-1 flex flex-col md:flex-row pt-16 min-h-[calc(100vh-64px)]">
-        
+
         {/* LEFT PANEL (40% width, professional muted slate-blue background) */}
         <div className="md:w-[40%] bg-slate-100 border-b md:border-b-0 md:border-r border-slate-200/80 flex flex-col justify-between p-8 md:p-12 text-center md:text-left gap-12 relative overflow-hidden">
           {/* Subtle decoration lines */}
@@ -78,7 +78,7 @@ export default function ContactPage() {
 
           {/* Top Logo wordmark */}
           <div className="relative z-10 self-center md:self-start">
-            <Link 
+            <Link
               href="/"
               className="font-extrabold text-2xl tracking-tight text-slate-900"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -90,13 +90,13 @@ export default function ContactPage() {
           {/* Central content list */}
           <div className="relative z-10 space-y-8 my-auto max-w-sm mx-auto md:mx-0">
             <div>
-              <span 
+              <span
                 className="inline-block px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-100 rounded-full mb-4"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 LET'S TALK
               </span>
-              <h2 
+              <h2
                 className="text-2xl md:text-3xl font-[800] text-slate-900 leading-[1.2] tracking-[-0.02em]"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
@@ -127,12 +127,12 @@ export default function ContactPage() {
           {/* Bottom links */}
           <div className="relative z-10 border-t border-slate-200/80 pt-6 flex flex-col md:flex-row gap-4 justify-between items-center text-xs text-slate-500">
             <a href="mailto:param@workforceos.com" className="hover:text-blue-600 font-bold transition-colors">
-              param@workforceos.com
+              paramkhodiyar1008@gmail.com
             </a>
-            <a 
-              href="https://linkedin.com" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href="https://linkedin.com/in/paramkhodiyar"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hover:text-blue-600 font-bold transition-colors"
             >
               LinkedIn Profile &rarr;
@@ -143,13 +143,13 @@ export default function ContactPage() {
         {/* RIGHT PANEL (60% width, off-white background) */}
         <div className="md:w-[60%] bg-slate-50/50 flex items-center justify-center p-6 sm:p-12">
           <div className="w-full max-w-[480px] bg-white border border-slate-200 rounded-[24px] p-8 sm:p-10">
-            
+
             {isSuccess ? (
               <div className="text-center py-10 space-y-4 flex flex-col items-center">
                 <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 border border-green-100 flex items-center justify-center select-none mb-2">
                   <span className="material-symbols-outlined text-[28px] font-bold">done</span>
                 </div>
-                <h3 
+                <h3
                   className="text-2xl font-bold text-slate-900"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
@@ -168,7 +168,7 @@ export default function ContactPage() {
             ) : (
               <div className="space-y-6">
                 <div>
-                  <h3 
+                  <h3
                     className="text-xl font-bold text-slate-900"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >

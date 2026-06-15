@@ -18,7 +18,7 @@ export default function AboutPage() {
             className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-100 rounded-full mb-6"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            OUR STORY
+            MY STORY
           </span>
 
           {/* Headline */}
@@ -26,37 +26,41 @@ export default function AboutPage() {
             className="text-3xl md:text-[2.75rem] font-[800] text-slate-900 leading-[1.15] tracking-[-0.02em] mb-12"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Built by someone who's seen the spreadsheet chaos firsthand.
+            Built to solve real problems and drive startup efficiency.
           </h1>
 
           {/* Desktop/Mobile Layout */}
           <div className="flex flex-col md:flex-row gap-10 items-start">
-            {/* Founder Avatar - Styled flat visual representation */}
-            <div className="order-1 md:order-2 self-center md:self-start shrink-0">
-              <div className="w-[200px] h-[200px] md:w-[240px] md:h-[240px] rounded-full border-[3px] border-blue-600 bg-slate-50 flex items-center justify-center relative overflow-hidden select-none">
-                {/* SVG Avatar representing the founder */}
-                <svg className="w-24 h-24 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-                <div className="absolute bottom-2 left-0 right-0 text-center bg-blue-600/90 text-white text-[9px] font-bold py-1 uppercase tracking-wider">
-                  Param Khodiyar
-                </div>
+            {/* Founder Avatar */}
+            <div className="order-1 md:order-2 self-center md:self-start shrink-0 flex flex-col items-center gap-3">
+              <div className="w-[200px] h-[200px] md:w-[240px] md:h-[240px] rounded-full bg-slate-50 relative overflow-hidden select-none">
+                <img 
+                  src="/me.jpg" 
+                  alt="Param Khodiyar" 
+                  className="w-full h-full object-cover object-center scale-[1.15] transition-transform" 
+                />
+              </div>
+              <div 
+                className="text-slate-900 text-xs font-extrabold uppercase tracking-widest bg-slate-100 border border-slate-200 px-3 py-1 rounded-full"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                Param Khodiyar
               </div>
             </div>
 
             {/* First-person story */}
             <div className="order-2 md:order-1 flex-1 space-y-6 text-slate-600 text-[16px] leading-[1.75]">
               <p>
-                A few years ago, I was running operations at a fast-growing Indian software company. We scaled from 15 to 80 employees in less than a year. Almost overnight, the simple operational systems we relied on completely fell apart.
+                The idea for <strong className="font-bold text-slate-900">WorkforceOS</strong> was born during my summer internship. Every single day, I had to manually clock in and clock out. It was a repetitive, friction-filled task, and I quickly realized there had to be a better way to automate it.
               </p>
               <p>
-                We were tracking attendance in giant Excel sheets. Leave requests came through chaotic WhatsApp messages that were hard to scroll back and verify. Task statuses were discussed in chats and immediately forgotten, leaving managers constantly chasing status reports. When month-end payroll arrived, HR and finance went into a two-day panic, manually calculating loss-of-pay and statutory deductions under pressure.
+                That curiosity led me to discover that systems designed to handle this are called HRMS (Human Resource Management Systems). I was immediately keen to build one. I love developing solutions that solve my own day-to-day problems and the broader operational challenges around the world. Technology, at its core, was built to streamline processes and save time.
               </p>
               <p>
-                I looked for an alternative HRMS to purchase, but every platform we trialled was either bloated with hundreds of complex options we didn't need, or failed to handle basic Indian compliance variables (like PF caps, ESIC thresholds, and Professional Tax slabs) out of the box. So we decided to build what we couldn't buy.
+                I built WorkforceOS entirely on my own, working alongside autonomous agents to amplify my development speed and capabilities. My goal was to deliver a sleek, lightweight, yet fully-compliant product that small startups can use to eliminate spreadsheet chaos and drastically increase operational efficiency.
               </p>
               <p>
-                We built **WorkforceOS** around one simple idea: HRMS platforms should be clean, fast, and secure. We started by building a robust audit log database first, then laid down attendance, payroll, leaves, tasks, and reviews on top of it. It's built specifically for Indian startups and SMBs of 20 to 500 people who want to replace spreadsheet chaos with clear, compliant execution.
+                WorkforceOS is centered around a simple belief: business tools should be clean, fast, and secure. I started by building an immutable audit trail ledger first, then built attendance tracking, leaves, tasks, and payroll structures on top of it. It is built specifically for Indian startups and SMBs of 20 to 500 people who want high-performance, compliant execution without the bloat.
               </p>
             </div>
           </div>
@@ -77,7 +81,7 @@ export default function AboutPage() {
               className="text-2xl md:text-[2.25rem] font-[700] text-slate-900 leading-[1.2] tracking-[-0.02em]"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
-              The principles behind our code.
+              The principles behind my code.
             </h2>
           </div>
 
@@ -94,7 +98,7 @@ export default function AboutPage() {
                 Transparency
               </h3>
               <p className="text-slate-500 text-[14px] leading-[1.65]">
-                Every action in WorkforceOS is logged and attributable. We built the audit trail first, then built the features around it. We run our own product the same way.
+                Every action in WorkforceOS is logged and attributable. I built the audit trail first, then built the features around it. I run my own product the same way.
               </p>
             </div>
 

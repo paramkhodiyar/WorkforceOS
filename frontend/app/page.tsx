@@ -9,7 +9,7 @@ import { useAuth } from '../lib/auth/AuthProvider';
 
 export default function Homepage() {
   const { user } = useAuth();
-  
+
   // Tab showcase state
   const [activeTab, setActiveTab] = useState<'hr' | 'employee' | 'manager' | 'finance' | 'admin'>('hr');
   const [fade, setFade] = useState(true);
@@ -33,7 +33,7 @@ export default function Homepage() {
 
   // Manager Showcase Mockup State
   const [priyaLeaveStatus, setPriyaLeaveStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
-  
+
   // Finance Showcase Mockup State
   const [payrollApproved, setPayrollApproved] = useState(false);
   const [payrollApproving, setPayrollApproving] = useState(false);
@@ -116,7 +116,7 @@ export default function Homepage() {
     const newErrors: Record<string, string> = {};
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Work email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -159,7 +159,7 @@ export default function Homepage() {
 
         <div className="max-w-[760px] mx-auto text-center px-6 relative z-10 flex flex-col items-center">
           {/* Eyebrow Pill */}
-          <span 
+          <span
             className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-6"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
@@ -167,7 +167,7 @@ export default function Homepage() {
           </span>
 
           {/* Main Headline - Solid Color, No Gradients */}
-          <h2 
+          <h2
             className="text-4xl md:text-[4.25rem] font-[800] text-slate-900 leading-[1.1] tracking-[-0.03em] mb-6"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
@@ -235,7 +235,7 @@ export default function Homepage() {
                       <span className="text-[8px] text-slate-400 block font-semibold uppercase">Today's Attendance</span>
                       <span className="text-lg font-bold text-slate-800 transition-all">{attendanceCount}%</span>
                     </div>
-                    <div 
+                    <div
                       onClick={handleHeroApproveLeave}
                       className="bg-white border border-slate-200 p-2.5 rounded-lg cursor-pointer hover:border-blue-600 transition-colors group"
                       title="Click to approve a leave request"
@@ -253,13 +253,12 @@ export default function Homepage() {
                   <div className="bg-white border border-slate-200 rounded-lg p-2 flex-1 flex flex-col justify-between overflow-hidden">
                     <div className="flex justify-between items-center pb-1 border-b border-slate-100 shrink-0">
                       <span className="text-[8px] font-bold text-slate-500 uppercase">Live Simulation Controls</span>
-                      <button 
+                      <button
                         onClick={handleHeroClockIn}
-                        className={`px-3 py-1 rounded text-[8px] font-bold transition-colors cursor-pointer border ${
-                          clockedIn 
-                            ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
+                        className={`px-3 py-1 rounded text-[8px] font-bold transition-colors cursor-pointer border ${clockedIn
+                            ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
                             : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                        }`}
+                          }`}
                       >
                         {clockedIn ? 'Clock Out EMP-042' : 'Clock In EMP-042'}
                       </button>
@@ -284,7 +283,7 @@ export default function Homepage() {
       <section className="py-20 md:py-24 bg-white">
         <div className="max-w-[900px] mx-auto px-6">
           <div className="flex justify-start">
-            <span 
+            <span
               className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-6"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
@@ -292,7 +291,7 @@ export default function Homepage() {
             </span>
           </div>
 
-          <h2 
+          <h2
             className="text-2xl md:text-[2.25rem] font-[700] text-slate-900 leading-[1.2] tracking-[-0.02em] mb-4 text-left"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
@@ -330,14 +329,14 @@ export default function Homepage() {
                 body: 'When something goes wrong — a missed approval, a disputed payout, an unauthorised change — there is no log to check.'
               }
             ].map((problem, idx) => (
-              <div 
+              <div
                 key={idx}
                 className="bg-white border border-slate-200 rounded-xl p-7 flex flex-col hover:border-slate-400 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 mb-5 shrink-0 select-none">
                   <span className="material-symbols-outlined text-[20px] font-bold">close</span>
                 </div>
-                <h3 
+                <h3
                   className="text-[17px] font-semibold text-slate-900 mb-2.5 leading-snug"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
@@ -356,14 +355,14 @@ export default function Homepage() {
       <section className="py-20 md:py-24 bg-slate-100/60 border-y border-slate-200 relative">
         <div className="max-w-[1100px] mx-auto px-6 flex flex-col items-center">
           {/* Eyebrow */}
-          <span 
+          <span
             className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-6"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             THE WORKFORCEOS DIFFERENCE
           </span>
 
-          <h2 
+          <h2
             className="text-2xl md:text-[2.25rem] font-[700] text-slate-900 leading-[1.2] tracking-[-0.02em] mb-12 text-center"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
@@ -390,7 +389,7 @@ export default function Homepage() {
               }
             ].map((stat, idx) => (
               <div key={idx} className="space-y-2.5">
-                <span 
+                <span
                   className="text-5xl font-[800] text-blue-600 tracking-tight block"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
@@ -413,7 +412,7 @@ export default function Homepage() {
           <div className="w-full flex justify-start md:justify-center overflow-x-auto pb-4 mb-12 scrollbar-none custom-scrollbar">
             <div className="flex flex-nowrap md:flex-wrap gap-2 md:justify-center px-2">
               {[
-                'Employees', 'Attendance', 'Leave', 'Tasks', 'Performance', 
+                'Employees', 'Attendance', 'Leave', 'Tasks', 'Performance',
                 'Payroll', 'Expenses', 'Assets', 'Knowledge Base', 'Notifications', 'Audit Log'
               ].map((chip) => (
                 <Link
@@ -448,13 +447,13 @@ export default function Homepage() {
         <div className="max-w-[1100px] mx-auto px-6">
           {/* Top text block */}
           <div className="mb-12">
-            <span 
+            <span
               className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-6"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               HOW IT WORKS
             </span>
-            <h2 
+            <h2
               className="text-2xl md:text-[2.25rem] font-[700] text-slate-900 leading-[1.2] tracking-[-0.02em] mb-3"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
@@ -478,11 +477,10 @@ export default function Homepage() {
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key as any)}
-                  className={`px-5 py-2.5 rounded-full font-semibold text-sm transition-all whitespace-nowrap cursor-pointer ${
-                    activeTab === tab.key
+                  className={`px-5 py-2.5 rounded-full font-semibold text-sm transition-all whitespace-nowrap cursor-pointer ${activeTab === tab.key
                       ? 'bg-blue-600 text-white'
                       : 'bg-transparent text-slate-500 border border-slate-200 hover:bg-slate-55'
-                  }`}
+                    }`}
                 >
                   {tab.name}
                 </button>
@@ -496,7 +494,7 @@ export default function Homepage() {
             {activeTab === 'hr' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div className="order-2 md:order-1 space-y-6">
-                  <h3 
+                  <h3
                     className="text-xl font-bold text-slate-900"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
@@ -529,7 +527,7 @@ export default function Homepage() {
                         <span className="material-symbols-outlined text-green-600 text-[24px]">verified</span>
                         <h4 className="text-xs font-bold text-slate-900">Onboarding Step Cleared!</h4>
                         <p className="text-[9px] text-slate-400">Employee data written and bank PAN details encrypted at-rest.</p>
-                        <button 
+                        <button
                           onClick={() => { setOnboardSuccess(false); setOnboardStep(5); }}
                           className="px-3 py-1 bg-slate-100 hover:bg-slate-250 text-slate-600 border border-slate-200 text-[8px] rounded font-bold cursor-pointer"
                         >
@@ -541,8 +539,8 @@ export default function Homepage() {
                         <div>
                           <span className="text-[9px] text-slate-400 block font-bold uppercase mb-1">Onboarding Progress</span>
                           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                            <div 
-                              className="bg-blue-600 h-full transition-all duration-500" 
+                            <div
+                              className="bg-blue-600 h-full transition-all duration-500"
                               style={{ width: `${(onboardStep / 7) * 100}%` }}
                             ></div>
                           </div>
@@ -552,14 +550,14 @@ export default function Homepage() {
                           </div>
                         </div>
                         <div className="flex justify-end gap-2 border-t border-slate-100 pt-2">
-                          <button 
+                          <button
                             disabled={onboardStep === 1}
                             onClick={() => setOnboardStep(prev => prev - 1)}
                             className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded text-[9px] font-bold cursor-pointer disabled:opacity-40"
                           >
                             Prev Step
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               if (onboardStep === 7) {
                                 setOnboardSuccess(true);
@@ -591,7 +589,7 @@ export default function Homepage() {
                   <div className="grid grid-cols-2 gap-3 flex-1 pt-2">
                     <div className="bg-white border border-slate-200 p-3 rounded-lg flex flex-col items-center justify-center text-center gap-1.5">
                       <span className="text-[8px] font-bold text-slate-400 uppercase">Work Attendance</span>
-                      <button 
+                      <button
                         onClick={() => {
                           setEmpClockedIn(!empClockedIn);
                           setEmpLogs(prev => [
@@ -599,9 +597,8 @@ export default function Homepage() {
                             ...prev.slice(0, 1)
                           ]);
                         }}
-                        className={`w-full py-1.5 text-white text-[9px] font-bold rounded transition-colors cursor-pointer ${
-                          empClockedIn ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'
-                        }`}
+                        className={`w-full py-1.5 text-white text-[9px] font-bold rounded transition-colors cursor-pointer ${empClockedIn ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'
+                          }`}
                       >
                         {empClockedIn ? 'Clock Out' : 'Clock In'}
                       </button>
@@ -633,7 +630,7 @@ export default function Homepage() {
                 </div>
                 {/* Feature details */}
                 <div className="space-y-6">
-                  <h3 
+                  <h3
                     className="text-xl font-bold text-slate-900"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
@@ -660,7 +657,7 @@ export default function Homepage() {
             {activeTab === 'manager' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div className="order-2 md:order-1 space-y-6">
-                  <h3 
+                  <h3
                     className="text-xl font-bold text-slate-900"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
@@ -694,13 +691,13 @@ export default function Homepage() {
                           <span className="text-[8px] text-slate-400">Sick Leave · 2 Days (June 18-19)</span>
                         </div>
                         <div className="flex gap-1.5">
-                          <button 
+                          <button
                             onClick={() => setPriyaLeaveStatus('approved')}
                             className="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[8px] font-bold cursor-pointer"
                           >
                             Approve
                           </button>
-                          <button 
+                          <button
                             onClick={() => setPriyaLeaveStatus('rejected')}
                             className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-650 rounded text-[8px] font-bold cursor-pointer border border-slate-200"
                           >
@@ -710,15 +707,14 @@ export default function Homepage() {
                       </div>
                     ) : (
                       <div className="text-center space-y-1.5">
-                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded border inline-block ${
-                          priyaLeaveStatus === 'approved' 
-                            ? 'bg-green-50 text-green-700 border-green-150' 
+                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded border inline-block ${priyaLeaveStatus === 'approved'
+                            ? 'bg-green-50 text-green-700 border-green-150'
                             : 'bg-red-50 text-red-700 border-red-150'
-                        }`}>
+                          }`}>
                           Priya's Request: {priyaLeaveStatus === 'approved' ? 'Approved' : 'Rejected'}
                         </span>
                         <p className="text-[8px] text-slate-400">Action logged to database. HR notified for stage-2 sign-off.</p>
-                        <button 
+                        <button
                           onClick={() => setPriyaLeaveStatus('pending')}
                           className="text-[8px] font-bold text-blue-600 hover:underline block mx-auto cursor-pointer"
                         >
@@ -731,11 +727,10 @@ export default function Homepage() {
                     <span className="text-[8px] font-bold text-slate-400 uppercase block mb-1.5">Team Status Today</span>
                     <div className="grid grid-cols-4 gap-1.5 text-center">
                       <div className="p-1 border border-slate-100 rounded text-[9px] bg-green-50 text-green-750 font-semibold">Aarav</div>
-                      <div className={`p-1 border rounded text-[9px] font-semibold transition-all ${
-                        priyaLeaveStatus === 'approved' 
+                      <div className={`p-1 border rounded text-[9px] font-semibold transition-all ${priyaLeaveStatus === 'approved'
                           ? 'bg-amber-50 text-amber-700 border-amber-100'
                           : 'bg-green-50 text-green-750 border-green-100'
-                      }`}>
+                        }`}>
                         Priya
                       </div>
                       <div className="p-1 border border-slate-100 rounded text-[9px] bg-green-50 text-green-750 font-semibold">Kabir</div>
@@ -780,7 +775,7 @@ export default function Homepage() {
                   {payrollApproved ? (
                     <div className="bg-green-50 border border-green-200 p-2 text-center rounded-lg space-y-1">
                       <span className="text-[10px] font-bold text-green-700 block">● Payroll Executed & Confirmed</span>
-                      <button 
+                      <button
                         onClick={() => setPayrollApproved(false)}
                         className="text-[8px] font-bold text-slate-500 hover:underline cursor-pointer"
                       >
@@ -788,7 +783,7 @@ export default function Homepage() {
                       </button>
                     </div>
                   ) : (
-                    <button 
+                    <button
                       onClick={() => {
                         setPayrollApproving(true);
                         setTimeout(() => {
@@ -812,7 +807,7 @@ export default function Homepage() {
                 </div>
                 {/* Feature details */}
                 <div className="space-y-6">
-                  <h3 
+                  <h3
                     className="text-xl font-bold text-slate-900"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
@@ -839,7 +834,7 @@ export default function Homepage() {
             {activeTab === 'admin' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div className="order-2 md:order-1 space-y-6">
-                  <h3 
+                  <h3
                     className="text-xl font-bold text-slate-900"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
@@ -869,7 +864,7 @@ export default function Homepage() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-[9px] text-slate-700">
                         <span>Manage Employee Records</span>
-                        <button 
+                        <button
                           onClick={() => {
                             const val = !hrPermissions.dbAccess;
                             setHrPermissions(prev => ({ ...prev, dbAccess: val }));
@@ -885,7 +880,7 @@ export default function Homepage() {
                       </div>
                       <div className="flex justify-between items-center text-[9px] text-slate-700">
                         <span>Run & Process Payroll</span>
-                        <button 
+                        <button
                           onClick={() => {
                             const val = !hrPermissions.runPayroll;
                             setHrPermissions(prev => ({ ...prev, runPayroll: val }));
@@ -918,13 +913,13 @@ export default function Homepage() {
         <div className="max-w-[1140px] mx-auto px-6">
           {/* Top segment */}
           <div className="mb-12">
-            <span 
+            <span
               className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-6"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               WHAT'S INCLUDED
             </span>
-            <h2 
+            <h2
               className="text-2xl md:text-[2.25rem] font-[700] text-slate-900 leading-[1.2] tracking-[-0.02em]"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
@@ -1021,7 +1016,7 @@ export default function Homepage() {
                   <div className={`w-12 h-12 rounded-full ${module.color} flex items-center justify-center mb-6 border select-none`}>
                     <span className="material-symbols-outlined text-[24px]">{module.icon}</span>
                   </div>
-                  <h3 
+                  <h3
                     className="text-lg font-bold text-slate-900 mb-3"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >
@@ -1068,13 +1063,13 @@ export default function Homepage() {
           <div className="bg-white border border-slate-200 rounded-[32px] overflow-hidden grid grid-cols-1 md:grid-cols-2">
             {/* Left side */}
             <div className="p-8 md:p-12 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col justify-center">
-              <span 
+              <span
                 className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-6 w-fit"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 BUILT TO LAST
               </span>
-              <h2 
+              <h2
                 className="text-xl md:text-[1.625rem] font-[700] text-slate-900 leading-[1.2] tracking-[-0.02em] mb-4"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
@@ -1128,13 +1123,13 @@ export default function Homepage() {
         <div className="max-w-[1000px] mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
           {/* Left Side persuasion */}
           <div className="md:col-span-5 space-y-6">
-            <span 
+            <span
               className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               GET A LIVE DEMO
             </span>
-            <h2 
+            <h2
               className="text-2xl md:text-[2.25rem] font-[700] text-slate-900 leading-[1.15] tracking-[-0.02em]"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
@@ -1156,7 +1151,7 @@ export default function Homepage() {
             <div className="pt-4 border-t border-slate-200">
               <span className="text-xs text-slate-400 block font-medium">Founder's Direct Email:</span>
               <a href="mailto:param@workforceos.com" className="text-sm font-semibold text-blue-600 hover:underline">
-                param@workforceos.com
+                paramkhodiyar1008@gmail.com
               </a>
             </div>
           </div>
@@ -1169,7 +1164,7 @@ export default function Homepage() {
                   <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 border border-green-100 flex items-center justify-center select-none mb-2">
                     <span className="material-symbols-outlined text-[28px] font-bold">done</span>
                   </div>
-                  <h3 
+                  <h3
                     className="text-2xl font-bold text-slate-900"
                     style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   >

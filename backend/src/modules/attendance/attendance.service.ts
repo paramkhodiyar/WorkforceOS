@@ -53,6 +53,30 @@ export class AttendanceService {
 
     const status = isLate ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
 
+    let notes: string | undefined = undefined;
+    const OFFICE_LAT = 12.9716;
+    const OFFICE_LNG = 77.5946;
+    const MAX_RADIUS_METERS = 200;
+
+    if (workMode === "WFO" && gpsLat !== undefined && gpsLng !== undefined && gpsLat !== null && gpsLng !== null) {
+      const R = 6371e3; // Earth's radius in meters
+      const phi1 = (OFFICE_LAT * Math.PI) / 180;
+      const phi2 = (gpsLat * Math.PI) / 180;
+      const deltaPhi = ((gpsLat - OFFICE_LAT) * Math.PI) / 180;
+      const deltaLambda = ((gpsLng - OFFICE_LNG) * Math.PI) / 180;
+
+      const a =
+        Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+        Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // in meters
+
+      if (distance > MAX_RADIUS_METERS) {
+        const distKm = (distance / 1000).toFixed(2);
+        notes = `Flagged: Outside Bounds (${distKm}km away)`;
+      }
+    }
+
     const record = await prisma.attendance.upsert({
       where: { userId_date: { userId, date: today } },
       update: {
@@ -61,7 +85,8 @@ export class AttendanceService {
         workMode: workMode || "WFO",
         ipAddress,
         gpsLat,
-        gpsLng
+        gpsLng,
+        notes
       },
       create: {
         userId,
@@ -71,7 +96,8 @@ export class AttendanceService {
         workMode: workMode || "WFO",
         ipAddress,
         gpsLat,
-        gpsLng
+        gpsLng,
+        notes
       }
     });
 

@@ -112,16 +112,38 @@ export default function AttendancePage() {
   async function handleCheckIn() {
     if (checking) return;
     setChecking(true);
-    try {
-      await api.attendance.checkIn({
-        workMode: checkType,
-        ipAddress: location
-      });
-      toast.success('Successfully checked in!');
-    } catch (err: any) {
-      toast.error(err.message || 'Check-in failed');
-    } finally {
-      setChecking(false);
+
+    const performCheckIn = async (gpsLat?: number, gpsLng?: number) => {
+      try {
+        await api.attendance.checkIn({
+          workMode: checkType,
+          ipAddress: location,
+          gpsLat,
+          gpsLng
+        });
+        toast.success('Successfully checked in!');
+        await loadData();
+      } catch (err: any) {
+        toast.error(err.message || 'Check-in failed');
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    if (checkType === 'WFO' && typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          performCheckIn(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.warn('Geolocation error:', error);
+          toast.warning('Could not retrieve precise location. Checking in without GPS verification.');
+          performCheckIn();
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    } else {
+      performCheckIn();
     }
   }
 
@@ -131,6 +153,7 @@ export default function AttendancePage() {
     try {
       await api.attendance.checkOut();
       toast.success('Successfully checked out!');
+      await loadData();
     } catch (err: any) {
       toast.error(err.message || 'Check-out failed');
     } finally {
@@ -419,8 +442,13 @@ export default function AttendancePage() {
                             {log.workMode}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">
-                          {log.ipAddress || '-'}
+                        <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                          <div className="truncate">{log.ipAddress || '-'}</div>
+                          {log.notes && (
+                            <div className={`text-[10px] mt-0.5 inline-block ${log.notes.includes('Flagged') ? 'bg-red-50 text-red-700 border border-red-100 px-1.5 py-0.5 rounded font-bold' : 'text-slate-550'}`}>
+                              {log.notes}
+                            </div>
+                          )}
                         </td>
                         {(isHR || isAdmin) && (
                           <td className="px-4 py-3 text-right">
@@ -559,8 +587,13 @@ export default function AttendancePage() {
                             </span>
                           ) : '-'}
                         </td>
-                        <td className="px-4 py-3 text-on-surface-variant max-w-xs truncate">
-                          {todayRecord?.ipAddress || '-'}
+                        <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                          <div className="truncate">{todayRecord?.ipAddress || '-'}</div>
+                          {todayRecord?.notes && (
+                            <div className={`text-[10px] mt-0.5 inline-block ${todayRecord.notes.includes('Flagged') ? 'bg-red-50 text-red-700 border border-red-100 px-1.5 py-0.5 rounded font-bold' : 'text-slate-550'}`}>
+                              {todayRecord.notes}
+                            </div>
+                          )}
                         </td>
                         {(isHR || isAdmin) && (
                           <td className="px-4 py-3 text-right">

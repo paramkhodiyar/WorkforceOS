@@ -58,10 +58,15 @@ export function LandingHeader() {
         {/* Left Side: Brand Wordmark */}
         <Link 
           href="/" 
-          className="font-extrabold text-xl tracking-tight text-slate-900 font-sans cursor-pointer hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-slate-900 font-sans cursor-pointer hover:opacity-90 transition-opacity"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          WorkforceOS
+          <img 
+            src="/workforceoslogo.png" 
+            alt="WorkforceOS Logo" 
+            className="h-8 w-8 object-cover object-center scale-110 rounded" 
+          />
+          <span>WorkforceOS</span>
         </Link>
 
         {/* Right Side: Desktop Nav links & CTA */}
@@ -109,10 +114,15 @@ export function LandingHeader() {
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="font-extrabold text-xl tracking-tight text-slate-900"
+              className="flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-slate-900 cursor-pointer"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
-              WorkforceOS
+              <img 
+                src="/workforceoslogo.png" 
+                alt="WorkforceOS Logo" 
+                className="h-8 w-8 object-cover object-center scale-110 rounded" 
+              />
+              <span>WorkforceOS</span>
             </Link>
             
             {/* Close Button */}

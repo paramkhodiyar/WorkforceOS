@@ -45,10 +45,21 @@ export const markPaid = asyncHandler(async (req: Request, res: Response) => {
 
 export const getMyPayslips = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
+  const orgId = req.org!.id;
   const { page, limit } = parsePagination(req.query);
   const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
 
-  const result = await PayrollService.getEmployeePayslips(userId, year, page, limit);
+  let hasAllAccess = false;
+  try {
+    const scopes = await getPermissionScopes(req.user!, orgId, "payroll", "read");
+    if (scopes.isGlobal) {
+      hasAllAccess = true;
+    }
+  } catch (err) {
+    // Fall back to only listing their own payslips
+  }
+
+  const result = await PayrollService.getEmployeePayslips(userId, year, page, limit, orgId, hasAllAccess);
 
   return sendPaginated(res, result.records, {
     page,

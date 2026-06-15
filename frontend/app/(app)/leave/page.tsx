@@ -5,6 +5,8 @@ import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { CommentDialog } from '../../../components/ui/CommentDialog';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
+import { Button } from '../../../components/ui/Button';
 
 export default function LeavePage() {
   const { user } = useAuth();
@@ -91,7 +93,6 @@ export default function LeavePage() {
   async function handleDialogConfirm(comment: string) {
     if (!dialogParams) return;
     const { id, status, currentStatus } = dialogParams;
-    setDialogOpen(false);
     try {
       await api.leave.approve(id, { 
         status, 
@@ -99,9 +100,11 @@ export default function LeavePage() {
         comment: comment.trim() || `${status === 'APPROVED' ? 'Approved' : 'Rejected'} via operations dashboard` 
       });
       await loadData();
+      setDialogOpen(false);
       toast.success(`Leave request successfully ${status === 'APPROVED' ? 'approved' : 'rejected'}`);
     } catch (err: any) {
       toast.error(err.message || 'Approval action failed');
+      throw err;
     }
   }
 
@@ -144,8 +147,21 @@ export default function LeavePage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="space-y-6 font-sans">
+        <div>
+          <h1 className="text-headline-md font-bold text-on-surface">Leave Management</h1>
+          <p className="text-body-sm text-outline">Manage leave allocations, request checkouts, and approve requests</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1 space-y-6">
+            <ListSkeleton count={5} />
+            <FormSkeleton />
+          </div>
+          <div className="md:col-span-2 space-y-6">
+            <ListSkeleton count={2} />
+            <TableSkeleton rows={4} cols={5} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -222,13 +238,13 @@ export default function LeavePage() {
                 />
               </div>
 
-              <button
+              <Button
                 type="submit"
-                disabled={submitting}
-                className="w-full py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50"
+                loading={submitting}
+                className="w-full"
               >
-                {submitting ? 'Filing Request...' : 'Submit Request'}
-              </button>
+                Submit Request
+              </Button>
             </form>
           </div>
         </div>
@@ -275,18 +291,18 @@ export default function LeavePage() {
                           </span>
                         </div>
                         <div className="flex gap-2 shrink-0">
-                          <button
+                          <Button
+                            variant="outline"
                             onClick={() => handleApproval(req.id, 'REJECTED', req.status)}
-                            className="px-3 py-1.5 border border-error-container text-error hover:bg-error/5 rounded-lg text-label-sm font-bold transition-colors"
+                            className="text-error border-error-container hover:bg-error/5"
                           >
                             Reject
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleApproval(req.id, 'APPROVED', req.status)}
-                            className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold shadow-sm transition-all"
                           >
                             Approve
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     ))}

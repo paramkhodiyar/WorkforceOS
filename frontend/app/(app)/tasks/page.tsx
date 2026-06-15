@@ -6,6 +6,8 @@ import { useAuth } from '../../../lib/auth/AuthProvider';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { CommentDialog } from '../../../components/ui/CommentDialog';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { Skeleton } from '../../../components/ui/Skeleton';
+import { Button } from '../../../components/ui/Button';
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -295,9 +297,22 @@ export default function TasksPage() {
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="h-8 w-8 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-label-sm text-outline font-semibold uppercase">Syncing Tasks...</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+          </div>
         </div>
       ) : activeTab === 'board' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -629,21 +644,22 @@ export default function TasksPage() {
               )}
 
               <div className="pt-4 border-t border-slate-100 flex gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-label-sm font-bold transition-all cursor-pointer"
                   disabled={submitting}
+                  className="flex-1"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="flex-1 py-2.5 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-sm font-bold shadow-sm transition-all cursor-pointer"
-                  disabled={submitting}
+                  loading={submitting}
+                  className="flex-1"
                 >
-                  {submitting ? 'Creating...' : 'Create'}
-                </button>
+                  Create
+                </Button>
               </div>
             </form>
           </div>

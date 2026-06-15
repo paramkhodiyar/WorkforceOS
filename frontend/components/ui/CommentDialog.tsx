@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Button } from './Button';
 
 interface CommentDialogProps {
   isOpen: boolean;
@@ -9,7 +10,7 @@ interface CommentDialogProps {
   defaultValue?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  onConfirm: (comment: string) => void;
+  onConfirm: (comment: string) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -24,8 +25,20 @@ export function CommentDialog({
   onClose,
 }: CommentDialogProps) {
   const [comment, setComment] = useState(defaultValue);
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      await onConfirm(comment);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
@@ -44,20 +57,21 @@ export function CommentDialog({
           />
         </div>
         <div className="flex gap-3 justify-end">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            disabled={loading}
             onClick={onClose}
-            className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-label-sm font-bold transition-all cursor-pointer"
           >
             {cancelLabel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            onClick={() => onConfirm(comment)}
-            className="px-4 py-2 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-sm font-bold shadow-sm transition-all cursor-pointer"
+            loading={loading}
+            onClick={handleConfirm}
           >
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

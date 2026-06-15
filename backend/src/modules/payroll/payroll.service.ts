@@ -246,14 +246,19 @@ export class PayrollService {
     return updated;
   }
 
-  static async getEmployeePayslips(userId: string, year?: number, page = 1, limit = 10) {
+  static async getEmployeePayslips(userId: string, year?: number, page = 1, limit = 10, orgId?: string, hasAllAccess = false) {
     const where: any = {
-      userId,
       isDeleted: false
     };
 
+    if (hasAllAccess && orgId) {
+      where.payrollRun = { organizationId: orgId };
+    } else {
+      where.userId = userId;
+    }
+
     if (year) {
-      where.payrollRun = { year };
+      where.payrollRun = { ...where.payrollRun, year };
     }
 
     const total = await prisma.payrollRecord.count({ where });
@@ -263,7 +268,8 @@ export class PayrollService {
       skip: (page - 1) * limit,
       take: limit,
       include: {
-        payrollRun: true
+        payrollRun: true,
+        user: { select: { id: true, firstName: true, lastName: true, email: true, employeeId: true } }
       }
     });
 

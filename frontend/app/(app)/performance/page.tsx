@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { TableSkeleton, ListSkeleton } from '../../../components/ui/Skeleton';
 
 export default function PerformancePage() {
   const { user } = useAuth();
@@ -60,8 +61,14 @@ export default function PerformancePage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <span className="material-symbols-outlined animate-spin text-[32px] text-primary">progress_activity</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-6">
+            <TableSkeleton rows={4} cols={5} />
+          </div>
+          <div className="md:col-span-1 space-y-6">
+            <ListSkeleton count={2} />
+            <ListSkeleton count={3} />
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

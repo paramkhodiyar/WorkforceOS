@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
+import { Button } from '../../../components/ui/Button';
 
 export default function AttendancePage() {
   const { user } = useAuth();
@@ -232,8 +234,20 @@ export default function AttendancePage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="space-y-6 font-sans">
+        <div>
+          <h1 className="text-headline-md font-bold text-on-surface">Attendance Tracker</h1>
+          <p className="text-body-sm text-outline">Record daily shifts and inspect check-in history</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1 space-y-6">
+            <FormSkeleton />
+          </div>
+          <div className="md:col-span-2 space-y-6">
+            <ListSkeleton count={2} />
+            <TableSkeleton rows={4} cols={5} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -301,13 +315,14 @@ export default function AttendancePage() {
                     <p className="text-[11px] text-green-600 mt-1">Location: {currentStatus.ipAddress}</p>
                   )}
                 </div>
-                <button
+                <Button
                   onClick={handleCheckOut}
-                  disabled={checking}
-                  className="w-full py-3 bg-error hover:bg-red-700 text-on-error rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50 cursor-pointer"
+                  loading={checking}
+                  variant="danger"
+                  className="w-full py-3"
                 >
-                  {checking ? 'Processing...' : 'Check Out Now'}
-                </button>
+                  Check Out Now
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -338,13 +353,13 @@ export default function AttendancePage() {
                   />
                 </div>
 
-                <button
+                <Button
                   onClick={handleCheckIn}
-                  disabled={checking}
-                  className="w-full py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50 cursor-pointer"
+                  loading={checking}
+                  className="w-full py-3"
                 >
-                  {checking ? 'Processing...' : 'Check In Now'}
-                </button>
+                  Check In Now
+                </Button>
               </div>
             )}
           </div>

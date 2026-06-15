@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { TableSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
+import { Button } from '../../../components/ui/Button';
 
 export default function PayrollPage() {
   const { user } = useAuth();
@@ -29,7 +31,16 @@ export default function PayrollPage() {
   async function loadData() {
     try {
       const payslipsRes = await api.payroll.list();
-      setPayslips(payslipsRes.data || []);
+      const mappedPayslips = (payslipsRes.data || []).map((ps: any) => ({
+        ...ps,
+        year: ps.payrollRun?.year ?? ps.year,
+        month: ps.payrollRun?.month ?? ps.month,
+        status: ps.payrollRun?.status ?? ps.status ?? 'PAID',
+        netPay: ps.netSalary ?? ps.netPay ?? 0,
+        basic: ps.basicSalary ?? ps.basic ?? 0,
+        deductions: ps.totalDeductions ?? ps.deductions ?? 0,
+      }));
+      setPayslips(mappedPayslips);
       
       if (isAdmin || isFinance) {
         const runsRes = await api.payroll.runs();
@@ -66,7 +77,18 @@ export default function PayrollPage() {
   async function handleViewPayslip(id: string) {
     try {
       const res = await api.payroll.getPayslip(id);
-      setSelectedPayslip(res.data);
+      const ps = res.data;
+      if (ps) {
+        setSelectedPayslip({
+          ...ps,
+          year: ps.payrollRun?.year ?? ps.year,
+          month: ps.payrollRun?.month ?? ps.month,
+          status: ps.payrollRun?.status ?? ps.status ?? 'PAID',
+          netPay: ps.netSalary ?? ps.netPay ?? 0,
+          basic: ps.basicSalary ?? ps.basic ?? 0,
+          deductions: ps.totalDeductions ?? ps.deductions ?? 0,
+        });
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to fetch payslip details');
     }
@@ -111,8 +133,28 @@ export default function PayrollPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="space-y-6 font-sans">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-headline-md font-bold text-on-surface">Payroll Management</h1>
+            <p className="text-body-sm text-outline">Manage salary schedules, statutory deductions, and payslips</p>
+          </div>
+        </div>
+        
+        {isAdmin || isFinance ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-1 space-y-6">
+              <FormSkeleton />
+            </div>
+            <div className="md:col-span-2 space-y-6">
+              <TableSkeleton rows={4} cols={5} />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <TableSkeleton rows={4} cols={5} />
+          </div>
+        )}
       </div>
     );
   }
@@ -156,13 +198,13 @@ export default function PayrollPage() {
                 </select>
               </div>
 
-              <button
+              <Button
                 type="submit"
-                disabled={generating}
-                className="w-full py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50"
+                loading={generating}
+                className="w-full"
               >
-                {generating ? 'Generating Run...' : 'Execute Payout'}
-              </button>
+                Execute Payout
+              </Button>
             </form>
           </div>
 

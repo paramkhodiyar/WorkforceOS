@@ -1,7 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
+
+// Detect if running inside the Flutter WebView bridge
+function isNativeMobile(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !!(window as any).WorkforceOSBridge;
+}
 
 export default function LoginPageClient() {
   const { login, loading } = useAuth();
@@ -9,11 +15,53 @@ export default function LoginPageClient() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  // Biometric state — only relevant when running inside the Flutter WebView
+  const [isMobile, setIsMobile] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [hasStoredSession, setHasStoredSession] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
+
+  useEffect(() => {
+    const mobile = isNativeMobile();
+    setIsMobile(mobile);
+    if (mobile) {
+      const saved = localStorage.getItem('biometric_enabled') === 'true';
+      const hasToken = !!localStorage.getItem('token');
+      setBiometricEnabled(saved);
+      setHasStoredSession(hasToken);
+    }
+  }, []);
+
+  function toggleBiometric() {
+    const next = !biometricEnabled;
+    setBiometricEnabled(next);
+    localStorage.setItem('biometric_enabled', next ? 'true' : 'false');
+    // Tell Flutter to persist the preference
+    if ((window as any).WorkforceOSBridge) {
+      (window as any).WorkforceOSBridge.postMessage(
+        JSON.stringify({ type: 'set_biometric_pref', enabled: next })
+      );
+    }
+  }
+
+  function triggerBiometric() {
+    if (!(window as any).WorkforceOSBridge) return;
+    setBioLoading(true);
+    // Ask Flutter to run biometric auth → Flutter will inject token + redirect
+    (window as any).WorkforceOSBridge.postMessage(
+      JSON.stringify({ type: 'trigger_biometric' })
+    );
+    // If Flutter doesn't respond (no stored session), reset after 5s
+    setTimeout(() => setBioLoading(false), 5000);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     try {
       await login(email, password);
+      // After login, mark that a session exists for biometric bypass
+      if (isMobile) setHasStoredSession(true);
     } catch (err: any) {
       setError(err.message || 'Invalid credentials');
     }
@@ -21,14 +69,15 @@ export default function LoginPageClient() {
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 font-sans bg-surface">
+      {/* Desktop Hero Panel */}
       <div className="relative hidden md:flex flex-col justify-between p-12 bg-slate-950 text-white overflow-hidden select-none">
-        <img 
-          src="/login_hero.png" 
-          alt="Office space" 
+        <img
+          src="/login_hero.png"
+          alt="Office space"
           className="absolute inset-0 w-full h-full object-cover opacity-85"
         />
         <div className="absolute inset-0 bg-slate-950/20" />
-        
+
         <div className="relative z-10 flex items-center gap-3">
           <img src="/workforceoslogo.png" alt="Logo" className="h-8 w-8 object-contain rounded" />
           <span className="text-lg font-bold tracking-wider uppercase">WorkforceOS</span>
@@ -48,17 +97,84 @@ export default function LoginPageClient() {
         </div>
       </div>
 
+      {/* Sign In Form */}
       <div className="w-full flex items-center justify-center p-8 lg:p-16 bg-white overflow-y-auto">
-        <div className="max-w-md w-full space-y-8">
+        <div className="max-w-md w-full space-y-6">
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <img 
-              src="/workforceoslogo.png" 
-              alt="Logo" 
+            <img
+              src="/workforceoslogo.png"
+              alt="Logo"
               className="h-12 w-12 object-contain rounded mb-4 block md:hidden"
             />
             <h1 className="text-headline-md font-bold text-on-surface">Sign In</h1>
-            <p className="text-body-sm text-outline mt-1.5">Enter your credentials to access your organization dashboard</p>
+            <p className="text-body-sm text-outline mt-1.5">Enter your credentials to access your dashboard</p>
           </div>
+
+          {/* ── Biometric Section (mobile-only) ──────────────────────── */}
+          {isMobile && (
+            <div className="space-y-4">
+              {/* Toggle row */}
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[20px] text-blue-600">fingerprint</span>
+                  </div>
+                  <div>
+                    <p className="text-label-sm font-bold text-slate-900">Biometric Login</p>
+                    <p className="text-[11px] text-slate-500">Use fingerprint instead of password</p>
+                  </div>
+                </div>
+                {/* Slider toggle */}
+                <button
+                  type="button"
+                  onClick={toggleBiometric}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${
+                    biometricEnabled ? 'bg-blue-600' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${
+                      biometricEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Fingerprint button — only shown when biometric is ON + session exists */}
+              {biometricEnabled && hasStoredSession && (
+                <button
+                  type="button"
+                  onClick={triggerBiometric}
+                  disabled={bioLoading}
+                  className="w-full py-4 rounded-2xl border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 transition-all flex flex-col items-center gap-2 active:scale-[0.98] disabled:opacity-60"
+                >
+                  {bioLoading ? (
+                    <div className="h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span className="material-symbols-outlined text-[40px] text-blue-600">fingerprint</span>
+                  )}
+                  <span className="text-label-sm font-bold text-blue-700">
+                    {bioLoading ? 'Waiting for scan...' : 'Login with Fingerprint'}
+                  </span>
+                </button>
+              )}
+
+              {biometricEnabled && !hasStoredSession && (
+                <p className="text-[11px] text-center text-slate-500 -mt-2">
+                  Sign in once with your password to enable fingerprint login next time.
+                </p>
+              )}
+
+              {biometricEnabled && hasStoredSession && (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-slate-200" />
+                  <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">or sign in with password</span>
+                  <div className="flex-1 h-px bg-slate-200" />
+                </div>
+              )}
+            </div>
+          )}
+          {/* ─────────────────────────────────────────────────────────── */}
 
           {error && (
             <div className="p-4 bg-error-container border border-error-container text-error rounded-xl text-body-sm">

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -90,6 +91,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
             final data = jsonDecode(message.message) as Map<String, dynamic>;
             final type = data['type'] as String?;
             final prefs = await SharedPreferences.getInstance();
+
             if (type == 'save_token') {
               final token = data['token'] as String?;
               if (token != null && token.isNotEmpty) {
@@ -99,6 +101,38 @@ class _WebViewScreenState extends State<WebViewScreen> {
             } else if (type == 'clear_token') {
               await prefs.remove('auth_token');
               debugPrint('WorkforceOSBridge: token cleared');
+            } else if (type == 'set_biometric_pref') {
+              final enabled = data['enabled'] as bool? ?? false;
+              await prefs.setBool('use_biometric', enabled);
+              debugPrint('WorkforceOSBridge: biometric pref set to $enabled');
+            } else if (type == 'trigger_biometric') {
+              // Web is asking Flutter to run biometric auth and inject token
+              final String? storedToken = prefs.getString('auth_token');
+              if (storedToken == null || storedToken.isEmpty) {
+                debugPrint('WorkforceOSBridge: no stored token for biometric bypass');
+                return;
+              }
+              final auth = LocalAuthentication();
+              try {
+                final bool ok = await auth.authenticate(
+                  localizedReason: 'Scan your fingerprint to access WorkforceOS',
+                  options: const AuthenticationOptions(
+                    stickyAuth: true,
+                    biometricOnly: false,
+                  ),
+                );
+                if (ok && mounted) {
+                  final escaped = storedToken
+                      .replaceAll("'", "\\'")
+                      .replaceAll('"', '\\"');
+                  await _controller.runJavaScript(
+                    "window.localStorage.setItem('token', '$escaped');"
+                    "window.location.replace('/dashboard');",
+                  );
+                }
+              } catch (e) {
+                debugPrint('WorkforceOSBridge: biometric error $e');
+              }
             }
           } catch (e) {
             debugPrint('WorkforceOSBridge parse error: $e');

@@ -27,7 +27,8 @@ export default function BottomNavBar() {
   const quickTabs = [
     { label: 'Home', icon: 'dashboard', href: '/dashboard', show: true },
     { label: 'Tasks', icon: 'assignment', href: '/tasks', show: features.includes('tasks') },
-    { label: 'Attendance', icon: 'event_available', href: '/attendance', show: features.includes('attendance') }
+    { label: 'Attendance', icon: 'event_available', href: '/attendance', show: features.includes('attendance') },
+    { label: 'Profile', icon: 'account_circle', href: '/profile', show: true },
   ].filter(tab => tab.show);
 
   const secondaryTabs = [

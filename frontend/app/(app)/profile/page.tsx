@@ -239,8 +239,14 @@ function ProfileContent() {
   return (
     <div className="space-y-6 font-sans">
       <div>
-        <h1 className="text-headline-md font-bold text-on-surface">Employee Profile</h1>
-        <p className="text-body-sm text-outline">Manage personal details, compensation structure, and balance sheets</p>
+        <h1 className="text-headline-md font-bold text-on-surface">
+          {isOwnProfile ? 'My Profile' : 'Employee Profile'}
+        </h1>
+        <p className="text-body-sm text-outline">
+          {isOwnProfile
+            ? 'View and manage your personal details and information'
+            : 'Manage personal details, compensation structure, and balance sheets'}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">

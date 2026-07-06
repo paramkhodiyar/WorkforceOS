@@ -251,8 +251,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Check-In/Check-Out Widget */}
-        {!isAdmin && !isHR && !isManager && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-label-sm font-bold text-slate-900 uppercase tracking-wider">Shift Controls</h3>
               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
@@ -307,7 +306,6 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-        )}
 
         {/* 2x2 KPIs Grid */}
         {(isAdmin || isHR || isManager) && metrics ? (

@@ -10,6 +10,16 @@ import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/u
 import { Button } from '../../../components/ui/Button';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 import { ReadMoreText } from '../../../components/ui/ReadMoreText';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
+import { CustomDatePicker } from '../../../components/ui/CustomDatePicker';
+
+const leaveTypeOptions = [
+  { value: 'SICK', label: 'Sick Leave' },
+  { value: 'CASUAL', label: 'Casual Leave' },
+  { value: 'EARNED', label: 'Earned Leave' },
+  { value: 'WFH', label: 'Work From Home (WFH)' },
+  { value: 'HALF_DAY', label: 'Half Day' }
+];
 
 export default function LeavePage() {
   const { user } = useAuth();
@@ -202,38 +212,31 @@ export default function LeavePage() {
             <form onSubmit={handleApply} className="space-y-4">
               <div>
                 <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Leave Type</label>
-                <select
+                <CustomSelect
+                  options={leaveTypeOptions}
                   value={leaveType}
-                  onChange={(e) => setLeaveType(e.target.value)}
-                  className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
-                >
-                  <option value="SICK">Sick Leave</option>
-                  <option value="CASUAL">Casual Leave</option>
-                  <option value="EARNED">Earned Leave</option>
-                  <option value="WFH">Work From Home (WFH)</option>
-                  <option value="HALF_DAY">Half Day</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Start Date</label>
-                <input
-                  type="date"
-                  required
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+                  onChange={setLeaveType}
+                  placeholder="Select Leave Type"
                 />
               </div>
 
               <div>
-                <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">End Date</label>
-                <input
-                  type="date"
+                <CustomDatePicker
+                  label="Start Date"
+                  required
+                  value={startDate}
+                  onChange={setStartDate}
+                  placeholder="Select start date"
+                />
+              </div>
+
+              <div>
+                <CustomDatePicker
+                  label="End Date"
                   required
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+                  onChange={setEndDate}
+                  placeholder="Select end date"
                 />
               </div>
 

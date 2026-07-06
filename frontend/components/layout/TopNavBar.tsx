@@ -93,20 +93,20 @@ export default function TopNavBar() {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-3 z-50">
-              <div className="flex justify-between items-center pb-2 border-b border-outline-variant mb-2">
-                <span className="text-label-md font-bold text-on-surface uppercase tracking-wider">Notifications</span>
+            <div className="absolute right-[-40px] md:right-0 mt-2 w-[320px] max-w-[90vw] bg-white border border-slate-200 rounded-2xl shadow-xl p-3 z-50 animate-slide-in-up">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-2">
+                <span className="text-label-md font-bold text-slate-800 uppercase tracking-wider">Notifications</span>
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllAsRead}
-                    className="text-[10px] text-primary hover:underline font-bold uppercase"
+                    className="text-[10px] text-primary hover:underline font-bold uppercase cursor-pointer"
                   >
                     Mark read
                   </button>
                 )}
               </div>
 
-              <div className="max-h-64 overflow-y-auto divide-y divide-outline-variant">
+              <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
                 {notifications.length === 0 ? (
                   <p className="text-body-sm text-outline text-center py-6">No new notifications</p>
                 ) : (

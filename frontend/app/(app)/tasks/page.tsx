@@ -268,7 +268,7 @@ export default function TasksPage() {
   );
 
   return (
-    <div className="space-y-6 font-sans max-w-7xl mx-auto p-4 md:p-6">
+    <div className="space-y-6 font-sans">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-headline-md font-extrabold text-on-surface">Tasks Center</h1>

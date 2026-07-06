@@ -570,7 +570,7 @@ export default function AttendancePage() {
 
       {/* Tab: Team Attendance */}
       {activeTab === 'team-attendance' && showTeamAttendance && (
-        <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+        <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
           <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
             <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Active Staff Check-ins</h2>
             <div className="relative w-48">
@@ -591,10 +591,112 @@ export default function AttendancePage() {
           {paginatedTeam.length === 0 ? (
             <p className="text-body-sm text-outline py-8 text-center">No team members assigned or records found.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <>
+              {/* Mobile View - Cards List */}
+              <div className="block md:hidden space-y-4">
+                {paginatedTeam.map(member => {
+                  const todayRecord = member.attendances?.[0];
+                  const isCheckedIn = todayRecord && !todayRecord.checkOut;
+                  const hasCheckedOut = todayRecord && todayRecord.checkOut;
+
+                  return (
+                    <div key={member.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-blue-50 text-primary border border-blue-100 flex items-center justify-center font-bold text-[12px] shrink-0">
+                            {member.firstName?.[0]}{member.lastName?.[0]}
+                          </div>
+                          <div>
+                            <h4 className="text-label-sm font-bold text-slate-900 leading-tight">
+                              {member.firstName} {member.lastName}
+                            </h4>
+                            <p className="text-[10px] text-outline mt-0.5">{member.email}</p>
+                          </div>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
+                          isCheckedIn
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : hasCheckedOut
+                            ? 'bg-zinc-100 text-zinc-650 border-zinc-200'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>
+                          {isCheckedIn ? 'Checked In' : hasCheckedOut ? 'Completed' : 'Offline'}
+                        </span>
+                      </div>
+
+                      {todayRecord && (
+                        <div className="pt-2.5 border-t border-slate-100 grid grid-cols-2 gap-2 text-[11px] text-slate-700 font-semibold">
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wider text-outline block">In Time</span>
+                            <span className="font-mono text-slate-950">
+                              {todayRecord.checkIn ? new Date(todayRecord.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wider text-outline block">Out Time</span>
+                            <span className="font-mono text-slate-950">
+                              {todayRecord.checkOut ? new Date(todayRecord.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wider text-outline block">Work Mode</span>
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                              todayRecord.workMode === 'WFO' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-purple-50 text-purple-700 border border-purple-100'
+                            }`}>
+                              {todayRecord.workMode === 'WFM' ? 'WFH' : todayRecord.workMode}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wider text-outline block">Location / Notes</span>
+                            <span className="text-slate-950 block truncate max-w-[130px]" title={todayRecord.ipAddress}>
+                              {todayRecord.ipAddress || '-'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {todayRecord?.notes && (
+                        <div className="pt-1.5">
+                          <span className={`text-[10px] inline-block ${
+                            todayRecord.notes.includes('Flagged')
+                              ? 'bg-red-50 text-red-700 border border-red-100 px-1.5 py-0.5 rounded-lg font-bold'
+                              : 'text-slate-550'
+                          }`}>
+                            {todayRecord.notes}
+                          </span>
+                        </div>
+                      )}
+
+                      {(isHR || isAdmin) && (
+                        <div className="pt-2 border-t border-slate-100 flex justify-end">
+                          {todayRecord ? (
+                            <button
+                              type="button"
+                              onClick={() => openAdjustmentModal({
+                                ...todayRecord,
+                                user: {
+                                  firstName: member.firstName,
+                                  lastName: member.lastName
+                                }
+                              })}
+                              className="text-primary hover:text-blue-700 font-extrabold text-[11px] underline cursor-pointer"
+                            >
+                              Adjust Attendance
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-outline italic">No log available</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop View - Standard Table */}
+              <table className="hidden md:table w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-surface-container-low/50">
+                  <tr className="bg-slate-50/50">
                     <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
                     <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
                     <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Check In</th>
@@ -606,14 +708,14 @@ export default function AttendancePage() {
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-outline-variant text-body-sm">
+                <tbody className="divide-y divide-slate-100 text-body-sm">
                   {paginatedTeam.map(member => {
                     const todayRecord = member.attendances?.[0];
                     const isCheckedIn = todayRecord && !todayRecord.checkOut;
                     const hasCheckedOut = todayRecord && todayRecord.checkOut;
                     
                     return (
-                      <tr key={member.id} className="hover:bg-surface-container-low transition-colors">
+                      <tr key={member.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-blue-50 text-primary border border-blue-100 flex items-center justify-center font-bold text-[11px]">
@@ -651,7 +753,7 @@ export default function AttendancePage() {
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               todayRecord.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
                             }`}>
-                              {todayRecord.workMode}
+                              {todayRecord.workMode === 'WFM' ? 'WFH' : todayRecord.workMode}
                             </span>
                           ) : '-'}
                         </td>
@@ -712,7 +814,7 @@ export default function AttendancePage() {
                   </div>
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       )}
@@ -721,146 +823,283 @@ export default function AttendancePage() {
       {activeTab === 'adjustments' && (isAdmin || isHR) && (
         <div className="space-y-6">
           {/* Pending Adjustments Section */}
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Pending Adjustment Requests</h2>
+          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
+            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-2">Pending Adjustment Requests</h2>
             {adjustmentRequests.filter(req => req.status === 'PENDING').length === 0 ? (
               <p className="text-body-sm text-outline py-4 text-center">No pending adjustment requests.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-body-sm">
-                  <thead>
-                    <tr className="bg-surface-container-low/50">
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Original Times</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Proposed Times</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Reason</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant">
-                    {adjustmentRequests.filter(req => req.status === 'PENDING').map(req => {
-                      const emp = req.attendance?.user;
-                      const isOwnRequest = req.requestedBy === user?.id;
-                      
-                      return (
-                        <tr key={req.id} className="hover:bg-surface-container-low transition-colors">
-                          <td className="px-4 py-3">
-                            <p className="font-semibold text-on-surface">{emp?.firstName} {emp?.lastName}</p>
-                            <p className="text-[10px] text-outline">{emp?.employeeId}</p>
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-on-surface">
-                            {new Date(req.attendance?.date).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3 text-outline font-mono text-[11px]">
-                            In: {formatTime(req.attendance?.checkIn)}<br />
-                            Out: {formatTime(req.attendance?.checkOut)}<br />
-                            Status: <span className="font-bold text-[10px]">{req.attendance?.status}</span>
-                          </td>
-                          <td className="px-4 py-3 text-primary font-mono text-[11px] bg-blue-50/30">
-                            In: {formatTime(req.proposedCheckIn)}<br />
-                            Out: {formatTime(req.proposedCheckOut)}<br />
-                            Status: <span className="font-bold text-[10px]">{req.proposedStatus || req.attendance?.status}</span>
-                          </td>
-                          <td className="px-4 py-3 text-on-surface-variant max-w-xs">
-                            <ReadMoreText text={req.reason} title="Adjustment Reason" />
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => handleRejectAdjustment(req.id)}
-                                className="px-2.5 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
-                              >
-                                Reject
-                              </button>
-                              {isOwnRequest ? (
-                                <span className="px-2.5 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[11px] font-bold border border-slate-200 select-none cursor-not-allowed" title="Two-person rule: Cannot approve own request">
-                                  Self-Request
-                                </span>
-                              ) : (
+              <div>
+                {/* Mobile View - Cards List */}
+                <div className="block md:hidden space-y-4">
+                  {adjustmentRequests.filter(req => req.status === 'PENDING').map(req => {
+                    const emp = req.attendance?.user;
+                    const isOwnRequest = req.requestedBy === user?.id;
+
+                    return (
+                      <div key={req.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-label-sm font-bold text-slate-900 leading-tight">
+                              {emp?.firstName} {emp?.lastName}
+                            </h4>
+                            <p className="text-[10px] text-outline mt-0.5">Emp ID: {emp?.employeeId}</p>
+                            <p className="text-[11px] font-bold text-slate-700 mt-1">
+                              Date: {new Date(req.attendance?.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                          <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                            Pending Approval
+                          </span>
+                        </div>
+
+                        <div className="pt-2.5 border-t border-slate-100 grid grid-cols-2 gap-3 text-[11px] text-slate-700">
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wider text-outline font-bold block">Original Times</span>
+                            <span className="font-mono text-slate-950 block">In: {formatTime(req.attendance?.checkIn)}</span>
+                            <span className="font-mono text-slate-950 block">Out: {formatTime(req.attendance?.checkOut)}</span>
+                            <span className="text-[9px] font-bold text-slate-500">Status: {req.attendance?.status}</span>
+                          </div>
+                          <div className="bg-blue-50/50 p-1.5 rounded-lg border border-blue-100/50">
+                            <span className="text-[9px] uppercase tracking-wider text-primary font-bold block">Proposed Times</span>
+                            <span className="font-mono text-slate-950 block">In: {formatTime(req.proposedCheckIn)}</span>
+                            <span className="font-mono text-slate-950 block">Out: {formatTime(req.proposedCheckOut)}</span>
+                            <span className="text-[9px] font-bold text-primary">Status: {req.proposedStatus || req.attendance?.status}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-[11px] pt-1.5 border-t border-slate-150 text-slate-700">
+                          <span className="text-[9px] uppercase tracking-wider text-outline font-bold block">Reason</span>
+                          <ReadMoreText text={req.reason} title="Adjustment Reason" />
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleRejectAdjustment(req.id)}
+                            className="px-3 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                          >
+                            Reject
+                          </button>
+                          {isOwnRequest ? (
+                            <span className="px-3 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[11px] font-bold border border-slate-200 select-none cursor-not-allowed" title="Two-person rule: Cannot approve own request">
+                              Self-Request
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleApproveAdjustment(req.id)}
+                              className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm"
+                            >
+                              Approve
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop View - Structured Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-body-sm">
+                    <thead>
+                      <tr className="bg-slate-50/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Original Times</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Proposed Times</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Reason</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {adjustmentRequests.filter(req => req.status === 'PENDING').map(req => {
+                        const emp = req.attendance?.user;
+                        const isOwnRequest = req.requestedBy === user?.id;
+                        
+                        return (
+                          <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-4 py-3">
+                              <p className="font-semibold text-on-surface">{emp?.firstName} {emp?.lastName}</p>
+                              <p className="text-[10px] text-outline">{emp?.employeeId}</p>
+                            </td>
+                            <td className="px-4 py-3 font-semibold text-on-surface">
+                              {new Date(req.attendance?.date).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-3 text-outline font-mono text-[11px]">
+                              In: {formatTime(req.attendance?.checkIn)}<br />
+                              Out: {formatTime(req.attendance?.checkOut)}<br />
+                              Status: <span className="font-bold text-[10px]">{req.attendance?.status}</span>
+                            </td>
+                            <td className="px-4 py-3 text-primary font-mono text-[11px] bg-blue-50/30">
+                              In: {formatTime(req.proposedCheckIn)}<br />
+                              Out: {formatTime(req.proposedCheckOut)}<br />
+                              Status: <span className="font-bold text-[10px]">{req.proposedStatus || req.attendance?.status}</span>
+                            </td>
+                            <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                              <ReadMoreText text={req.reason} title="Adjustment Reason" />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex justify-end gap-2">
                                 <button
-                                  onClick={() => handleApproveAdjustment(req.id)}
-                                  className="px-2.5 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm"
+                                  onClick={() => handleRejectAdjustment(req.id)}
+                                  className="px-2.5 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
                                 >
-                                  Approve
+                                  Reject
                                 </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                                {isOwnRequest ? (
+                                  <span className="px-2.5 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[11px] font-bold border border-slate-200 select-none cursor-not-allowed" title="Two-person rule: Cannot approve own request">
+                                    Self-Request
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleApproveAdjustment(req.id)}
+                                    className="px-2.5 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm"
+                                  >
+                                    Approve
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
 
           {/* Exceptions Section */}
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Attendance Exceptions Log</h2>
+          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
+            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-2">Attendance Exceptions Log</h2>
             {exceptions.length === 0 ? (
               <p className="text-body-sm text-outline py-4 text-center">No attendance exceptions found.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-body-sm">
-                  <thead>
-                    <tr className="bg-surface-container-low/50">
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">In</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Out</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant">
-                    {exceptions.map(exc => (
-                      <tr key={exc.id} className="hover:bg-surface-container-low transition-colors">
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-on-surface">{exc.firstName} {exc.lastName}</p>
-                          <p className="text-[10px] text-outline">{exc.email}</p>
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-on-surface">
-                          {new Date(exc.date).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3 font-mono text-on-surface-variant">
-                          {exc.checkIn ? new Date(exc.checkIn).toLocaleTimeString() : '-'}
-                        </td>
-                        <td className="px-4 py-3 font-mono text-on-surface-variant">
-                          {exc.checkOut ? new Date(exc.checkOut).toLocaleTimeString() : (
-                            <span className="text-error font-bold text-[10px] uppercase">Missing Out</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            exc.status === 'LATE'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : exc.status === 'ABSENT'
-                              ? 'bg-red-50 text-red-700 border border-red-200'
-                              : 'bg-blue-50 text-blue-700 border border-blue-200'
-                          }`}>
-                            {exc.status}
+              <>
+                {/* Mobile View - Cards List */}
+                <div className="block md:hidden space-y-4">
+                  {exceptions.map(exc => (
+                    <div key={exc.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="text-label-sm font-bold text-slate-900 leading-tight">
+                            {exc.firstName} {exc.lastName}
+                          </h4>
+                          <p className="text-[10px] text-outline mt-0.5">{exc.email}</p>
+                          <p className="text-[11px] font-bold text-slate-700 mt-1">
+                            Date: {new Date(exc.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </p>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
+                          exc.status === 'LATE'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : exc.status === 'ABSENT'
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'bg-blue-50 text-blue-700 border border-blue-200'
+                        }`}>
+                          {exc.status}
+                        </span>
+                      </div>
+
+                      <div className="pt-2.5 border-t border-slate-100 grid grid-cols-2 gap-2 text-[11px] text-slate-700 font-semibold">
+                        <div>
+                          <span className="text-[9px] uppercase tracking-wider text-outline block">In Time</span>
+                          <span className="font-mono text-slate-950">
+                            {exc.checkIn ? new Date(exc.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => openAdjustmentModal({
-                              ...exc,
-                              user: {
-                                firstName: exc.firstName,
-                                lastName: exc.lastName
-                              }
-                            })}
-                            className="px-2.5 py-1.5 border border-outline-variant hover:bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
-                          >
-                            Adjust
-                          </button>
-                        </td>
+                        </div>
+                        <div>
+                          <span className="text-[9px] uppercase tracking-wider text-outline block">Out Time</span>
+                          <span className="font-mono text-slate-950">
+                            {exc.checkOut ? new Date(exc.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (
+                              <span className="text-error font-bold text-[9px] uppercase">Missing Out</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => openAdjustmentModal({
+                            ...exc,
+                            user: {
+                              firstName: exc.firstName,
+                              lastName: exc.lastName
+                            }
+                          })}
+                          className="text-primary hover:text-blue-700 font-extrabold text-[11px] underline cursor-pointer"
+                        >
+                          Adjust Log
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop View - Structured Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-body-sm">
+                    <thead>
+                      <tr className="bg-slate-50/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">In</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Out</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {exceptions.map(exc => (
+                        <tr key={exc.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="font-semibold text-on-surface">{exc.firstName} {exc.lastName}</p>
+                            <p className="text-[10px] text-outline">{exc.email}</p>
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-on-surface">
+                            {new Date(exc.date).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-on-surface-variant">
+                            {exc.checkIn ? new Date(exc.checkIn).toLocaleTimeString() : '-'}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-on-surface-variant">
+                            {exc.checkOut ? new Date(exc.checkOut).toLocaleTimeString() : (
+                              <span className="text-error font-bold text-[10px] uppercase">Missing Out</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              exc.status === 'LATE'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : exc.status === 'ABSENT'
+                                ? 'bg-red-50 text-red-700 border border-red-200'
+                                : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            }`}>
+                              {exc.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => openAdjustmentModal({
+                                ...exc,
+                                user: {
+                                  firstName: exc.firstName,
+                                  lastName: exc.lastName
+                                }
+                              })}
+                              className="px-2.5 py-1.5 border border-outline-variant hover:bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                            >
+                              Adjust
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* Exceptions Pagination */}
                 {Math.ceil(totalExceptions / itemsPerPage) > 1 && (
@@ -886,60 +1125,109 @@ export default function AttendancePage() {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-          </div>
+            </>
+          )}
+        </div>
 
           {/* All Historical Adjustments Section */}
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Resolved Adjustment History</h2>
+          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
+            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-2">Resolved Adjustment History</h2>
             {adjustmentRequests.filter(req => req.status !== 'PENDING').length === 0 ? (
               <p className="text-body-sm text-outline py-4 text-center">No resolved adjustments.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-body-sm">
-                  <thead>
-                    <tr className="bg-surface-container-low/50">
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Adjusted Values</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant">
-                    {adjustmentRequests.filter(req => req.status !== 'PENDING').map(req => {
-                      const emp = req.attendance?.user;
-                      
-                      return (
-                        <tr key={req.id} className="hover:bg-surface-container-low transition-colors">
-                          <td className="px-4 py-3">
-                            <p className="font-semibold text-on-surface">{emp?.firstName} {emp?.lastName}</p>
-                            <p className="text-[10px] text-outline">{emp?.employeeId}</p>
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-on-surface">
-                            {new Date(req.attendance?.date).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              req.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
-                            }`}>
-                              {req.status}
+              <div>
+                {/* Mobile View - Cards List */}
+                <div className="block md:hidden space-y-4">
+                  {adjustmentRequests.filter(req => req.status !== 'PENDING').map(req => {
+                    const emp = req.attendance?.user;
+
+                    return (
+                      <div key={req.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-label-sm font-bold text-slate-900 leading-tight">
+                              {emp?.firstName} {emp?.lastName}
+                            </h4>
+                            <p className="text-[10px] text-outline mt-0.5">Emp ID: {emp?.employeeId}</p>
+                            <p className="text-[11px] font-bold text-slate-700 mt-1">
+                              Date: {new Date(req.attendance?.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
+                            req.status === 'APPROVED'
+                              ? 'bg-green-50 text-green-700 border-green-200'
+                              : 'bg-red-50 text-red-700 border-red-200'
+                          }`}>
+                            {req.status}
+                          </span>
+                        </div>
+
+                        <div className="pt-2.5 border-t border-slate-100 text-[11px] text-slate-700 space-y-1">
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wider text-outline font-bold block">Adjusted Times</span>
+                            <span className="font-mono text-slate-950 block">
+                              In: {formatTime(req.proposedCheckIn)} · Out: {formatTime(req.proposedCheckOut)}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-[11px] text-on-surface-variant">
-                            In: {formatTime(req.proposedCheckIn)}<br />
-                            Out: {formatTime(req.proposedCheckOut)}<br />
-                            Status: <span className="font-bold text-[10px]">{req.proposedStatus || req.attendance?.status}</span>
-                          </td>
-                          <td className="px-4 py-3 text-on-surface-variant max-w-xs">
-                            <ReadMoreText text={req.reason} title="Adjustment Notes" />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            <span className="text-[9px] font-bold text-slate-500">Status: {req.proposedStatus || req.attendance?.status}</span>
+                          </div>
+                          {req.reason && (
+                            <div>
+                              <span className="text-[9px] uppercase tracking-wider text-outline font-bold block">Notes</span>
+                              <ReadMoreText text={req.reason} title="Adjustment Notes" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop View - Structured Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-body-sm">
+                    <thead>
+                      <tr className="bg-slate-50/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Adjusted Values</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {adjustmentRequests.filter(req => req.status !== 'PENDING').map(req => {
+                        const emp = req.attendance?.user;
+                        
+                        return (
+                          <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-4 py-3">
+                              <p className="font-semibold text-on-surface">{emp?.firstName} {emp?.lastName}</p>
+                              <p className="text-[10px] text-outline">{emp?.employeeId}</p>
+                            </td>
+                            <td className="px-4 py-3 font-semibold text-on-surface">
+                              {new Date(req.attendance?.date).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                req.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                              }`}>
+                                {req.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-mono text-[11px] text-on-surface-variant">
+                              In: {formatTime(req.proposedCheckIn)}<br />
+                              Out: {formatTime(req.proposedCheckOut)}<br />
+                              Status: <span className="font-bold text-[10px]">{req.proposedStatus || req.attendance?.status}</span>
+                            </td>
+                            <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                              <ReadMoreText text={req.reason} title="Adjustment Notes" />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

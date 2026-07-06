@@ -7,6 +7,16 @@ import { useToast } from '../../../lib/toast/ToastProvider';
 import { Button } from '../../../components/ui/Button';
 import { TableSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
 import { ReadMoreText } from '../../../components/ui/ReadMoreText';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
+import { CustomDatePicker } from '../../../components/ui/CustomDatePicker';
+
+const expenseCategoryOptions = [
+  { value: 'TRAVEL', label: 'Travel' },
+  { value: 'MEALS', label: 'Meals & Food' },
+  { value: 'EQUIPMENT', label: 'Equipment & Tech' },
+  { value: 'EDUCATION', label: 'Education & Training' },
+  { value: 'OTHER', label: 'Other' }
+];
 
 export default function ExpensesPage() {
   const { user } = useAuth();
@@ -15,8 +25,10 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [actioningClaimId, setActioningClaimId] = useState<string | null>(null);
+  const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('TRAVEL');
+  const [incurredOn, setIncurredOn] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   const [searchClaims, setSearchClaims] = useState('');
   const [currentPageClaims, setCurrentPageClaims] = useState(1);
@@ -51,12 +63,16 @@ export default function ExpensesPage() {
     setSubmitting(true);
     try {
       await api.expenses.create({
+        title,
         amount: Number(amount),
         category,
+        incurredOn,
         description
       });
+      setTitle('');
       setAmount('');
       setDescription('');
+      setIncurredOn(new Date().toISOString().split('T')[0]);
       await loadData();
       toast.success('Expense claim filed successfully');
     } catch (err: any) {
@@ -132,9 +148,21 @@ export default function ExpensesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm h-fit">
-          <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">File Claim</h2>
+        <div className="md:col-span-1 bg-white border border-slate-200 p-5 rounded-3xl shadow-sm h-fit space-y-4">
+          <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-2">File Claim</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Title</label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Flight tickets to Jaipur"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+              />
+            </div>
+
             <div>
               <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Amount (₹)</label>
               <input
@@ -143,23 +171,29 @@ export default function ExpensesPage() {
                 required
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+                placeholder="e.g. 10000"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
               />
             </div>
 
             <div>
               <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Category</label>
-              <select
+              <CustomSelect
+                options={expenseCategoryOptions}
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
-              >
-                <option value="TRAVEL">Travel</option>
-                <option value="MEALS">Meals & Food</option>
-                <option value="EQUIPMENT">Equipment & Tech</option>
-                <option value="EDUCATION">Education & Training</option>
-                <option value="OTHER">Other</option>
-              </select>
+                onChange={setCategory}
+                placeholder="Select category"
+              />
+            </div>
+
+            <div>
+              <CustomDatePicker
+                label="Date Incurred"
+                required
+                value={incurredOn}
+                onChange={setIncurredOn}
+                placeholder="Select date incurred"
+              />
             </div>
 
             <div>
@@ -169,7 +203,8 @@ export default function ExpensesPage() {
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
+                placeholder="Provide details about this expense..."
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-body-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
               />
             </div>
 
@@ -185,7 +220,7 @@ export default function ExpensesPage() {
 
         <div className="md:col-span-2 space-y-6">
           {(isAdmin || isFinance || isManager) && (
-            <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+            <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
               <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Pending Team Claims</h2>
                 <div className="relative w-48">
@@ -269,7 +304,7 @@ export default function ExpensesPage() {
             </div>
           )}
 
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
             <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
               <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">My Expenses</h2>
               <div className="relative w-48">
@@ -298,8 +333,11 @@ export default function ExpensesPage() {
                       <div key={exp.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h4 className="text-label-sm font-bold text-slate-900">{exp.category}</h4>
-                            <span className="text-[11px] font-mono text-slate-700 font-semibold block mt-1">₹{exp.amount.toFixed(2)}</span>
+                            <h4 className="text-label-sm font-bold text-slate-900">{exp.title || exp.category}</h4>
+                            <p className="text-[10px] text-outline mt-0.5 font-semibold">
+                              Category: {exp.category} · {new Date(exp.incurredOn).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </p>
+                            <span className="text-[11px] font-mono text-slate-700 font-bold block mt-1">₹{exp.amount.toFixed(2)}</span>
                           </div>
                           <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
                             exp.status === 'APPROVED'
@@ -321,24 +359,30 @@ export default function ExpensesPage() {
                   {/* Desktop View - Standard Table */}
                   <table className="hidden md:table w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-surface-container-low/50">
+                      <tr className="bg-slate-50/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Title</th>
                         <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Category</th>
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Amount</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Amount</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-center">Date Incurred</th>
                         <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Description</th>
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-center">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-outline-variant text-body-sm">
+                    <tbody className="divide-y divide-slate-100 text-body-sm">
                       {paginatedClaims.map(exp => (
-                        <tr key={exp.id} className="hover:bg-surface-container-low transition-colors">
-                          <td className="px-4 py-3 font-semibold text-on-surface">{exp.category}</td>
-                          <td className="px-4 py-3 text-on-surface-variant font-mono">
+                        <tr key={exp.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 font-semibold text-on-surface">{exp.title || exp.category}</td>
+                          <td className="px-4 py-3 text-on-surface-variant">{exp.category}</td>
+                          <td className="px-4 py-3 text-on-surface-variant font-mono text-right">
                             ₹{exp.amount.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant text-center">
+                            {new Date(exp.incurredOn).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </td>
                           <td className="px-4 py-3 text-on-surface-variant max-w-xs">
                             <ReadMoreText text={exp.description} title="Expense Description" />
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-center">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                               exp.status === 'APPROVED'
                                 ? 'bg-green-50 text-green-700 border-green-200'

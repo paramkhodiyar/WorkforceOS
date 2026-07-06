@@ -231,40 +231,66 @@ export default function PayrollPage() {
               <p className="text-body-sm text-outline py-8 text-center">No payroll runs executed yet.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-surface-container-low/50">
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Run Date</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Period</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Total Gross</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Deductions</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant text-body-sm">
+                <>
+                  {/* Mobile View - Cards List */}
+                  <div className="block md:hidden space-y-4">
                     {paginatedRuns.map(run => (
-                      <tr key={run.id} className="hover:bg-surface-container-low transition-colors">
-                        <td className="px-4 py-3 font-semibold text-on-surface">
-                          {new Date(run.runDate).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3 text-on-surface-variant">
-                          {new Date(run.year, run.month - 1).toLocaleString('default', { month: 'long' })} {run.year}
-                        </td>
-                        <td className="px-4 py-3 text-on-surface-variant font-mono">
-                          ₹{(run.totalGross ?? 0).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-error font-mono">
-                          ₹{(run.totalDeductions ?? 0).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-200">
+                      <div key={run.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-label-sm font-bold text-slate-900">Run: {new Date(run.runDate).toLocaleDateString()}</h4>
+                            <p className="text-[11px] text-outline mt-0.5 font-medium">
+                              Period: {new Date(run.year, run.month - 1).toLocaleString('default', { month: 'long' })} {run.year}
+                            </p>
+                          </div>
+                          <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[9px] font-bold border border-green-200 uppercase">
                             {run.status}
                           </span>
-                        </td>
-                      </tr>
+                        </div>
+                        <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                          <span>Total Gross: <span className="font-mono text-slate-900">₹{(run.totalGross ?? 0).toFixed(2)}</span></span>
+                          <span className="text-red-650">Deductions: <span className="font-mono">₹{(run.totalDeductions ?? 0).toFixed(2)}</span></span>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+
+                  {/* Desktop View - Standard Table */}
+                  <table className="hidden md:table w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-container-low/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Run Date</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Period</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Total Gross</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Deductions</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant text-body-sm">
+                      {paginatedRuns.map(run => (
+                        <tr key={run.id} className="hover:bg-surface-container-low transition-colors">
+                          <td className="px-4 py-3 font-semibold text-on-surface">
+                            {new Date(run.runDate).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant">
+                            {new Date(run.year, run.month - 1).toLocaleString('default', { month: 'long' })} {run.year}
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant font-mono">
+                            ₹{(run.totalGross ?? 0).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-error font-mono">
+                            ₹{(run.totalDeductions ?? 0).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-200">
+                              {run.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
 
                 {totalRunPages > 1 && (
                   <div className="mt-4 pt-4 border-t border-outline-variant flex items-center justify-between">
@@ -319,48 +345,80 @@ export default function PayrollPage() {
           <p className="text-body-sm text-outline py-8 text-center">No payslip records found.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface-container-low/50">
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Period</th>
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Net Payout</th>
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-center">Status</th>
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant text-body-sm">
+            <>
+              {/* Mobile View - Cards List */}
+              <div className="block md:hidden space-y-4">
                 {paginatedPayslips.map(ps => (
-                  <tr key={ps.id} className="hover:bg-surface-container-low transition-colors">
-                    <td className="px-4 py-3 font-semibold text-on-surface">
-                      {ps.user?.firstName} {ps.user?.lastName}
-                    </td>
-                    <td className="px-4 py-3 text-on-surface-variant">
-                      {new Date(ps.year, ps.month - 1).toLocaleString('default', { month: 'long' })} {ps.year}
-                    </td>
-                    <td className="px-4 py-3 text-on-surface-variant font-mono text-right">
-                      ₹{ps.netPay.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-200">
+                  <div key={ps.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-label-sm font-bold text-slate-900">{ps.user?.firstName} {ps.user?.lastName}</h4>
+                        <p className="text-[11px] text-outline mt-0.5 font-medium">
+                          Period: {new Date(ps.year, ps.month - 1).toLocaleString('default', { month: 'long' })} {ps.year}
+                        </p>
+                      </div>
+                      <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[9px] font-bold border border-green-200 uppercase">
                         {ps.status}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <ThreeDotMenu
-                        actions={[
-                          {
-                            label: 'View Payslip',
-                            icon: 'visibility',
-                            onClick: () => handleViewPayslip(ps.id)
-                          }
-                        ]}
-                      />
-                    </td>
-                  </tr>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                      <span>Net Payout: <span className="font-mono text-slate-900">₹{ps.netPay.toFixed(2)}</span></span>
+                      <button
+                        onClick={() => handleViewPayslip(ps.id)}
+                        className="px-2 py-1 bg-primary hover:bg-blue-755 text-on-primary font-bold text-[9px] rounded uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">visibility</span>
+                        View
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+
+              {/* Desktop View - Standard Table */}
+              <table className="hidden md:table w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-container-low/50">
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Period</th>
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Net Payout</th>
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-center">Status</th>
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant text-body-sm">
+                  {paginatedPayslips.map(ps => (
+                    <tr key={ps.id} className="hover:bg-surface-container-low transition-colors">
+                      <td className="px-4 py-3 font-semibold text-on-surface">
+                        {ps.user?.firstName} {ps.user?.lastName}
+                      </td>
+                      <td className="px-4 py-3 text-on-surface-variant">
+                        {new Date(ps.year, ps.month - 1).toLocaleString('default', { month: 'long' })} {ps.year}
+                      </td>
+                      <td className="px-4 py-3 text-on-surface-variant font-mono text-right">
+                        ₹{ps.netPay.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-200">
+                          {ps.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <ThreeDotMenu
+                          actions={[
+                            {
+                              label: 'View Payslip',
+                              icon: 'visibility',
+                              onClick: () => handleViewPayslip(ps.id)
+                            }
+                          ]}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
 
             {totalPayslipPages > 1 && (
               <div className="mt-4 pt-4 border-t border-outline-variant flex items-center justify-between">

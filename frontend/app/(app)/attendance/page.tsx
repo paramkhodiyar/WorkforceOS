@@ -423,68 +423,122 @@ export default function AttendancePage() {
             {paginatedHistory.length === 0 ? (
               <p className="text-body-sm text-outline py-8 text-center">No attendance logs recorded yet.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-surface-container-low/50">
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">In</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Out</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Type</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Location</th>
-                      {(isHR || isAdmin) && (
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant">
-                    {paginatedHistory.map(log => (
-                      <tr key={log.id} className="hover:bg-surface-container-low transition-colors text-body-sm">
-                        <td className="px-4 py-3 text-on-surface font-semibold">
-                          {new Date(log.date).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3 text-on-surface-variant font-mono">
-                          {log.checkIn ? new Date(log.checkIn).toLocaleTimeString() : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-on-surface-variant font-mono">
-                          {log.checkOut ? new Date(log.checkOut).toLocaleTimeString() : '-'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+              <>
+                {/* Mobile View - Cards List */}
+                <div className="block md:hidden space-y-4">
+                  {paginatedHistory.map(log => (
+                    <div key={log.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="text-label-sm font-bold text-slate-900">{new Date(log.date).toLocaleDateString()}</h4>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold inline-block mt-1 ${
                             log.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
                           }`}>
                             {log.workMode}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-on-surface-variant max-w-xs">
-                          <div className="truncate">{log.ipAddress || '-'}</div>
-                          {log.notes && (
-                            <div className={`text-[10px] mt-0.5 inline-block ${log.notes.includes('Flagged') ? 'bg-red-50 text-red-700 border border-red-100 px-1.5 py-0.5 rounded font-bold' : 'text-slate-550'}`}>
-                              {log.notes}
-                            </div>
-                          )}
-                        </td>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-body-xs font-semibold block">In: {log.checkIn ? new Date(log.checkIn).toLocaleTimeString() : '-'}</span>
+                          <span className="text-body-xs font-semibold block">Out: {log.checkOut ? new Date(log.checkOut).toLocaleTimeString() : '-'}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100">
+                        <span className="text-slate-550 font-mono">IP: {log.ipAddress || '-'}</span>
+                        {log.notes && (
+                          <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border ${
+                            log.notes.includes('Flagged') ? 'bg-red-50 text-red-750 border-red-150' : 'bg-slate-100 text-slate-655 border-slate-200'
+                          }`}>
+                            {log.notes}
+                          </span>
+                        )}
+                      </div>
+
+                      {(isHR || isAdmin) && (
+                        <div className="pt-2 flex gap-2">
+                          <button
+                            onClick={() => openAdjustmentModal({
+                              ...log,
+                              user: {
+                                firstName: user?.firstName || 'Self',
+                                lastName: user?.lastName || ''
+                              }
+                            })}
+                            className="w-full py-2 bg-primary hover:bg-blue-755 text-on-primary font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">edit</span>
+                            Request Adjustment
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop View - Standard Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-container-low/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">In</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Out</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Type</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Location</th>
                         {(isHR || isAdmin) && (
-                          <td className="px-4 py-3 text-right">
-                            <button
-                              onClick={() => openAdjustmentModal({
-                                ...log,
-                                user: {
-                                  firstName: user?.firstName || 'Self',
-                                  lastName: user?.lastName || ''
-                                }
-                              })}
-                              className="text-primary hover:text-blue-700 font-bold text-[11px] underline cursor-pointer"
-                            >
-                              Adjust
-                            </button>
-                          </td>
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
                         )}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant">
+                      {paginatedHistory.map(log => (
+                        <tr key={log.id} className="hover:bg-surface-container-low transition-colors text-body-sm">
+                          <td className="px-4 py-3 text-on-surface font-semibold">
+                            {new Date(log.date).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant font-mono">
+                            {log.checkIn ? new Date(log.checkIn).toLocaleTimeString() : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant font-mono">
+                            {log.checkOut ? new Date(log.checkOut).toLocaleTimeString() : '-'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              log.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                            }`}>
+                              {log.workMode}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                            <div className="truncate">{log.ipAddress || '-'}</div>
+                            {log.notes && (
+                              <div className={`text-[10px] mt-0.5 inline-block ${log.notes.includes('Flagged') ? 'bg-red-50 text-red-700 border border-red-100 px-1.5 py-0.5 rounded font-bold' : 'text-slate-550'}`}>
+                                {log.notes}
+                              </div>
+                            )}
+                          </td>
+                          {(isHR || isAdmin) && (
+                            <td className="px-4 py-3 text-right">
+                              <button
+                                onClick={() => openAdjustmentModal({
+                                  ...log,
+                                  user: {
+                                    firstName: user?.firstName || 'Self',
+                                    lastName: user?.lastName || ''
+                                  }
+                                })}
+                                className="text-primary hover:text-blue-700 font-bold text-[11px] underline cursor-pointer"
+                              >
+                                Adjust
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
                 {totalPagesHistory > 1 && (
                   <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
                     <span className="text-[11px] text-outline">
@@ -508,7 +562,7 @@ export default function AttendancePage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>

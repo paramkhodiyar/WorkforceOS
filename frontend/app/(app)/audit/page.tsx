@@ -99,49 +99,83 @@ export default function AuditPage() {
         {paginatedLogs.length === 0 ? (
           <p className="text-body-sm text-outline py-8 text-center">No system audit records logged.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface-container-low/50">
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Timestamp</th>
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Actor</th>
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Action</th>
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Module</th>
-                  <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">IP Address</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant text-body-sm">
-                {paginatedLogs.map(log => (
-                  <tr key={log.id} className="hover:bg-surface-container-low transition-colors">
-                    <td className="px-4 py-3 text-on-surface-variant font-mono">
-                      {new Date(log.timestamp).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3">
+          <>
+            {/* Mobile View - Cards List */}
+            <div className="block md:hidden space-y-4 p-4">
+              {paginatedLogs.map(log => (
+                <div key={log.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                  <div className="flex justify-between items-start">
+                    <div>
                       {log.actor ? (
                         <div>
-                          <p className="font-semibold text-on-surface">{log.actor.firstName} {log.actor.lastName}</p>
-                          <p className="text-[10px] text-outline font-mono">{log.actor.email}</p>
+                          <h4 className="text-label-sm font-bold text-slate-900">{log.actor.firstName} {log.actor.lastName}</h4>
+                          <p className="text-[10px] text-outline font-mono mt-0.5">{log.actor.email}</p>
                         </div>
                       ) : (
-                        <span className="text-outline italic">System Process</span>
+                        <h4 className="text-label-sm italic text-outline font-bold">System Process</h4>
                       )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="bg-zinc-100 text-zinc-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-zinc-200">
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-on-surface-variant font-semibold">
-                      {log.module}
-                    </td>
-                    <td className="px-4 py-3 text-on-surface-variant font-mono">
-                      {log.ipAddress || 'Internal'}
-                    </td>
+                    </div>
+                    <span className="bg-zinc-150 text-zinc-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border border-zinc-200">
+                      {log.action}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                    <span className="font-mono text-outline">{new Date(log.timestamp).toLocaleString()}</span>
+                    <div>
+                      <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border border-blue-200 mr-2">{log.module}</span>
+                      <span className="font-mono">{log.ipAddress || 'Internal'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View - Standard Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-container-low/50">
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Timestamp</th>
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Actor</th>
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Action</th>
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Module</th>
+                    <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">IP Address</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-outline-variant text-body-sm">
+                  {paginatedLogs.map(log => (
+                    <tr key={log.id} className="hover:bg-surface-container-low transition-colors">
+                      <td className="px-4 py-3 text-on-surface-variant font-mono">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        {log.actor ? (
+                          <div>
+                            <p className="font-semibold text-on-surface">{log.actor.firstName} {log.actor.lastName}</p>
+                            <p className="text-[10px] text-outline font-mono">{log.actor.email}</p>
+                          </div>
+                        ) : (
+                          <span className="text-outline italic">System Process</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="bg-zinc-100 text-zinc-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-zinc-200">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-on-surface-variant font-semibold">
+                        {log.module}
+                      </td>
+                      <td className="px-4 py-3 text-on-surface-variant font-mono">
+                        {log.ipAddress || 'Internal'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {totalPages > 1 && (

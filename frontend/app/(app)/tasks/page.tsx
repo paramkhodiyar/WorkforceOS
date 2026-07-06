@@ -41,6 +41,7 @@ export default function TasksPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   const [reviewingTaskId, setReviewingTaskId] = useState<string | null>(null);
+  const [reviewAction, setReviewAction] = useState<'APPROVED' | 'CHANGES_REQUESTED'>('CHANGES_REQUESTED');
   const [delayedSearch, setDelayedSearch] = useState('');
   const [delayedPage, setDelayedPage] = useState(1);
   const itemsPerPageDelayed = 5;
@@ -160,28 +161,49 @@ export default function TasksPage() {
     }
   }
 
-  async function handleMoveStatus(id: string, newStatus: string) {
+  async function handleMoveStatus(task: any, action: 'START' | 'SUBMIT' | 'RESUBMIT' | 'CLOSE' | 'APPROVE' | 'REQUEST_CHANGES') {
     try {
-      await api.tasks.updateStatus(id, newStatus);
+      if (action === 'START') {
+        await api.tasks.accept(task.id);
+        toast.success('Task started successfully');
+      } else if (action === 'SUBMIT') {
+        await api.tasks.submit(task.id);
+        toast.success('Task submitted for review');
+      } else if (action === 'RESUBMIT') {
+        await api.tasks.resubmit(task.id);
+        toast.success('Task resubmitted for review');
+      } else if (action === 'CLOSE') {
+        await api.tasks.close(task.id);
+        toast.success('Task closed successfully');
+      } else if (action === 'APPROVE') {
+        setReviewAction('APPROVED');
+        setReviewingTaskId(task.id);
+        return; // Opens CommentDialog
+      } else if (action === 'REQUEST_CHANGES') {
+        setReviewAction('CHANGES_REQUESTED');
+        setReviewingTaskId(task.id);
+        return; // Opens CommentDialog
+      }
       loadTasks();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update task status');
+      toast.error(err.message || 'Failed to update task');
     }
   }
 
-  async function handleRaiseDelayReview(commentText: string) {
+  async function handleReviewTaskConfirm(commentText: string) {
     if (!reviewingTaskId) return;
 
     try {
       await api.tasks.review(reviewingTaskId, {
-        score: 1,
+        score: reviewAction === 'APPROVED' ? 5 : 1,
         comment: commentText,
-        action: 'CHANGES_REQUESTED'
+        action: reviewAction
       });
       setReviewingTaskId(null);
       loadTasks();
+      toast.success(reviewAction === 'APPROVED' ? 'Task approved successfully' : 'Changes requested on task');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to submit review request');
+      toast.error(err.message || 'Failed to submit task review');
     }
   }
 
@@ -385,12 +407,12 @@ export default function TasksPage() {
                             )}
                           </div>
 
-                          <div className="flex gap-1.5">
-                            {statusKey === 'TODO' && (
+                          <div className="flex gap-1.5 flex-wrap">
+                            {statusKey === 'TODO' && task.assigneeId === user?.id && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleMoveStatus(task.id, 'IN_PROGRESS');
+                                  handleMoveStatus(task, 'START');
                                 }}
                                 className="px-2.5 py-1 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
                               >
@@ -398,15 +420,79 @@ export default function TasksPage() {
                               </button>
                             )}
                             {statusKey === 'IN_PROGRESS' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMoveStatus(task.id, 'DONE');
-                                }}
-                                className="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
-                              >
-                                Complete
-                              </button>
+                              <>
+                                {/* Assignee Actions */}
+                                {task.assigneeId === user?.id && (
+                                  <>
+                                    {(task.status === 'ACCEPTED' || task.status === 'IN_PROGRESS') && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleMoveStatus(task, 'SUBMIT');
+                                        }}
+                                        className="px-2.5 py-1 bg-green-600 hover:bg-green-750 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                                      >
+                                        Complete
+                                      </button>
+                                    )}
+                                    {task.status === 'CHANGES_REQUESTED' && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleMoveStatus(task, 'RESUBMIT');
+                                        }}
+                                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-750 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                                      >
+                                        Resubmit
+                                      </button>
+                                    )}
+                                    {(task.status === 'SUBMITTED' || task.status === 'RESUBMITTED' || task.status === 'IN_REVIEW') && (
+                                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                        Pending Review
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+
+                                {/* Creator/Admin/HR Review Actions */}
+                                {(task.creatorId === user?.id || isAdmin || isHR) && (
+                                  <>
+                                    {(task.status === 'SUBMITTED' || task.status === 'RESUBMITTED' || task.status === 'IN_REVIEW') && (
+                                      <div className="flex gap-1">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleMoveStatus(task, 'APPROVE');
+                                          }}
+                                          className="px-2 py-0.5 bg-green-600 hover:bg-green-700 text-on-primary rounded text-[9px] font-bold uppercase cursor-pointer"
+                                        >
+                                          Approve
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleMoveStatus(task, 'REQUEST_CHANGES');
+                                          }}
+                                          className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-on-primary rounded text-[9px] font-bold uppercase cursor-pointer"
+                                        >
+                                          Reject
+                                        </button>
+                                      </div>
+                                    )}
+                                    {(task.status === 'APPROVED' || task.status === 'ACCEPTED' || task.status === 'IN_PROGRESS' || task.status === 'CHANGES_REQUESTED') && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleMoveStatus(task, 'CLOSE');
+                                        }}
+                                        className="px-2 py-0.5 bg-slate-800 hover:bg-slate-900 text-on-primary rounded text-[9px] font-bold uppercase cursor-pointer"
+                                      >
+                                        Close
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
@@ -464,7 +550,62 @@ export default function TasksPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile View - Sleek Actionable Cards */}
+            <div className="block md:hidden space-y-4">
+              {paginatedDelayedTasks.length > 0 ? (
+                paginatedDelayedTasks.map(task => (
+                  <div key={task.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-label-sm font-bold text-slate-900">{task.title}</h4>
+                        <p className="text-[11px] text-outline mt-0.5 line-clamp-2">{task.description}</p>
+                      </div>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${
+                        task.priority === 'HIGH' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-yellow-50 text-yellow-700 border border-yellow-100'
+                      }`}>
+                        {task.priority}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-body-xs font-semibold pt-1 border-t border-slate-100">
+                      <div className="flex items-center gap-2">
+                        {task.assignee ? (
+                          <>
+                            <span className="h-5 w-5 rounded-full bg-blue-100 text-primary flex items-center justify-center font-extrabold text-[8px]">
+                              {task.assignee.firstName[0]}{task.assignee.lastName[0]}
+                            </span>
+                            <span className="text-slate-700">{task.assignee.firstName} {task.assignee.lastName}</span>
+                          </>
+                        ) : (
+                          <span className="text-slate-400">Unassigned</span>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span className="text-red-600 block">Due {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</span>
+                        <span className="text-[9px] uppercase font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 mt-1 inline-block">{task.status}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-1 flex gap-2">
+                      <button
+                        onClick={() => setReviewingTaskId(task.id)}
+                        className="flex-1 py-2 bg-primary hover:bg-blue-750 text-on-primary font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">rate_review</span>
+                        Raise Delay Review
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-12 text-center text-slate-400 font-medium">
+                  No overdue tasks found matching your filter.
+                </div>
+              )}
+            </div>
+
+            {/* Desktop View - Structured Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
@@ -825,10 +966,10 @@ export default function TasksPage() {
 
       <CommentDialog
         isOpen={reviewingTaskId !== null}
-        title="Raise Delay Review"
-        placeholder="Request progress review comment / action details..."
-        confirmLabel="Raise Review"
-        onConfirm={handleRaiseDelayReview}
+        title={reviewAction === 'APPROVED' ? 'Approve Task' : 'Request Changes on Task'}
+        placeholder={reviewAction === 'APPROVED' ? 'Provide optional approval notes...' : 'Specify what changes are needed...'}
+        confirmLabel={reviewAction === 'APPROVED' ? 'Approve' : 'Request Changes'}
+        onConfirm={handleReviewTaskConfirm}
         onClose={() => setReviewingTaskId(null)}
       />
     </div>

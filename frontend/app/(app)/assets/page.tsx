@@ -182,36 +182,63 @@ export default function AssetsPage() {
             {paginatedMyAssets.length === 0 ? (
               <p className="text-body-sm text-outline py-8 text-center">No assigned assets found.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-surface-container-low/50">
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Asset Name</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Category</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Serial Number</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant text-body-sm">
-                    {paginatedMyAssets.map(ast => (
-                      <tr key={ast.id} className="hover:bg-surface-container-low transition-colors">
-                        <td className="px-4 py-3 font-semibold text-on-surface">{ast.name}</td>
-                        <td className="px-4 py-3 text-on-surface-variant">{ast.category}</td>
-                        <td className="px-4 py-3 text-on-surface-variant font-mono">{ast.serialNumber || 'Pending Allocation'}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                            ast.status === 'ASSIGNED'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                          }`}>
-                            {ast.status}
-                          </span>
-                        </td>
+              <>
+                {/* Mobile View - Cards List */}
+                <div className="block md:hidden space-y-4">
+                  {paginatedMyAssets.map(ast => (
+                    <div key={ast.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="text-label-sm font-bold text-slate-900">{ast.name}</h4>
+                          <span className="text-[10px] text-outline block mt-0.5">{ast.category}</span>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
+                          ast.status === 'ASSIGNED'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                        }`}>
+                          {ast.status}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                        <span>Serial: <span className="font-mono text-slate-900">{ast.serialNumber || 'Pending Allocation'}</span></span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop View - Standard Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-container-low/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Asset Name</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Category</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Serial Number</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant text-body-sm">
+                      {paginatedMyAssets.map(ast => (
+                        <tr key={ast.id} className="hover:bg-surface-container-low transition-colors">
+                          <td className="px-4 py-3 font-semibold text-on-surface">{ast.name}</td>
+                          <td className="px-4 py-3 text-on-surface-variant">{ast.category}</td>
+                          <td className="px-4 py-3 text-on-surface-variant font-mono">{ast.serialNumber || 'Pending Allocation'}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                              ast.status === 'ASSIGNED'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                            }`}>
+                              {ast.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
 
             {totalMyAssetsPages > 1 && (
@@ -261,41 +288,69 @@ export default function AssetsPage() {
               {paginatedInventory.length === 0 ? (
                 <p className="text-body-sm text-outline py-8 text-center">No assets found in organization inventory.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-container-low/50">
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Asset</th>
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Assignee</th>
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Serial</th>
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant text-body-sm">
-                      {paginatedInventory.map(ast => (
-                        <tr key={ast.id} className="hover:bg-surface-container-low transition-colors">
-                          <td className="px-4 py-3">
-                            <p className="font-semibold text-on-surface">{ast.name}</p>
-                            <p className="text-[10px] text-outline">{ast.category}</p>
-                          </td>
-                          <td className="px-4 py-3 text-on-surface-variant">
-                            {ast.assignedTo ? `${ast.assignedTo.firstName} ${ast.assignedTo.lastName}` : 'Unassigned'}
-                          </td>
-                          <td className="px-4 py-3 text-on-surface-variant font-mono">{ast.serialNumber || '-'}</td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                              ast.status === 'ASSIGNED'
-                                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                : 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                            }`}>
-                              {ast.status}
-                            </span>
-                          </td>
+                <>
+                  {/* Mobile View - Cards List */}
+                  <div className="block md:hidden space-y-4">
+                    {paginatedInventory.map(ast => (
+                      <div key={ast.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-label-sm font-bold text-slate-900">{ast.name}</h4>
+                            <span className="text-[10px] text-outline block mt-0.5">{ast.category}</span>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
+                            ast.status === 'ASSIGNED'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                          }`}>
+                            {ast.status}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                          <span>Assignee: <span className="text-slate-900">{ast.assignedTo ? `${ast.assignedTo.firstName} ${ast.assignedTo.lastName}` : 'Unassigned'}</span></span>
+                          <span>Serial: <span className="font-mono text-slate-900">{ast.serialNumber || '-'}</span></span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop View - Standard Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-surface-container-low/50">
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Asset</th>
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Assignee</th>
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Serial</th>
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant text-body-sm">
+                        {paginatedInventory.map(ast => (
+                          <tr key={ast.id} className="hover:bg-surface-container-low transition-colors">
+                            <td className="px-4 py-3">
+                              <p className="font-semibold text-on-surface">{ast.name}</p>
+                              <p className="text-[10px] text-outline">{ast.category}</p>
+                            </td>
+                            <td className="px-4 py-3 text-on-surface-variant">
+                              {ast.assignedTo ? `${ast.assignedTo.firstName} ${ast.assignedTo.lastName}` : 'Unassigned'}
+                            </td>
+                            <td className="px-4 py-3 text-on-surface-variant font-mono">{ast.serialNumber || '-'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                ast.status === 'ASSIGNED'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                              }`}>
+                                {ast.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
 
               {totalInventoryPages > 1 && (

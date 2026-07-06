@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuth, SEED_USERS } from '../../../lib/auth/AuthProvider';
+import { useAuth } from '../../../lib/auth/AuthProvider';
 
 export default function LoginPageClient() {
-  const { login, quickLogin, loading } = useAuth();
+  const { login, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,15 +16,6 @@ export default function LoginPageClient() {
       await login(email, password);
     } catch (err: any) {
       setError(err.message || 'Invalid credentials');
-    }
-  }
-
-  async function handleQuickLogin(seedEmail: string) {
-    setError('');
-    try {
-      await quickLogin(seedEmail);
-    } catch (err: any) {
-      setError(err.message || 'Quick login failed');
     }
   }
 
@@ -108,24 +99,6 @@ export default function LoginPageClient() {
               {loading ? 'Authenticating...' : 'Sign In'}
             </button>
           </form>
-
-          <div className="border-t border-slate-100 pt-6">
-            <p className="text-[10px] text-outline font-bold uppercase tracking-wider text-center md:text-left mb-4">Development Quick Login</p>
-            <div className="grid grid-cols-2 gap-3">
-              {SEED_USERS.map((seed) => (
-                <button
-                  key={seed.email}
-                  type="button"
-                  onClick={() => handleQuickLogin(seed.email)}
-                  disabled={loading}
-                  className="p-3 bg-slate-50 border border-slate-100 hover:border-primary/30 hover:bg-slate-100/50 rounded-xl text-left transition-all active:scale-95 duration-100 flex flex-col justify-between cursor-pointer"
-                >
-                  <span className="text-label-sm font-bold text-on-surface">{seed.label}</span>
-                  <span className="text-[9px] text-outline uppercase tracking-wider mt-1 font-semibold">{seed.role.replace('_', ' ')}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

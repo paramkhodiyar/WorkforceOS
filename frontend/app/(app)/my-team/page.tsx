@@ -461,75 +461,133 @@ export default function MyTeamPage() {
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Name</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Email</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Designation</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Role</th>
-                      {canEdit && <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
-                    {paginatedMembers.length > 0 ? (
-                      paginatedMembers.map((m: any) => {
-                        const isLead = type === 'team' && entityData.leadId === m.id;
-                        const isHead = type === 'dept' && entityData.headId === m.id;
-                        return (
-                          <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4 font-bold text-slate-900">
-                              {m.firstName} {m.lastName}
-                            </td>
-                            <td className="px-6 py-4 text-slate-600 font-mono">{m.email}</td>
-                            <td className="px-6 py-4 text-slate-600">{m.designation || 'Staff Member'}</td>
-                            <td className="px-6 py-4">
-                              {isLead && (
-                                <span className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full text-[9px] font-bold uppercase">
-                                  Lead
-                                </span>
-                              )}
-                              {isHead && (
-                                <span className="px-2.5 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-full text-[9px] font-bold uppercase">
-                                  Head
-                                </span>
-                              )}
-                              {!isLead && !isHead && (
-                                <span className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded-full text-[9px] font-bold uppercase">
-                                  Member
-                                </span>
-                              )}
-                            </td>
-                            {canEdit && (
-                              <td className="px-6 py-4 text-right">
-                                {!(isLead || isHead) ? (
-                                  <ThreeDotMenu
-                                    actions={[
-                                      {
-                                        label: 'Remove Member',
-                                        icon: 'person_remove',
-                                        className: 'text-red-600 hover:bg-red-50/50',
-                                        onClick: () => handleRemoveMember(m.id)
-                                      }
-                                    ]}
-                                  />
-                                ) : (
-                                  <span className="text-slate-300 text-label-xs select-none">No action</span>
+              <>
+                {/* Mobile View - Cards List */}
+                <div className="block md:hidden space-y-4">
+                  {paginatedMembers.length > 0 ? (
+                    paginatedMembers.map((m: any) => {
+                      const isLead = type === 'team' && entityData.leadId === m.id;
+                      const isHead = type === 'dept' && entityData.headId === m.id;
+                      return (
+                        <div key={m.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-label-sm font-bold text-slate-900">{m.firstName} {m.lastName}</h4>
+                              <p className="text-[11px] text-outline mt-0.5 font-medium">{m.designation || 'Staff Member'}</p>
+                            </div>
+                            {isLead && (
+                              <span className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full text-[9px] font-bold uppercase">
+                                Lead
+                              </span>
+                            )}
+                            {isHead && (
+                              <span className="px-2.5 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-full text-[9px] font-bold uppercase">
+                                Head
+                              </span>
+                            )}
+                            {!isLead && !isHead && (
+                              <span className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded-full text-[9px] font-bold uppercase">
+                                Member
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                            <span className="font-mono">{m.email}</span>
+                          </div>
+                          {canEdit && !(isLead || isHead) && (
+                            <div className="pt-2 flex gap-2">
+                              <button
+                                onClick={() => handleRemoveMember(m.id)}
+                                className="w-full py-2 bg-red-50 hover:bg-red-100 text-red-650 font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1.5 border border-red-150 cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">person_remove</span>
+                                Remove Member
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="py-12 text-center text-slate-400 font-medium">
+                      No team members found.
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop View - Standard Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Name</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Email</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Designation</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Role</th>
+                        {canEdit && <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
+                      {paginatedMembers.length > 0 ? (
+                        paginatedMembers.map((m: any) => {
+                          const isLead = type === 'team' && entityData.leadId === m.id;
+                          const isHead = type === 'dept' && entityData.headId === m.id;
+                          return (
+                            <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="px-6 py-4 font-bold text-slate-900">
+                                {m.firstName} {m.lastName}
+                              </td>
+                              <td className="px-6 py-4 text-slate-600 font-mono">{m.email}</td>
+                              <td className="px-6 py-4 text-slate-600">{m.designation || 'Staff Member'}</td>
+                              <td className="px-6 py-4">
+                                {isLead && (
+                                  <span className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full text-[9px] font-bold uppercase">
+                                    Lead
+                                  </span>
+                                )}
+                                {isHead && (
+                                  <span className="px-2.5 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-full text-[9px] font-bold uppercase">
+                                    Head
+                                  </span>
+                                )}
+                                {!isLead && !isHead && (
+                                  <span className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded-full text-[9px] font-bold uppercase">
+                                    Member
+                                  </span>
                                 )}
                               </td>
-                            )}
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={canEdit ? 5 : 4} className="px-6 py-12 text-center text-slate-400 font-medium">
-                          No team members found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                              {canEdit && (
+                                <td className="px-6 py-4 text-right">
+                                  {!(isLead || isHead) ? (
+                                    <ThreeDotMenu
+                                      actions={[
+                                        {
+                                          label: 'Remove Member',
+                                          icon: 'person_remove',
+                                          className: 'text-red-600 hover:bg-red-50/50',
+                                          onClick: () => handleRemoveMember(m.id)
+                                        }
+                                      ]}
+                                    />
+                                  ) : (
+                                    <span className="text-slate-300 text-label-xs select-none">No action</span>
+                                  )}
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={canEdit ? 5 : 4} className="px-6 py-12 text-center text-slate-400 font-medium">
+                            No team members found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
 
                 {totalMembersPages > 1 && (
                   <div className="p-4 border-t border-slate-100 flex items-center justify-between">
@@ -572,84 +630,150 @@ export default function MyTeamPage() {
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Task ID</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Task Title</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Assignee</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Priority</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Status</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 font-mono">Due Date</th>
-                      {canEdit && <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
-                    {paginatedTasks.length > 0 ? (
-                      paginatedTasks.map((task: any) => {
-                        const isPending = !['APPROVED', 'CLOSED'].includes(task.status);
-                        const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
-                        const showDelayAction = isPending && isOverdue;
+              <>
+                {/* Mobile View - Cards List */}
+                <div className="block md:hidden space-y-4">
+                  {paginatedTasks.length > 0 ? (
+                    paginatedTasks.map((task: any) => {
+                      const isPending = !['APPROVED', 'CLOSED'].includes(task.status);
+                      const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+                      const showDelayAction = isPending && isOverdue;
 
-                        return (
-                          <tr key={task.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4 font-mono text-slate-900 font-bold">{task.taskId}</td>
-                            <td className="px-6 py-4 text-slate-900 font-bold">{task.title}</td>
-                            <td className="px-6 py-4 text-slate-600">
-                              {task.assignee ? `${task.assignee.firstName} ${task.assignee.lastName}` : 'Unassigned'}
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                                task.priority === 'CRITICAL' || task.priority === 'HIGH'
-                                  ? 'bg-red-50 text-red-700 border-red-200'
-                                  : 'bg-slate-100 text-slate-700 border-slate-200'
-                              }`}>
-                                {task.priority}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap inline-block ${
-                                task.status === 'APPROVED' || task.status === 'CLOSED'
-                                  ? 'bg-green-50 text-green-700 border-green-200'
-                                  : task.status === 'IN_PROGRESS'
-                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200'
-                              }`}>
-                                {task.status.replace('_', ' ')}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 font-mono text-slate-600">
-                              {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
-                            </td>
-                            {canEdit && (
-                              <td className="px-6 py-4 text-right">
-                                {showDelayAction ? (
-                                  <ThreeDotMenu
-                                    actions={[
-                                      {
-                                        label: 'Raise Delay Review',
-                                        icon: 'rate_review',
-                                        onClick: () => setDelayReviewTaskId(task.id)
-                                      }
-                                    ]}
-                                  />
-                                ) : (
-                                  <span className="text-slate-300 text-label-xs select-none">No action</span>
-                                )}
-                              </td>
-                            )}
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={canEdit ? 7 : 6} className="px-6 py-12 text-center text-slate-400 font-medium">
-                          No tasks associated with this team or department scope.
-                        </td>
+                      return (
+                        <div key={task.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-[10px] font-mono text-outline font-bold block">{task.taskId}</span>
+                              <h4 className="text-label-sm font-bold text-slate-900 mt-0.5">{task.title}</h4>
+                              <p className="text-[11px] text-slate-600 mt-1">
+                                Assignee: <span className="font-semibold text-slate-800">{task.assignee ? `${task.assignee.firstName} ${task.assignee.lastName}` : 'Unassigned'}</span>
+                              </p>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${
+                              task.status === 'APPROVED' || task.status === 'CLOSED'
+                                ? 'bg-green-50 text-green-700 border-green-200'
+                                : task.status === 'IN_PROGRESS'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}>
+                              {task.status.replace('_', ' ')}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                            <span>Due: <span className="font-mono text-slate-900">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</span></span>
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
+                              task.priority === 'CRITICAL' || task.priority === 'HIGH'
+                                ? 'bg-red-50 text-red-700 border-red-200'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}>
+                              {task.priority}
+                            </span>
+                          </div>
+
+                          {canEdit && showDelayAction && (
+                            <div className="pt-2">
+                              <button
+                                onClick={() => setDelayReviewTaskId(task.id)}
+                                className="w-full py-2 bg-primary hover:bg-blue-755 text-on-primary font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">rate_review</span>
+                                Raise Delay Review
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="py-12 text-center text-slate-400 font-medium">
+                      No tasks associated with this scope.
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop View - Standard Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Task ID</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Task Title</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Assignee</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Priority</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Status</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700 font-mono">Due Date</th>
+                        {canEdit && <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>}
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
+                      {paginatedTasks.length > 0 ? (
+                        paginatedTasks.map((task: any) => {
+                          const isPending = !['APPROVED', 'CLOSED'].includes(task.status);
+                          const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+                          const showDelayAction = isPending && isOverdue;
+
+                          return (
+                            <tr key={task.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="px-6 py-4 font-mono text-slate-900 font-bold">{task.taskId}</td>
+                              <td className="px-6 py-4 text-slate-900 font-bold">{task.title}</td>
+                              <td className="px-6 py-4 text-slate-600">
+                                {task.assignee ? `${task.assignee.firstName} ${task.assignee.lastName}` : 'Unassigned'}
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                  task.priority === 'CRITICAL' || task.priority === 'HIGH'
+                                    ? 'bg-red-50 text-red-700 border-red-200'
+                                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                                }`}>
+                                  {task.priority}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap inline-block ${
+                                  task.status === 'APPROVED' || task.status === 'CLOSED'
+                                    ? 'bg-green-50 text-green-700 border-green-200'
+                                    : task.status === 'IN_PROGRESS'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                                }`}>
+                                  {task.status.replace('_', ' ')}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-mono text-slate-600">
+                                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
+                              </td>
+                              {canEdit && (
+                                <td className="px-6 py-4 text-right">
+                                  {showDelayAction ? (
+                                    <ThreeDotMenu
+                                      actions={[
+                                        {
+                                          label: 'Raise Delay Review',
+                                          icon: 'rate_review',
+                                          onClick: () => setDelayReviewTaskId(task.id)
+                                        }
+                                      ]}
+                                    />
+                                  ) : (
+                                    <span className="text-slate-300 text-label-xs select-none">No action</span>
+                                  )}
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={canEdit ? 7 : 6} className="px-6 py-12 text-center text-slate-400 font-medium">
+                            No tasks associated with this team or department scope.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
 
                 {totalTasksPages > 1 && (
                   <div className="p-4 border-t border-slate-100 flex items-center justify-between">

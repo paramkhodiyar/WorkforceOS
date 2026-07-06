@@ -367,7 +367,54 @@ export default function LeavePage() {
             {paginatedHistory.length === 0 ? (
               <p className="text-body-sm text-outline py-8 text-center">No leave requests filed yet.</p>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              {/* Mobile View - Sleek Cards */}
+              <div className="block md:hidden space-y-4">
+                {paginatedHistory.map(req => (
+                  <div key={req.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-label-sm font-bold text-slate-900">{req.leaveType} Leave</h4>
+                        <p className="text-[11px] text-outline mt-0.5 font-semibold">
+                          {new Date(req.startDate).toLocaleDateString()} to {new Date(req.endDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                        req.status === 'HR_APPROVED'
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : req.status === 'MANAGER_APPROVED'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : req.status === 'REJECTED'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : req.status === 'CANCELLED'
+                          ? 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>
+                        {req.status === 'HR_APPROVED' ? 'APPROVED' : req.status}
+                      </span>
+                    </div>
+
+                    <div className="text-body-sm text-slate-700 pt-1 border-t border-slate-100">
+                      <ReadMoreText text={req.reason} title="Leave Reason" />
+                    </div>
+
+                    {(req.status === 'PENDING' || req.status === 'MANAGER_APPROVED') && (
+                      <div className="pt-2 flex gap-2">
+                        <button
+                          onClick={() => handleCancel(req.id)}
+                          className="w-full py-2 bg-red-50 hover:bg-red-100 text-red-650 font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1.5 border border-red-150 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">close</span>
+                          Cancel Request
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop View - Standard Table */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-surface-container-low/50">
@@ -423,7 +470,7 @@ export default function LeavePage() {
                     ))}
                   </tbody>
                 </table>
-                
+              </div>  
                 {totalPagesHistory > 1 && (
                   <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
                     <span className="text-[11px] text-outline">
@@ -447,7 +494,7 @@ export default function LeavePage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>

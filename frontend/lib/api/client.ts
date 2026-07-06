@@ -166,6 +166,10 @@ export const api = {
         body: JSON.stringify({ status }),
       });
     },
+    accept: (id: string): Promise<any> => request(`/tasks/${id}/accept`, { method: 'POST' }),
+    submit: (id: string): Promise<any> => request(`/tasks/${id}/submit`, { method: 'POST' }),
+    resubmit: (id: string): Promise<any> => request(`/tasks/${id}/resubmit`, { method: 'POST' }),
+    close: (id: string): Promise<any> => request(`/tasks/${id}/close`, { method: 'POST' }),
     review: (id: string, data: any): Promise<any> =>
       request(`/tasks/${id}/review`, {
         method: 'POST',

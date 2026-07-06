@@ -281,59 +281,108 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department Name</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department Head</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Teams Count</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Employees Count</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
-                    {paginatedDepts.length > 0 ? (
-                      paginatedDepts.map((dept) => (
-                        <tr key={dept.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-4 text-slate-900 font-bold">{dept.name}</td>
-                          <td className="px-6 py-4 text-slate-600">
-                            {dept.head ? `${dept.head.firstName} ${dept.head.lastName}` : 'Unassigned'}
-                          </td>
-                          <td className="px-6 py-4 text-center text-slate-600">{dept._count?.teams || 0}</td>
-                          <td className="px-6 py-4 text-center text-slate-600">{dept._count?.employees || 0}</td>
-                          <td className="px-6 py-4 text-right">
-                            <ThreeDotMenu
-                              actions={[
-                                {
-                                  label: 'Edit',
-                                  icon: 'edit',
-                                  onClick: () => {
-                                    setDeptForm({ id: dept.id, name: dept.name, headId: dept.headId });
-                                    setIsDeptModalOpen(true);
+              <>
+                {/* Mobile View - Cards List */}
+                <div className="block md:hidden space-y-4">
+                  {paginatedDepts.length > 0 ? (
+                    paginatedDepts.map((dept) => (
+                      <div key={dept.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-label-sm font-bold text-slate-900">{dept.name}</h4>
+                            <p className="text-[11px] text-outline mt-0.5 font-medium">
+                              Head: <span className="font-semibold text-slate-700">{dept.head ? `${dept.head.firstName} ${dept.head.lastName}` : 'Unassigned'}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                          <div>
+                            <span className="block text-slate-550 font-medium">Teams: <span className="text-slate-900">{dept._count?.teams || 0}</span></span>
+                            <span className="block text-slate-550 font-medium">Employees: <span className="text-slate-900">{dept._count?.employees || 0}</span></span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => {
+                                setDeptForm({ id: dept.id, name: dept.name, headId: dept.headId });
+                                setIsDeptModalOpen(true);
+                              }}
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[9px] rounded uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget({ type: 'department', id: dept.id, name: dept.name })}
+                              className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-650 font-bold text-[9px] rounded uppercase transition-all flex items-center justify-center gap-1 border border-red-150 cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-12 text-center text-slate-400 font-medium">
+                      No departments found.
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop View - Standard Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department Name</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department Head</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Teams Count</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Employees Count</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
+                      {paginatedDepts.length > 0 ? (
+                        paginatedDepts.map((dept) => (
+                          <tr key={dept.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 text-slate-900 font-bold">{dept.name}</td>
+                            <td className="px-6 py-4 text-slate-600">
+                              {dept.head ? `${dept.head.firstName} ${dept.head.lastName}` : 'Unassigned'}
+                            </td>
+                            <td className="px-6 py-4 text-center text-slate-600">{dept._count?.teams || 0}</td>
+                            <td className="px-6 py-4 text-center text-slate-600">{dept._count?.employees || 0}</td>
+                            <td className="px-6 py-4 text-right">
+                              <ThreeDotMenu
+                                actions={[
+                                  {
+                                    label: 'Edit',
+                                    icon: 'edit',
+                                    onClick: () => {
+                                      setDeptForm({ id: dept.id, name: dept.name, headId: dept.headId });
+                                      setIsDeptModalOpen(true);
+                                    }
+                                  },
+                                  {
+                                    label: 'Delete',
+                                    icon: 'delete',
+                                    className: 'text-error hover:bg-error/5',
+                                    onClick: () => setDeleteTarget({ type: 'department', id: dept.id, name: dept.name })
                                   }
-                                },
-                                {
-                                  label: 'Delete',
-                                  icon: 'delete',
-                                  className: 'text-error hover:bg-error/5',
-                                  onClick: () => setDeleteTarget({ type: 'department', id: dept.id, name: dept.name })
-                                }
-                              ]}
-                            />
+                                ]}
+                              />
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                            No departments found.
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
-                          No departments found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
 
               {totalPagesDepts > 1 && (
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -380,72 +429,134 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Team Name</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Team Lead</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Members Count</th>
-                      <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
-                    {paginatedTeams.length > 0 ? (
-                      paginatedTeams.map((team) => (
-                        <tr key={team.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-4 text-slate-900 font-bold">{team.name}</td>
-                          <td className="px-6 py-4 text-slate-600">{team.department?.name}</td>
-                          <td className="px-6 py-4 text-slate-600">
-                            {team.lead ? `${team.lead.firstName} ${team.lead.lastName}` : 'Unassigned'}
-                          </td>
-                          <td className="px-6 py-4 text-center text-slate-600">{team._count?.members || 0}</td>
-                          <td className="px-6 py-4 text-right">
-                            <ThreeDotMenu
-                              actions={[
-                                {
-                                  label: 'Edit',
-                                  icon: 'edit',
-                                  onClick: async () => {
-                                    try {
-                                      const res = await api.teams.get(team.id);
-                                      const fullTeam = res.data;
-                                      setTeamForm({
-                                        id: fullTeam.id,
-                                        name: fullTeam.name,
-                                        departmentId: fullTeam.departmentId,
-                                        leadId: fullTeam.leadId,
-                                        memberIds: fullTeam.members?.map((m: any) => m.id) || [],
-                                      });
-                                      setMemberSearch('');
-                                      setIsTeamModalOpen(true);
-                                    } catch (err: any) {
-                                      setErrorMessage(err.message || 'Failed to load team details');
-                                    }
-                                  }
-                                },
-                                {
-                                  label: 'Delete',
-                                  icon: 'delete',
-                                  className: 'text-error hover:bg-error/5',
-                                  onClick: () => setDeleteTarget({ type: 'team', id: team.id, name: team.name })
+              <>
+                {/* Mobile View - Cards List */}
+                <div className="block md:hidden space-y-4">
+                  {paginatedTeams.length > 0 ? (
+                    paginatedTeams.map((team) => (
+                      <div key={team.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-label-sm font-bold text-slate-900">{team.name}</h4>
+                            <p className="text-[11px] text-outline mt-0.5 font-medium">
+                              Dept: <span className="font-semibold text-slate-700">{team.department?.name || 'N/A'}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                          <div>
+                            <span className="block text-slate-550 font-medium">Lead: <span className="text-slate-900">{team.lead ? `${team.lead.firstName} ${team.lead.lastName}` : 'Unassigned'}</span></span>
+                            <span className="block text-slate-550 font-medium">Members: <span className="text-slate-900">{team._count?.members || 0}</span></span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await api.teams.get(team.id);
+                                  const fullTeam = res.data;
+                                  setTeamForm({
+                                    id: fullTeam.id,
+                                    name: fullTeam.name,
+                                    departmentId: fullTeam.departmentId,
+                                    leadId: fullTeam.leadId,
+                                    memberIds: fullTeam.members?.map((m: any) => m.id) || [],
+                                  });
+                                  setMemberSearch('');
+                                  setIsTeamModalOpen(true);
+                                } catch (err: any) {
+                                  setErrorMessage(err.message || 'Failed to load team details');
                                 }
-                              ]}
-                            />
+                              }}
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[9px] rounded uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget({ type: 'team', id: team.id, name: team.name })}
+                              className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-650 font-bold text-[9px] rounded uppercase transition-all flex items-center justify-center gap-1 border border-red-150 cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-12 text-center text-slate-400 font-medium">
+                      No teams found.
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop View - Standard Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Team Name</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Department</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Team Lead</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-center">Members Count</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
+                      {paginatedTeams.length > 0 ? (
+                        paginatedTeams.map((team) => (
+                          <tr key={team.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 text-slate-900 font-bold">{team.name}</td>
+                            <td className="px-6 py-4 text-slate-600">{team.department?.name}</td>
+                            <td className="px-6 py-4 text-slate-600">
+                              {team.lead ? `${team.lead.firstName} ${team.lead.lastName}` : 'Unassigned'}
+                            </td>
+                            <td className="px-6 py-4 text-center text-slate-600">{team._count?.members || 0}</td>
+                            <td className="px-6 py-4 text-right">
+                              <ThreeDotMenu
+                                actions={[
+                                  {
+                                    label: 'Edit',
+                                    icon: 'edit',
+                                    onClick: async () => {
+                                      try {
+                                        const res = await api.teams.get(team.id);
+                                        const fullTeam = res.data;
+                                        setTeamForm({
+                                          id: fullTeam.id,
+                                          name: fullTeam.name,
+                                          departmentId: fullTeam.departmentId,
+                                          leadId: fullTeam.leadId,
+                                          memberIds: fullTeam.members?.map((m: any) => m.id) || [],
+                                        });
+                                        setMemberSearch('');
+                                        setIsTeamModalOpen(true);
+                                      } catch (err: any) {
+                                        setErrorMessage(err.message || 'Failed to load team details');
+                                      }
+                                    }
+                                  },
+                                  {
+                                    label: 'Delete',
+                                    icon: 'delete',
+                                    className: 'text-error hover:bg-error/5',
+                                    onClick: () => setDeleteTarget({ type: 'team', id: team.id, name: team.name })
+                                  }
+                                ]}
+                              />
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
+                            No teams found.
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
-                          No teams found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
 
               {totalPagesTeams > 1 && (
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">

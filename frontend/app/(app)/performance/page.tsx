@@ -308,67 +308,106 @@ export default function PerformancePage() {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-container-low/50">
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Review Cycle</th>
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Evaluator</th>
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Score / Band</th>
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
-                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant text-body-sm">
-                      {paginatedMyReviews.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-outline">
-                            No approved performance reviews found.
-                          </td>
+                <>
+                  {/* Mobile View - Cards List */}
+                  <div className="block md:hidden space-y-4">
+                    {paginatedMyReviews.length === 0 ? (
+                      <div className="py-8 text-center text-outline">
+                        No approved performance reviews found.
+                      </div>
+                    ) : (
+                      paginatedMyReviews.map((rev) => (
+                        <div key={rev.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-label-sm font-bold text-slate-900">{rev.period}</h4>
+                              <p className="text-[10px] text-outline mt-0.5">
+                                Evaluated on {new Date(rev.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <span className="bg-green-100 text-green-800 border border-green-200 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                              Approved
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                            <span>Score: <span className="text-primary font-bold">{rev.finalScore !== null && rev.finalScore !== undefined ? `${rev.finalScore.toFixed(2)} / 5.0 (${rev.scoreBand})` : 'Pending'}</span></span>
+                            <button
+                              onClick={() => setSelectedReview(rev)}
+                              className="px-2 py-1 bg-primary hover:bg-blue-755 text-on-primary font-bold text-[9px] rounded uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[12px]">visibility</span>
+                              View Scorecard
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Desktop View - Standard Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-surface-container-low/50">
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Review Cycle</th>
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Evaluator</th>
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Score / Band</th>
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                          <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
                         </tr>
-                      ) : (
-                        paginatedMyReviews.map((rev) => (
-                          <tr key={rev.id} className="hover:bg-surface-container-low transition-colors">
-                            <td className="px-4 py-3 font-semibold text-on-surface">
-                              <div>
-                                <p>{rev.period}</p>
-                                <p className="text-[10px] text-outline mt-0.5">
-                                  Evaluated on {new Date(rev.createdAt).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-on-surface-variant">
-                              {rev.reviewer ? `${rev.reviewer.firstName} ${rev.reviewer.lastName}` : 'System'}
-                            </td>
-                            <td className="px-4 py-3 font-medium text-primary">
-                              {rev.finalScore !== null && rev.finalScore !== undefined ? (
-                                <span>{rev.finalScore.toFixed(2)} / 5.0 <span className="text-on-surface-variant font-bold text-xs ml-1">({rev.scoreBand})</span></span>
-                              ) : (
-                                'Pending Evaluation'
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="bg-green-100 text-green-800 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
-                                Approved & Published
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <ThreeDotMenu
-                                actions={[
-                                  {
-                                    label: 'View Details',
-                                    icon: 'visibility',
-                                    onClick: () => setSelectedReview(rev)
-                                  }
-                                ]}
-                              />
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant text-body-sm">
+                        {paginatedMyReviews.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-8 text-center text-outline">
+                              No approved performance reviews found.
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                        ) : (
+                          paginatedMyReviews.map((rev) => (
+                            <tr key={rev.id} className="hover:bg-surface-container-low transition-colors">
+                              <td className="px-4 py-3 font-semibold text-on-surface">
+                                <div>
+                                  <p>{rev.period}</p>
+                                  <p className="text-[10px] text-outline mt-0.5">
+                                    Evaluated on {new Date(rev.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-on-surface-variant">
+                                {rev.reviewer ? `${rev.reviewer.firstName} ${rev.reviewer.lastName}` : 'System'}
+                              </td>
+                              <td className="px-4 py-3 font-medium text-primary">
+                                {rev.finalScore !== null && rev.finalScore !== undefined ? (
+                                  <span>{rev.finalScore.toFixed(2)} / 5.0 <span className="text-on-surface-variant font-bold text-xs ml-1">({rev.scoreBand})</span></span>
+                                ) : (
+                                  'Pending Evaluation'
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="bg-green-100 text-green-800 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                                  Approved & Published
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <ThreeDotMenu
+                                  actions={[
+                                    {
+                                      label: 'View Details',
+                                      icon: 'visibility',
+                                      onClick: () => setSelectedReview(rev)
+                                    }
+                                  ]}
+                                />
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
 
                 {totalPagesMyReviews > 1 && (
                   <div className="pt-4 border-t border-outline-variant flex items-center justify-between">
@@ -436,7 +475,73 @@ export default function PerformancePage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  {/* Mobile View - Cards List */}
+                  <div className="block md:hidden space-y-4 p-4">
+                    {paginatedTeamReviews.length === 0 ? (
+                      <div className="py-8 text-center text-outline">
+                        No team reviews found.
+                      </div>
+                    ) : (
+                      paginatedTeamReviews.map((rev) => (
+                        <div key={rev.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-3">
+                              {!rev.isPublished ? (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedReviewIds.includes(rev.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedReviewIds(prev => [...prev, rev.id]);
+                                    } else {
+                                      setSelectedReviewIds(prev => prev.filter(id => id !== rev.id));
+                                    }
+                                  }}
+                                  className="cursor-pointer rounded border-slate-300 text-primary focus:ring-primary h-4 w-4"
+                                />
+                              ) : (
+                                <span className="material-symbols-outlined text-[16px] text-green-605 select-none">check_circle</span>
+                              )}
+                              <div>
+                                <h4 className="text-label-sm font-bold text-slate-900">{rev.subject ? `${rev.subject.firstName} ${rev.subject.lastName}` : 'Unknown'}</h4>
+                                <p className="text-[10px] text-outline mt-0.5">{rev.period}</p>
+                              </div>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${
+                              rev.isPublished 
+                                ? 'bg-green-50 text-green-700 border-green-200' 
+                                : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                            }`}>
+                              {rev.isPublished ? 'Published' : 'Draft'}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100 font-semibold text-slate-700">
+                            <span>Score: <span className="text-primary font-bold">{rev.finalScore !== null && rev.finalScore !== undefined ? `${rev.finalScore.toFixed(2)} / 5.0 (${rev.scoreBand})` : 'Pending'}</span></span>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => setSelectedReview(rev)}
+                                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[9px] rounded uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                              >
+                                View
+                              </button>
+                              {!rev.isPublished && (
+                                <button
+                                  onClick={() => handlePublishReview(rev.id)}
+                                  className="px-2 py-1 bg-primary hover:bg-blue-755 text-on-primary font-bold text-[9px] rounded uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                                >
+                                  Release
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Desktop View - Standard Table */}
+                  <table className="hidden md:table w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-surface-container-low/50">
                         <th className="w-10 px-4 py-2.5 text-center">

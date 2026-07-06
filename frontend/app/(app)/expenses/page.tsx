@@ -291,27 +291,17 @@ export default function ExpensesPage() {
               <p className="text-body-sm text-outline py-8 text-center">No expense claims filed yet.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-surface-container-low/50">
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Category</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Amount</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Description</th>
-                      <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant text-body-sm">
+                <>
+                  {/* Mobile View - Cards List */}
+                  <div className="block md:hidden space-y-4">
                     {paginatedClaims.map(exp => (
-                      <tr key={exp.id} className="hover:bg-surface-container-low transition-colors">
-                        <td className="px-4 py-3 font-semibold text-on-surface">{exp.category}</td>
-                        <td className="px-4 py-3 text-on-surface-variant font-mono">
-                          ₹{exp.amount.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-on-surface-variant max-w-xs">
-                          <ReadMoreText text={exp.description} title="Expense Description" />
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                      <div key={exp.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-label-sm font-bold text-slate-900">{exp.category}</h4>
+                            <span className="text-[11px] font-mono text-slate-700 font-semibold block mt-1">₹{exp.amount.toFixed(2)}</span>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
                             exp.status === 'APPROVED'
                               ? 'bg-green-50 text-green-700 border-green-200'
                               : exp.status === 'REJECTED'
@@ -320,11 +310,50 @@ export default function ExpensesPage() {
                           }`}>
                             {exp.status}
                           </span>
-                        </td>
-                      </tr>
+                        </div>
+                        <div className="text-[11px] pt-1 border-t border-slate-100 text-slate-700 font-medium">
+                          <ReadMoreText text={exp.description} title="Expense Description" />
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+
+                  {/* Desktop View - Standard Table */}
+                  <table className="hidden md:table w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-container-low/50">
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Category</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Amount</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Description</th>
+                        <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant text-body-sm">
+                      {paginatedClaims.map(exp => (
+                        <tr key={exp.id} className="hover:bg-surface-container-low transition-colors">
+                          <td className="px-4 py-3 font-semibold text-on-surface">{exp.category}</td>
+                          <td className="px-4 py-3 text-on-surface-variant font-mono">
+                            ₹{exp.amount.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant max-w-xs">
+                            <ReadMoreText text={exp.description} title="Expense Description" />
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                              exp.status === 'APPROVED'
+                                ? 'bg-green-50 text-green-700 border-green-200'
+                                : exp.status === 'REJECTED'
+                                ? 'bg-red-50 text-red-700 border-red-200'
+                                : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                            }`}>
+                              {exp.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
                 
                 {totalPagesClaims > 1 && (
                   <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">

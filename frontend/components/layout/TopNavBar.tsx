@@ -2,26 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useAuth, SEED_USERS } from '../../lib/auth/AuthProvider';
+import { useAuth } from '../../lib/auth/AuthProvider';
 import { api } from '../../lib/api/client';
 
 export default function TopNavBar() {
-  const { user, quickLogin, logout } = useAuth();
-  const [showDevMenu, setShowDevMenu] = useState(false);
+  const { user, logout } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
 
   if (!user) return null;
-
-  async function handleQuickSwitch(email: string) {
-    setShowDevMenu(false);
-    try {
-      await quickLogin(email);
-    } catch (err) {
-      console.error(err);
-    }
-  }
 
   async function fetchNotifications() {
     if (typeof window !== 'undefined' && !localStorage.getItem('token')) {
@@ -93,7 +83,6 @@ export default function TopNavBar() {
           <button
             onClick={() => {
               setShowNotifications(!showNotifications);
-              setShowDevMenu(false);
             }}
             className="hover:bg-surface-container p-1.5 rounded-full transition-transform active:scale-95 relative flex items-center"
           >
@@ -150,37 +139,6 @@ export default function TopNavBar() {
                     </div>
                   ))
                 )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowDevMenu(!showDevMenu);
-              setShowNotifications(false);
-            }}
-            className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border border-yellow-300 px-3 py-1 rounded text-[11px] font-bold tracking-wider flex items-center gap-1 active:scale-95 duration-100"
-          >
-            <span className="material-symbols-outlined text-[14px]">terminal</span>
-            DEV SWITCHER
-          </button>
-          
-          {showDevMenu && (
-            <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-2 z-50">
-              <p className="text-[10px] text-outline font-bold px-3 py-1.5 uppercase tracking-wider">Quick Switch Role</p>
-              <div className="max-h-60 overflow-y-auto">
-                {SEED_USERS.map((seed) => (
-                  <button
-                    key={seed.email}
-                    onClick={() => handleQuickSwitch(seed.email)}
-                    className="w-full text-left px-3 py-2 text-body-sm text-on-surface hover:bg-surface-container rounded-lg transition-colors flex flex-col"
-                  >
-                    <span className="font-semibold">{seed.label}</span>
-                    <span className="text-[10px] text-outline">{seed.email}</span>
-                  </button>
-                ))}
               </div>
             </div>
           )}

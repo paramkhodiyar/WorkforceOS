@@ -490,103 +490,169 @@ export default function EmployeesPage() {
         {loading ? (
           <TableSkeleton rows={8} cols={7} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="w-12 px-6 py-4">
-                    <input
-                      type="checkbox"
-                      checked={filteredEmployees.length > 0 && selectedIds.length === filteredEmployees.length}
-                      onChange={handleSelectAll}
-                      className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                    />
-                  </th>
-                  <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Employee Name</th>
-                  <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Employee ID</th>
-                  <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Department</th>
-                  <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Designation</th>
-                  <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Status</th>
-                  <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedEmployees.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-body-sm text-outline">
-                      No employees match your active filter settings.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedEmployees.map(emp => (
-                    <tr key={emp.id} className="hover:bg-slate-50/40 transition-colors">
-                      <td className="px-6 py-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(emp.id)}
-                          onChange={() => handleSelectRow(emp.id)}
-                          className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-blue-50 text-primary border border-blue-100 flex items-center justify-center font-bold text-label-md">
-                            {emp.firstName[0]}{emp.lastName[0]}
-                          </div>
-                          <div>
-                            <p className="text-label-md font-bold text-on-surface">{emp.firstName} {emp.lastName}</p>
-                            <p className="text-[11px] text-outline font-medium">{emp.email}</p>
-                          </div>
+          <>
+            {/* Mobile View - Sleek Profile Cards */}
+            <div className="block md:hidden space-y-4">
+              {paginatedEmployees.length === 0 ? (
+                <div className="py-12 text-center text-body-sm text-outline">
+                  No employees match your active filter settings.
+                </div>
+              ) : (
+                paginatedEmployees.map(emp => (
+                  <div key={emp.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-blue-50 text-primary border border-blue-100 flex items-center justify-center font-bold text-label-md">
+                          {emp.firstName[0]}{emp.lastName[0]}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-body-sm text-on-surface-variant font-semibold font-mono">
-                        {emp.employeeId || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 text-body-sm text-on-surface-variant font-medium">
-                        {emp.department?.name || 'Operations'}
-                      </td>
-                      <td className="px-6 py-4 text-body-sm text-on-surface-variant font-medium">
-                        {emp.designation || 'Staff Member'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                          emp.status === 'ACTIVE'
-                            ? 'bg-green-50 text-green-700 border-green-200'
-                            : 'bg-slate-100 text-slate-600 border-slate-200'
-                        }`}>
-                          {emp.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <ThreeDotMenu
-                          actions={[
-                            {
-                              label: 'View Details',
-                              icon: 'visibility',
-                              onClick: () => router.push(`/profile?id=${emp.id}`)
-                            },
-                            ...((isAdmin || isHR) ? [
-                              {
-                                label: 'Edit Details',
-                                icon: 'edit',
-                                onClick: () => handleEditEmployee(emp)
-                              },
-                              {
-                                label: 'Delete',
-                                icon: 'delete',
-                                className: 'text-red-600 hover:bg-red-50/50',
-                                onClick: () => handleDeleteEmployee(emp.id)
-                              }
-                            ] : [])
-                          ]}
-                        />
+                        <div>
+                          <h4 className="text-label-sm font-bold text-slate-900">{emp.firstName} {emp.lastName}</h4>
+                          <p className="text-[10px] text-outline uppercase tracking-wider font-semibold">{emp.designation || 'Staff Member'}</p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
+                        emp.status === 'ACTIVE'
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-slate-100 text-slate-655 border-slate-200'
+                      }`}>
+                        {emp.status}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-body-xs font-semibold pt-1 border-t border-slate-100">
+                      <span className="text-slate-500 font-mono">ID: {emp.employeeId || 'N/A'}</span>
+                      <span className="text-slate-700">{emp.department?.name || 'Operations'}</span>
+                    </div>
+
+                    <div className="pt-2 flex gap-2">
+                      <button
+                        onClick={() => router.push(`/profile?id=${emp.id}`)}
+                        className="flex-1 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">visibility</span>
+                        View Profile
+                      </button>
+                      {(isAdmin || isHR) && (
+                        <>
+                          <button
+                            onClick={() => handleEditEmployee(emp)}
+                            className="py-2 px-3 bg-primary hover:bg-blue-750 text-on-primary font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEmployee(emp.id)}
+                            className="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-650 border border-red-150 font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop View - Structured Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="w-12 px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={filteredEmployees.length > 0 && selectedIds.length === filteredEmployees.length}
+                        onChange={handleSelectAll}
+                        className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                      />
+                    </th>
+                    <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Employee Name</th>
+                    <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Employee ID</th>
+                    <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Department</th>
+                    <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Designation</th>
+                    <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold">Status</th>
+                    <th className="px-6 py-4 text-section-cap text-outline uppercase font-semibold text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedEmployees.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-body-sm text-outline">
+                        No employees match your active filter settings.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    paginatedEmployees.map(emp => (
+                      <tr key={emp.id} className="hover:bg-slate-50/40 transition-colors">
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(emp.id)}
+                            onChange={() => handleSelectRow(emp.id)}
+                            className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-full bg-blue-50 text-primary border border-blue-100 flex items-center justify-center font-bold text-label-md">
+                              {emp.firstName[0]}{emp.lastName[0]}
+                            </div>
+                            <div>
+                              <p className="text-label-md font-bold text-on-surface">{emp.firstName} {emp.lastName}</p>
+                              <p className="text-[11px] text-outline font-medium">{emp.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-body-sm text-on-surface-variant font-semibold font-mono">
+                          {emp.employeeId || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-body-sm text-on-surface-variant font-medium">
+                          {emp.department?.name || 'Operations'}
+                        </td>
+                        <td className="px-6 py-4 text-body-sm text-on-surface-variant font-medium">
+                          {emp.designation || 'Staff Member'}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                            emp.status === 'ACTIVE'
+                              ? 'bg-green-50 text-green-700 border-green-200'
+                              : 'bg-slate-100 text-slate-655 border-slate-200'
+                          }`}>
+                            {emp.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <ThreeDotMenu
+                            actions={[
+                              {
+                                label: 'View Details',
+                                icon: 'visibility',
+                                onClick: () => router.push(`/profile?id=${emp.id}`)
+                              },
+                              ...((isAdmin || isHR) ? [
+                                {
+                                  label: 'Edit Details',
+                                  icon: 'edit',
+                                  onClick: () => handleEditEmployee(emp)
+                                },
+                                {
+                                  label: 'Delete',
+                                  icon: 'delete',
+                                  className: 'text-red-600 hover:bg-red-50/50',
+                                  onClick: () => handleDeleteEmployee(emp.id)
+                                }
+                              ] : [])
+                            ]}
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {totalPages > 1 && (

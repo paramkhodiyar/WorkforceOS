@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { LandingHeader } from '../../components/layout/LandingHeader';
 import { LandingFooter } from '../../components/layout/LandingFooter';
 import { AmbientGrid } from '../../components/ui/AmbientGrid';
+import { useToast } from '../../lib/toast/ToastProvider';
 
 export default function FeaturesPage() {
+  const toast = useToast();
   const [activeSection, setActiveSection] = useState('employees');
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -1006,7 +1008,7 @@ export default function FeaturesPage() {
                           ]);
                           addAudit(`Leave request filed: ${newLeaveType} for ${newLeaveDays} days.`);
                         } else {
-                          alert('Insufficient leave balance!');
+                          toast.error('Insufficient leave balance!');
                         }
                       }}
                       className="bg-blue-600 hover:bg-blue-750 text-white font-bold rounded p-1 text-[9px] cursor-pointer"

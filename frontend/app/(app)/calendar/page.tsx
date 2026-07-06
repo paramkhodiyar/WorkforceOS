@@ -4,7 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
+import DateTimePicker from '../../../components/ui/DateTimePicker';
 
 const DAYS_OF_WEEK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const MONTHS = [
@@ -51,6 +53,7 @@ interface CalendarEvent {
 export default function CalendarPage() {
   const { user } = useAuth();
   const toast = useToast();
+  const customConfirm = useConfirm();
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date("2026-07-06T13:30:00")); // Lock near the current local time for testing
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
@@ -91,13 +94,17 @@ export default function CalendarPage() {
   async function loadData() {
     try {
       setLoading(true);
-      // Determine start/end of current month/week/day view to fetch events
       const { start, end } = getViewRange();
       const eventsRes = await api.calendar.listEvents(start.toISOString(), end.toISOString());
       setEvents(eventsRes.data || []);
 
-      const empRes = await api.employees.list();
-      setEmployees(empRes.data || []);
+      // Use /employees/directory — accessible to all org members without special permissions
+      try {
+        const dirRes = await api.employees.directory();
+        setEmployees(dirRes.data || []);
+      } catch {
+        // Silently ignore if directory fails — invitee picker just won't show
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Failed to load calendar events');
@@ -156,7 +163,13 @@ export default function CalendarPage() {
 
   // Handle Event deletion/cancel
   async function handleDeleteEvent(id: string) {
-    if (!confirm('Are you sure you want to delete/cancel this meeting?')) return;
+    const ok = await customConfirm({
+      title: 'Delete Meeting',
+      message: 'Are you sure you want to delete/cancel this meeting?',
+      variant: 'danger',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
     try {
       await api.calendar.deleteEvent(id);
       toast.success('Meeting deleted successfully');
@@ -169,7 +182,13 @@ export default function CalendarPage() {
 
   // Handle Instance deletion
   async function handleDeleteInstance(id: string, dateStr: string) {
-    if (!confirm('Are you sure you want to cancel ONLY this single meeting occurrence?')) return;
+    const ok = await customConfirm({
+      title: 'Cancel Occurrence',
+      message: 'Are you sure you want to cancel ONLY this single meeting occurrence?',
+      variant: 'warning',
+      confirmLabel: 'Cancel Occurrence',
+    });
+    if (!ok) return;
     try {
       await api.calendar.deleteInstance(id, dateStr);
       toast.success('Meeting occurrence cancelled successfully');
@@ -286,16 +305,24 @@ export default function CalendarPage() {
       return;
     }
 
+    // Validate that times parse correctly before sending to API
+    const startMs = Date.parse(eventForm.startTime);
+    const endMs = Date.parse(eventForm.endTime);
+    if (isNaN(startMs) || isNaN(endMs) || endMs <= startMs) {
+      setAvailabilityList([]);
+      return;
+    }
+
     try {
       setCheckingAvailability(true);
       const res = await api.calendar.checkAvailability({
         inviteeIds: eventForm.inviteeIds,
-        startTime: new Date(eventForm.startTime).toISOString(),
-        endTime: new Date(eventForm.endTime).toISOString()
+        startTime: new Date(startMs).toISOString(),
+        endTime: new Date(endMs).toISOString()
       });
       setAvailabilityList(res.data || []);
     } catch (err) {
-      console.error("Availability check failed", err);
+      console.error('Availability check failed', err);
     } finally {
       setCheckingAvailability(false);
     }
@@ -911,28 +938,35 @@ export default function CalendarPage() {
                 </div>
               </div>
 
-              {/* Start & End Times */}
+              {/* Start & End Times — Custom Picker */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-outline uppercase font-bold block">Start Time</label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={eventForm.startTime}
-                    onChange={(e) => setEventForm({ ...eventForm, startTime: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium cursor-pointer"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-outline uppercase font-bold block">End Time</label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={eventForm.endTime}
-                    onChange={(e) => setEventForm({ ...eventForm, endTime: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium cursor-pointer"
-                  />
-                </div>
+                {(() => {
+                  // MUST use local time — toISOString() gives UTC and would be wrong for IST/any TZ
+                  const nowLocal = (() => {
+                    const n = new Date();
+                    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}T${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+                  })();
+                  return (
+                    <>
+                      <DateTimePicker
+                        label="Start Time"
+                        value={eventForm.startTime}
+                        min={nowLocal}
+                        onChange={(v) => setEventForm(f => ({ ...f, startTime: v }))}
+                        placeholder="Select start date & time"
+                        required
+                      />
+                      <DateTimePicker
+                        label="End Time"
+                        value={eventForm.endTime}
+                        min={eventForm.startTime || nowLocal}
+                        onChange={(v) => setEventForm(f => ({ ...f, endTime: v }))}
+                        placeholder="Select end date & time"
+                        required
+                      />
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Recurrence Setup */}

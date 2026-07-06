@@ -84,3 +84,26 @@ export const deleteDocument = asyncHandler(async (req: Request, res: Response) =
   await EmployeesService.deleteDocument(docId, userId);
   return sendSuccess(res, null, "Document deleted successfully");
 });
+
+// Lightweight directory endpoint — accessible to ALL authenticated org members for
+// calendar invitee selection, messaging, etc.
+export const getDirectory = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const { prisma } = await import("../../config/database");
+  const users = await prisma.user.findMany({
+    where: { organizationId: orgId, isDeleted: false, status: "ACTIVE" },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      designation: true,
+      avatarUrl: true,
+      departmentId: true,
+      department: { select: { name: true } }
+    },
+    orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
+  });
+  return sendSuccess(res, users);
+});
+

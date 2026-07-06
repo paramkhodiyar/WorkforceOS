@@ -5,6 +5,7 @@ import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { CommentDialog } from '../../../components/ui/CommentDialog';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
@@ -13,6 +14,7 @@ import { ReadMoreText } from '../../../components/ui/ReadMoreText';
 export default function LeavePage() {
   const { user } = useAuth();
   const toast = useToast();
+  const customConfirm = useConfirm();
   const [balances, setBalances] = useState<any[]>([]);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
@@ -111,7 +113,13 @@ export default function LeavePage() {
   }
 
   async function handleCancel(id: string) {
-    if (!confirm('Are you sure you want to cancel this leave request?')) return;
+    const ok = await customConfirm({
+      title: 'Cancel Leave Request',
+      message: 'Are you sure you want to cancel this leave request?',
+      variant: 'warning',
+      confirmLabel: 'Cancel Request',
+    });
+    if (!ok) return;
     try {
       await api.leave.cancel(id);
       await loadData();

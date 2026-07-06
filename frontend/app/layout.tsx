@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "../lib/auth/AuthProvider";
 import { ToastProvider } from "../lib/toast/ToastProvider";
+import { ConfirmProvider } from "../components/ui/ConfirmDialog";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -70,7 +71,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-surface text-on-surface">
         <AuthProvider>
           <ToastProvider>
-            {children}
+            <ConfirmProvider>
+              {children}
+            </ConfirmProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

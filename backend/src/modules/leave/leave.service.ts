@@ -202,23 +202,19 @@ export class LeaveService {
       // Department scope
       if (managerScopes.departmentIds.length > 0) {
         scopedOrConditions.push({
-          user: { departmentId: { in: managerScopes.departmentIds } }
+          departmentId: { in: managerScopes.departmentIds }
         });
       }
 
       // Team scope or Direct Reports (Manager)
       if (managerScopes.teamIds.length > 0 || user.systemRole === "MANAGER" || user.systemRole === "DEPARTMENT_HEAD") {
         // Direct manager reports
-        scopedOrConditions.push({
-          user: { managerId: user.id }
-        });
+        scopedOrConditions.push({ managerId: user.id });
         // Team member reports
         if (managerScopes.teamIds.length > 0) {
           scopedOrConditions.push({
-            user: {
-              teams: {
-                some: { id: { in: managerScopes.teamIds } }
-              }
+            teams: {
+              some: { id: { in: managerScopes.teamIds } }
             }
           });
         }

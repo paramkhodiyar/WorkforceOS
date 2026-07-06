@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { TableSkeleton, ListSkeleton } from '../../../components/ui/Skeleton';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 
 export default function PerformancePage() {
   const { user } = useAuth();
   const toast = useToast();
+  const customConfirm = useConfirm();
   
   const [reviews, setReviews] = useState<any[]>([]);
   const [teamReviews, setTeamReviews] = useState<any[]>([]);
@@ -96,7 +98,13 @@ export default function PerformancePage() {
   }, [selectedReview]);
 
   async function handlePublishReview(id: string) {
-    if (!confirm('Are you sure you want to release/publish this performance review? Once released, it will be visible to the employee.')) return;
+    const ok = await customConfirm({
+      title: 'Release Performance Review',
+      message: 'Are you sure you want to release/publish this performance review? Once released, it will be visible to the employee.',
+      variant: 'info',
+      confirmLabel: 'Publish',
+    });
+    if (!ok) return;
     try {
       await api.performance.publish(id);
       toast.success('Performance review released successfully');
@@ -161,7 +169,13 @@ export default function PerformancePage() {
 
   async function handleBulkPublish() {
     if (selectedReviewIds.length === 0) return;
-    if (!confirm(`Are you sure you want to release/publish the ${selectedReviewIds.length} selected reviews? They will become visible to employees immediately.`)) return;
+    const ok = await customConfirm({
+      title: 'Release Selected Reviews',
+      message: `Are you sure you want to release/publish the ${selectedReviewIds.length} selected reviews? They will become visible to employees immediately.`,
+      variant: 'info',
+      confirmLabel: 'Publish Selected',
+    });
+    if (!ok) return;
     try {
       await api.performance.bulkPublish(selectedReviewIds);
       toast.success('Selected performance reviews released successfully');
@@ -178,7 +192,13 @@ export default function PerformancePage() {
       toast.error('No draft reviews found to release');
       return;
     }
-    if (!confirm(`Are you sure you want to release/publish ALL ${drafts.length} draft reviews? They will become visible to employees immediately.`)) return;
+    const ok = await customConfirm({
+      title: 'Release All Draft Reviews',
+      message: `Are you sure you want to release/publish ALL ${drafts.length} draft reviews? They will become visible to employees immediately.`,
+      variant: 'warning',
+      confirmLabel: 'Publish All',
+    });
+    if (!ok) return;
     try {
       const draftIds = drafts.map(r => r.id);
       await api.performance.bulkPublish(draftIds);

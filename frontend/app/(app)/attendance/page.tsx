@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { ReadMoreText } from '../../../components/ui/ReadMoreText';
@@ -11,6 +12,7 @@ import { ReadMoreText } from '../../../components/ui/ReadMoreText';
 export default function AttendancePage() {
   const { user } = useAuth();
   const toast = useToast();
+  const customConfirm = useConfirm();
   const [activeTab, setActiveTab] = useState('my-attendance');
   const [currentStatus, setCurrentStatus] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
@@ -207,7 +209,13 @@ export default function AttendancePage() {
   }
 
   async function handleApproveAdjustment(id: string) {
-    if (!confirm('Are you sure you want to approve this adjustment?')) return;
+    const ok = await customConfirm({
+      title: 'Approve Attendance Adjustment',
+      message: 'Are you sure you want to approve this adjustment?',
+      variant: 'info',
+      confirmLabel: 'Approve',
+    });
+    if (!ok) return;
     try {
       await api.attendance.approveAdjustment(id);
       toast.success('Adjustment approved successfully!');
@@ -218,7 +226,13 @@ export default function AttendancePage() {
   }
 
   async function handleRejectAdjustment(id: string) {
-    if (!confirm('Are you sure you want to reject this adjustment?')) return;
+    const ok = await customConfirm({
+      title: 'Reject Attendance Adjustment',
+      message: 'Are you sure you want to reject this adjustment?',
+      variant: 'danger',
+      confirmLabel: 'Reject',
+    });
+    if (!ok) return;
     try {
       await api.attendance.rejectAdjustment(id);
       toast.success('Adjustment rejected successfully!');

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
 
@@ -12,6 +13,7 @@ export default function EmployeesPage() {
   const { user } = useAuth();
   const router = useRouter();
   const toast = useToast();
+  const customConfirm = useConfirm();
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -321,7 +323,13 @@ export default function EmployeesPage() {
   }
 
   async function handleDeleteEmployee(id: string) {
-    if (!confirm('Are you sure you want to delete this employee?')) return;
+    const ok = await customConfirm({
+      title: 'Delete Employee Record',
+      message: 'Are you sure you want to delete this employee?',
+      variant: 'danger',
+      confirmLabel: 'Delete Employee',
+    });
+    if (!ok) return;
     try {
       await api.employees.delete(id);
       loadEmployees();

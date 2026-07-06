@@ -72,6 +72,7 @@ export const api = {
       request(`/employees/${id}`, {
         method: 'DELETE',
       }),
+    directory: (): Promise<any> => request('/employees/directory'),
   },
   attendance: {
     history: (): Promise<any> => request('/attendance/history'),

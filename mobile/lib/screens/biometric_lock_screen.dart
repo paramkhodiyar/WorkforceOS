@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'webview_screen.dart';
 
 class BiometricLockScreen extends StatefulWidget {
@@ -12,15 +13,13 @@ class BiometricLockScreen extends StatefulWidget {
 class _BiometricLockScreenState extends State<BiometricLockScreen> {
   final LocalAuthentication _auth = LocalAuthentication();
   bool _isAuthenticating = false;
-  String _errorMessage = "";
+  String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    // Prompt for biometrics immediately when screen is loaded
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _authenticate();
-    });
+    // Kick off biometric prompt as soon as the screen is visible
+    WidgetsBinding.instance.addPostFrameCallback((_) => _authenticate());
   }
 
   Future<void> _authenticate() async {
@@ -28,43 +27,50 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
 
     setState(() {
       _isAuthenticating = true;
-      _errorMessage = "";
+      _errorMessage = '';
     });
 
     try {
       final bool didAuthenticate = await _auth.authenticate(
-        localizedReason: 'Please authenticate to log into WorkforceOS',
+        localizedReason: 'Scan your fingerprint to access WorkforceOS',
         options: const AuthenticationOptions(
           stickyAuth: true,
-          biometricOnly: false, // Allows passcode fallback if biometrics fail/are not enrolled
+          biometricOnly: false, // allow device PIN as fallback
         ),
       );
 
+      if (!mounted) return;
+
       if (didAuthenticate) {
+        // Load the stored JWT token (saved when user last logged in normally)
+        final prefs = await SharedPreferences.getInstance();
+        final String? token = prefs.getString('auth_token');
+
+        // Navigate to WebView; if we have a token it will be injected into
+        // localStorage so the user lands directly on /dashboard
         if (mounted) {
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const WebViewScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+              pageBuilder: (_, __, ___) => WebViewScreen(injectedToken: token),
+              transitionsBuilder: (_, animation, __, child) =>
+                  FadeTransition(opacity: animation, child: child),
               transitionDuration: const Duration(milliseconds: 500),
             ),
           );
         }
       } else {
         setState(() {
-          _errorMessage = "Authentication failed. Please try again.";
+          _errorMessage = 'Authentication failed. Please try again.';
+          _isAuthenticating = false;
         });
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = "Error authenticating: ${e.toString()}";
-      });
-    } finally {
-      setState(() {
-        _isAuthenticating = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error: ${e.toString()}';
+          _isAuthenticating = false;
+        });
+      }
     }
   }
 
@@ -76,10 +82,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.white,
-              Color(0xFFF8FAFC), // Slate 50
-            ],
+            colors: [Colors.white, Color(0xFFF8FAFC)],
           ),
         ),
         child: SafeArea(
@@ -97,10 +100,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white,
-                    border: Border.all(
-                      color: const Color(0xFFE2E8F0), // Slate 200
-                      width: 1.5,
-                    ),
+                    border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.04),
@@ -120,34 +120,60 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 24),
 
-                // App Name & Security Title
                 const Text(
                   'WorkforceOS',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A), // Slate 900
+                    color: Color(0xFF0F172A),
                     letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Biometric Authentication Required',
+                  'Touch the fingerprint sensor to continue',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF475569), // Slate 600
+                    color: Color(0xFF475569),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
 
                 const Spacer(),
 
-                // Error Message if any
+                // Fingerprint Icon — visual cue
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _isAuthenticating
+                      ? const SizedBox(
+                          key: ValueKey('spinner'),
+                          width: 56,
+                          height: 56,
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF3B82F6),
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : Icon(
+                          Icons.fingerprint,
+                          key: const ValueKey('fp'),
+                          size: 72,
+                          color: _errorMessage.isNotEmpty
+                              ? Colors.redAccent
+                              : const Color(0xFF3B82F6),
+                        ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Error
                 if (_errorMessage.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 24.0),
+                    padding: const EdgeInsets.only(bottom: 16.0),
                     child: Text(
                       _errorMessage,
                       textAlign: TextAlign.center,
@@ -159,50 +185,31 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                     ),
                   ),
 
-                // Authenticate Button
-                ElevatedButton.icon(
-                  onPressed: _isAuthenticating ? null : _authenticate,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B82F6), // Accent Blue
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                // Retry button (shown after failure)
+                if (!_isAuthenticating)
+                  ElevatedButton.icon(
+                    onPressed: _authenticate,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3B82F6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 56),
                     ),
-                    elevation: 0,
-                    minimumSize: const Size(double.infinity, 56),
-                  ),
-                  icon: _isAuthenticating
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(Icons.fingerprint, size: 24),
-                  label: Text(
-                    _isAuthenticating ? 'Authenticating...' : 'Authenticate',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.2,
+                    icon: const Icon(Icons.fingerprint, size: 22),
+                    label: const Text(
+                      'Use Biometric',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 16),
-
-                // Subtle fallback note
-                const Text(
-                  'Uses secure Android system biometrics',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF94A3B8), // Slate 400
-                  ),
-                ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
               ],
             ),
           ),

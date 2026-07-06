@@ -61,8 +61,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const response = await api.auth.login(email, password);
-      localStorage.setItem('token', response.data.tokens.accessToken);
+      const token = response.data.tokens.accessToken;
+      localStorage.setItem('token', token);
       setUser(response.data.user);
+      // Notify native Flutter app to save token for biometric bypass
+      if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
+        (window as any).WorkforceOSBridge.postMessage(JSON.stringify({ type: 'save_token', token }));
+      }
       try {
         const orgRes = await api.organization.get();
         setFeatures(orgRes.data.enabledFeatures || []);
@@ -85,6 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('token');
     setUser(null);
     setFeatures([]);
+    // Notify native Flutter app to clear the stored biometric token
+    if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
+      (window as any).WorkforceOSBridge.postMessage(JSON.stringify({ type: 'clear_token' }));
+    }
     router.push('/login');
   }
 

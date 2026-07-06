@@ -175,6 +175,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    addComment: (id: string, body: string): Promise<any> =>
+      request(`/tasks/${id}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ body }),
+      }),
   },
   expenses: {
     list: async (): Promise<any> => {

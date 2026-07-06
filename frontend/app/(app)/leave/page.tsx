@@ -26,6 +26,7 @@ export default function LeavePage() {
   const toast = useToast();
   const customConfirm = useConfirm();
   const [balances, setBalances] = useState<any[]>([]);
+  const [balancesOpen, setBalancesOpen] = useState(true);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,16 +196,30 @@ export default function LeavePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-6">
-          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Leave Balances</h2>
-            <div className="space-y-3">
-              {balances.map(bal => (
-                <div key={bal.id} className="flex justify-between items-center p-3 bg-surface-container-low border border-outline-variant rounded-lg">
-                  <span className="text-label-sm font-bold text-on-surface">{bal.leaveType}</span>
-                  <span className="text-body-sm text-outline font-semibold">{bal.remaining} / {bal.allocated} remaining</span>
-                </div>
-              ))}
-            </div>
+          <div className="bg-white border border-slate-200 p-4 rounded-3xl shadow-sm">
+            <button
+              type="button"
+              onClick={() => setBalancesOpen(prev => !prev)}
+              className="w-full flex justify-between items-center mb-1"
+            >
+              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Leave Balances</h2>
+              <span className="material-symbols-outlined text-[18px] text-outline transition-transform" style={{ transform: balancesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
+            </button>
+            {balancesOpen && (
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                {balances.map(bal => {
+                  const pct = bal.allocated > 0 ? bal.remaining / bal.allocated : 0;
+                  const color = pct === 0 ? 'border-red-300 bg-red-50 text-red-700' : pct < 0.4 ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-blue-200 bg-blue-50 text-blue-900';
+                  return (
+                    <div key={bal.id} className={`rounded-xl p-2.5 border flex flex-col items-center gap-0.5 text-center ${color}`}>
+                      <span className="text-[8px] font-extrabold uppercase tracking-wider leading-tight">{bal.leaveType.replace('_', ' ')}</span>
+                      <span className="text-[18px] font-black leading-tight">{bal.remaining}</span>
+                      <span className="text-[8px] font-bold opacity-70">of {bal.allocated}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">

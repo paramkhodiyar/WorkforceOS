@@ -42,6 +42,7 @@ export default function TasksPage() {
 
   const [reviewingTaskId, setReviewingTaskId] = useState<string | null>(null);
   const [reviewAction, setReviewAction] = useState<'APPROVED' | 'CHANGES_REQUESTED'>('CHANGES_REQUESTED');
+  const [delayReviewingTaskId, setDelayReviewingTaskId] = useState<string | null>(null);
   const [delayedSearch, setDelayedSearch] = useState('');
   const [delayedPage, setDelayedPage] = useState(1);
   const itemsPerPageDelayed = 5;
@@ -204,6 +205,20 @@ export default function TasksPage() {
       toast.success(reviewAction === 'APPROVED' ? 'Task approved successfully' : 'Changes requested on task');
     } catch (err: any) {
       toast.error(err.message || 'Failed to submit task review');
+    }
+  }
+
+  async function handleDelayReviewConfirm(commentText: string) {
+    if (!delayReviewingTaskId || !commentText.trim()) {
+      toast.error('Please enter a comment');
+      return;
+    }
+    try {
+      await api.tasks.addComment(delayReviewingTaskId, commentText.trim());
+      setDelayReviewingTaskId(null);
+      toast.success('Delay review comment added');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add delay review comment');
     }
   }
 
@@ -587,7 +602,7 @@ export default function TasksPage() {
 
                     <div className="pt-1 flex gap-2">
                       <button
-                        onClick={() => setReviewingTaskId(task.id)}
+                        onClick={() => setDelayReviewingTaskId(task.id)}
                         className="flex-1 py-2 bg-primary hover:bg-blue-750 text-on-primary font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1.5 shadow-sm"
                       >
                         <span className="material-symbols-outlined text-[14px]">rate_review</span>
@@ -659,7 +674,7 @@ export default function TasksPage() {
                               {
                                 label: 'Raise Delay Review',
                                 icon: 'rate_review',
-                                onClick: () => setReviewingTaskId(task.id)
+                                onClick: () => setDelayReviewingTaskId(task.id)
                               }
                             ]}
                           />
@@ -970,6 +985,15 @@ export default function TasksPage() {
         confirmLabel={reviewAction === 'APPROVED' ? 'Approve' : 'Request Changes'}
         onConfirm={handleReviewTaskConfirm}
         onClose={() => setReviewingTaskId(null)}
+      />
+
+      <CommentDialog
+        isOpen={delayReviewingTaskId !== null}
+        title="Raise Delay Review"
+        placeholder="Describe the delay reason or required action..."
+        confirmLabel="Submit Review"
+        onConfirm={handleDelayReviewConfirm}
+        onClose={() => setDelayReviewingTaskId(null)}
       />
     </div>
   );

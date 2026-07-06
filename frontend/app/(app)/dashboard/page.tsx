@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const [elapsed, setElapsed] = useState('');
 
   useEffect(() => {
-    if (!attendanceStatus?.checkIn) {
+    if (!attendanceStatus?.checkIn || attendanceStatus?.checkOut) {
       setElapsed('');
       return;
     }
@@ -100,6 +100,7 @@ export default function DashboardPage() {
   const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
   const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+  const isClockedIn = !!(attendanceStatus?.checkIn && !attendanceStatus?.checkOut);
 
   async function loadDashboardData() {
     try {
@@ -236,7 +237,7 @@ export default function DashboardPage() {
             </span>
           </div>
           
-          {attendanceStatus?.checkIn && (
+          {isClockedIn && (
             <div className="pt-2 flex justify-between items-center border-t border-white/10">
               <div className="flex items-center gap-1.5 text-body-xs font-semibold text-blue-100">
                 <span className="material-symbols-outlined text-[16px] animate-pulse">timer</span>
@@ -255,13 +256,13 @@ export default function DashboardPage() {
             <div className="flex justify-between items-center">
               <h3 className="text-label-sm font-bold text-slate-900 uppercase tracking-wider">Shift Controls</h3>
               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                attendanceStatus?.checkIn ? 'bg-green-50 text-green-700 border border-green-150' : 'bg-slate-100 text-slate-650'
+                isClockedIn ? 'bg-green-50 text-green-700 border border-green-150' : 'bg-slate-100 text-slate-650'
               }`}>
-                {attendanceStatus?.checkIn ? 'Clocked In' : 'Clocked Out'}
+                {isClockedIn ? 'Clocked In' : 'Clocked Out'}
               </span>
             </div>
 
-            {!attendanceStatus?.checkIn ? (
+            {!isClockedIn ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
                   {(['WFO', 'WFH', 'FIELD'] as const).map(mode => (
@@ -603,8 +604,8 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] text-outline font-bold uppercase">Status</p>
-                      <p className="text-body-sm font-bold text-green-600 mt-0.5">
-                        {attendanceStatus?.checkIn ? 'Clocked In' : 'Clocked Out'}
+                      <p className={`text-body-sm font-bold mt-0.5 ${isClockedIn ? 'text-green-600' : 'text-slate-500'}`}>
+                        {isClockedIn ? 'Clocked In' : 'Clocked Out'}
                       </p>
                     </div>
                   </div>

@@ -105,7 +105,7 @@ export default function PayrollPage() {
     );
   });
 
-  const runItemsPerPage = 8;
+  const runItemsPerPage = 5;
   const totalRunPages = Math.ceil(filteredRuns.length / runItemsPerPage);
   const paginatedRuns = filteredRuns.slice(
     (currentRunPage - 1) * runItemsPerPage,
@@ -125,7 +125,7 @@ export default function PayrollPage() {
     );
   });
 
-  const payslipItemsPerPage = 8;
+  const payslipItemsPerPage = 5;
   const totalPayslipPages = Math.ceil(filteredPayslips.length / payslipItemsPerPage);
   const paginatedPayslips = filteredPayslips.slice(
     (currentPayslipPage - 1) * payslipItemsPerPage,
@@ -171,7 +171,7 @@ export default function PayrollPage() {
 
       {(isAdmin || isFinance) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm h-fit">
+          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm h-fit">
             <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Run Payroll</h2>
             <form onSubmit={handleGenerateRun} className="space-y-4">
               <div>
@@ -209,7 +209,7 @@ export default function PayrollPage() {
             </form>
           </div>
 
-          <div className="md:col-span-2 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+          <div className="md:col-span-2 bg-white border border-slate-200 p-5 rounded-3xl shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
               <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Payroll Run Logs</h2>
               <div className="relative w-full sm:w-64">
@@ -321,7 +321,7 @@ export default function PayrollPage() {
         </div>
       )}
 
-      <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+      <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">
             {isAdmin || isFinance ? 'All Employee Payslips' : 'My Payslips'}
@@ -449,7 +449,7 @@ export default function PayrollPage() {
 
       {selectedPayslip && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg w-full max-w-md p-6">
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-lg w-full max-w-md p-6">
             <div className="flex justify-between items-center pb-4 border-b border-outline-variant mb-6">
               <div>
                 <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Salary Slip Details</h3>

@@ -185,7 +185,7 @@ export default function LeavePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-6">
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
             <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Leave Balances</h2>
             <div className="space-y-3">
               {balances.map(bal => (
@@ -197,7 +197,7 @@ export default function LeavePage() {
             </div>
           </div>
 
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
             <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Request Leave</h2>
             <form onSubmit={handleApply} className="space-y-4">
               <div>
@@ -261,7 +261,7 @@ export default function LeavePage() {
 
         <div className="md:col-span-2 space-y-6">
           {(isAdmin || isHR || isManager) && (
-            <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+            <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
               <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Approvals Inbox</h2>
                 <div className="relative w-48">
@@ -346,7 +346,7 @@ export default function LeavePage() {
             </div>
           )}
 
-          <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">
+          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
             <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
               <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">My Requests History</h2>
               <div className="relative w-48">

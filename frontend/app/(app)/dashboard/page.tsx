@@ -48,7 +48,7 @@ export default function DashboardPage() {
     const performCheckIn = async (gpsLat?: number, gpsLng?: number) => {
       try {
         await api.attendance.checkIn({
-          workMode,
+          workMode: workMode === 'WFO' ? 'WFO' : 'WFM',
           gpsLat,
           gpsLng
         });
@@ -291,7 +291,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center text-body-xs font-semibold text-slate-700">
-                  <span>Logged Mode: <strong className="text-slate-950 uppercase">{attendanceStatus.workMode}</strong></span>
+                  <span>Logged Mode: <strong className="text-slate-950 uppercase">{attendanceStatus.workMode === 'WFM' ? 'WFH' : attendanceStatus.workMode}</strong></span>
                   <span>In At: <strong className="text-slate-950">{new Date(attendanceStatus.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></span>
                 </div>
                 <button
@@ -312,7 +312,7 @@ export default function DashboardPage() {
         {(isAdmin || isHR || isManager) && metrics ? (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white border border-slate-200 p-4 rounded-3xl shadow-sm flex flex-col justify-between aspect-square">
-              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl w-fit">
+              <div className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-2xl">
                 <span className="material-symbols-outlined text-[20px]">group</span>
               </div>
               <div>
@@ -322,7 +322,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="bg-white border border-slate-200 p-4 rounded-3xl shadow-sm flex flex-col justify-between aspect-square">
-              <div className="p-2.5 bg-green-50 text-green-600 rounded-2xl w-fit">
+              <div className="w-10 h-10 flex items-center justify-center bg-green-50 text-green-600 rounded-2xl">
                 <span className="material-symbols-outlined text-[20px]">assignment_turned_in</span>
               </div>
               <div>
@@ -332,7 +332,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="bg-white border border-slate-200 p-4 rounded-3xl shadow-sm flex flex-col justify-between aspect-square">
-              <div className="p-2.5 bg-amber-50 text-amber-600 rounded-2xl w-fit">
+              <div className="w-10 h-10 flex items-center justify-center bg-amber-50 text-amber-600 rounded-2xl">
                 <span className="material-symbols-outlined text-[20px]">flight_takeoff</span>
               </div>
               <div>
@@ -342,7 +342,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="bg-white border border-slate-200 p-4 rounded-3xl shadow-sm flex flex-col justify-between aspect-square">
-              <div className="p-2.5 bg-rose-50 text-rose-600 rounded-2xl w-fit">
+              <div className="w-10 h-10 flex items-center justify-center bg-rose-50 text-rose-600 rounded-2xl">
                 <span className="material-symbols-outlined text-[20px]">pending_actions</span>
               </div>
               <div>
@@ -354,7 +354,7 @@ export default function DashboardPage() {
         ) : metrics ? (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white border border-slate-200 p-4 rounded-3xl shadow-sm flex flex-col justify-between aspect-square">
-              <div className="p-2.5 bg-indigo-50 text-indigo-650 rounded-2xl w-fit">
+              <div className="w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-650 rounded-2xl">
                 <span className="material-symbols-outlined text-[20px]">assignment</span>
               </div>
               <div>
@@ -364,7 +364,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="bg-white border border-slate-200 p-4 rounded-3xl shadow-sm flex flex-col justify-between aspect-square">
-              <div className="p-2.5 bg-amber-50 text-amber-600 rounded-2xl w-fit">
+              <div className="w-10 h-10 flex items-center justify-center bg-amber-50 text-amber-600 rounded-2xl">
                 <span className="material-symbols-outlined text-[20px]">event_busy</span>
               </div>
               <div>

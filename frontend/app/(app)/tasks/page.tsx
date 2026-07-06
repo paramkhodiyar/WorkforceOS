@@ -453,9 +453,8 @@ export default function TasksPage() {
                                     )}
                                   </>
                                 )}
-
                                 {/* Creator/Admin/HR Review Actions */}
-                                {(task.creatorId === user?.id || isAdmin || isHR) && (
+                                {(task.creatorId === user?.id || isAdmin || isHR) && task.assigneeId !== user?.id && (
                                   <>
                                     {(task.status === 'SUBMITTED' || task.status === 'RESUBMITTED' || task.status === 'IN_REVIEW') && (
                                       <div className="flex gap-1">
@@ -464,7 +463,7 @@ export default function TasksPage() {
                                             e.stopPropagation();
                                             handleMoveStatus(task, 'APPROVE');
                                           }}
-                                          className="px-2 py-0.5 bg-green-600 hover:bg-green-700 text-on-primary rounded text-[9px] font-bold uppercase cursor-pointer"
+                                          className="px-2 py-0.5 bg-green-600 hover:bg-green-700 text-white rounded text-[9px] font-bold uppercase transition-all shadow-sm cursor-pointer"
                                         >
                                           Approve
                                         </button>
@@ -473,7 +472,7 @@ export default function TasksPage() {
                                             e.stopPropagation();
                                             handleMoveStatus(task, 'REQUEST_CHANGES');
                                           }}
-                                          className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-on-primary rounded text-[9px] font-bold uppercase cursor-pointer"
+                                          className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[9px] font-bold uppercase transition-all shadow-sm cursor-pointer"
                                         >
                                           Reject
                                         </button>
@@ -485,7 +484,7 @@ export default function TasksPage() {
                                           e.stopPropagation();
                                           handleMoveStatus(task, 'CLOSE');
                                         }}
-                                        className="px-2 py-0.5 bg-slate-800 hover:bg-slate-900 text-on-primary rounded text-[9px] font-bold uppercase cursor-pointer"
+                                        className="px-2 py-0.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-[9px] font-bold uppercase transition-all shadow-sm cursor-pointer"
                                       >
                                         Close
                                       </button>

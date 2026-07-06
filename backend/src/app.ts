@@ -26,9 +26,17 @@ app.use(
 );
 app.use(
   cors({
-    origin: config.CORS_ORIGINS,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, server-to-server)
+      if (!origin) return callback(null, true);
+      // Wildcard mode – allow everything (dev convenience)
+      if (config.CORS_ORIGINS.includes("*")) return callback(null, true);
+      // Strict allow-list check
+      if (config.CORS_ORIGINS.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin '${origin}' is not allowed`));
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );

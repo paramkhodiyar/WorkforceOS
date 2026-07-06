@@ -170,7 +170,7 @@ model Organization {
   isActive    Boolean  @default(true)
   isDeleted   Boolean  @default(false)
   deletedAt   DateTime?
-  enabledFeatures String[] @default(["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "notifications", "audit"])
+  enabledFeatures String[] @default(["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "notifications", "audit", "calendar"])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -184,6 +184,7 @@ model Organization {
   permissions  RolePermission[]
   shiftConfigs ShiftConfig[]
   holidays     Holiday[]
+  calendarEvents CalendarEvent[]
 }
 
 model Department {
@@ -284,6 +285,8 @@ model User {
   bankDetail         BankDetail?
   emergencyContact   EmergencyContact?
   shift              ShiftConfig?     @relation(fields: [shiftId], references: [id])
+  eventsCreated      CalendarEvent[]  @relation("EventCreator")
+  eventAttendance    EventAttendee[]  @relation("EventAttendeeUser")
 }
 
 model UserRole {
@@ -859,3 +862,74 @@ model EmployeeDocument {
 
   user       User     @relation(fields: [userId], references: [id])
 }
+
+enum AttendeeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  TENTATIVE
+}
+
+enum RecurrenceType {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model CalendarEvent {
+  id                 String                @id @default(cuid())
+  organizationId     String
+  creatorId          String
+  title              String
+  description        String?               @db.Text
+  location           String?
+  startTime          DateTime
+  endTime            DateTime
+  isAllDay           Boolean               @default(false)
+  meetingLink        String?
+  recurrenceType     RecurrenceType        @default(NONE)
+  recurrenceInterval Int                   @default(1)
+  recurrenceDays     String?
+  recurrenceEndDate  DateTime?
+  isDeleted          Boolean               @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  organization       Organization          @relation(fields: [organizationId], references: [id])
+  creator            User                  @relation("EventCreator", fields: [creatorId], references: [id])
+  attendees          EventAttendee[]
+  exceptions         RecurrenceException[]
+
+  @@index([organizationId, startTime, endTime])
+  @@index([creatorId])
+}
+
+model EventAttendee {
+  id        String         @id @default(cuid())
+  eventId   String
+  userId    String
+  status    AttendeeStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  event     CalendarEvent  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User           @relation("EventAttendeeUser", fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+model RecurrenceException {
+  id            String   @id @default(cuid())
+  eventId       String
+  exceptionDate DateTime
+  isCancelled   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  event         CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, exceptionDate])
+}
+

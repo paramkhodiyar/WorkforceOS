@@ -14,6 +14,7 @@ import { notificationsRouter } from "../modules/notifications/notifications.rout
 import { auditRouter } from "../modules/audit/audit.router";
 import { departmentsRouter } from "../modules/departments/departments.router";
 import { teamsRouter } from "../modules/teams/teams.router";
+import { calendarRouter } from "../modules/calendar/calendar.router";
 import { rateLimitByUser } from "../middleware/rateLimit.middleware";
 
 const router = Router();
@@ -37,5 +38,6 @@ router.use("/notifications", notificationsRouter);
 router.use("/audit", auditRouter);
 router.use("/departments", departmentsRouter);
 router.use("/teams", teamsRouter);
+router.use("/calendar", calendarRouter);
 
 export default router;

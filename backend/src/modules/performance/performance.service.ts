@@ -339,6 +339,54 @@ export class PerformanceService {
     return updated;
   }
 
+  static async bulkPublishReviews(orgId: string, actorId: string, reviewIds: string[], req?: any) {
+    const actor = await prisma.user.findFirst({
+      where: { id: actorId, isDeleted: false },
+      include: { roles: { include: { role: true } } }
+    });
+    const isHR = actor?.systemRole === "HR" || actor?.roles.some(ur => ur.role.name === "HR_MANAGER");
+    const isAdmin = actor?.systemRole === "SUPER_ADMIN" || actor?.systemRole === "ORG_ADMIN";
+
+    const reviews = await prisma.performanceReview.findMany({
+      where: { id: { in: reviewIds }, isDeleted: false, subject: { organizationId: orgId } }
+    });
+
+    const updatedReviews = [];
+    for (const review of reviews) {
+      const isReviewer = review.reviewerId === actorId;
+      if (!isReviewer && !isHR && !isAdmin) {
+        continue;
+      }
+      if (review.isPublished) continue;
+
+      const updated = await prisma.performanceReview.update({
+        where: { id: review.id },
+        data: { isPublished: true }
+      });
+
+      await AuditService.log({
+        organizationId: orgId,
+        actorId,
+        action: AuditAction.UPDATED,
+        module: "performance",
+        targetId: review.id,
+        targetType: "PerformanceReview",
+        newValue: { isPublished: true },
+        req
+      });
+
+      await NotificationService.notify(
+        review.subjectId,
+        NotificationType.REVIEW_DUE,
+        "Performance Review Published",
+        `Your performance review for ${review.period} has been published. Final Score: ${review.finalScore ?? 0} (${review.scoreBand ?? "N/A"})`,
+        { reviewId: review.id }
+      );
+      updatedReviews.push(updated);
+    }
+    return updatedReviews;
+  }
+
   static async getLeaderboard(orgId: string, departmentId?: string, period = "2026-Q1", type = "QUARTERLY") {
     const where: any = {
       organizationId: orgId,

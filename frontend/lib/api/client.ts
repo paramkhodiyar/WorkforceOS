@@ -313,5 +313,42 @@ export const api = {
       request(`/performance/reviews/${id}/publish`, {
         method: 'POST',
       }),
+    bulkPublish: (ids: string[]): Promise<any> =>
+      request('/performance/reviews/bulk-publish', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
+  },
+  calendar: {
+    listEvents: (start: string, end: string): Promise<any> =>
+      request(`/calendar/events?start=${start}&end=${end}`),
+    createEvent: (data: any): Promise<any> =>
+      request('/calendar/events', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    updateEvent: (id: string, data: any): Promise<any> =>
+      request(`/calendar/events/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    deleteEvent: (id: string): Promise<any> =>
+      request(`/calendar/events/${id}`, {
+        method: 'DELETE',
+      }),
+    deleteInstance: (id: string, date: string): Promise<any> =>
+      request(`/calendar/events/${id}/instance?date=${date}`, {
+        method: 'DELETE',
+      }),
+    respond: (id: string, status: string): Promise<any> =>
+      request(`/calendar/events/${id}/respond`, {
+        method: 'POST',
+        body: JSON.stringify({ status }),
+      }),
+    checkAvailability: (data: { inviteeIds: string[]; startTime: string; endTime: string }): Promise<any> =>
+      request('/calendar/check-availability', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 };

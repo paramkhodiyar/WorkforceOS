@@ -6,6 +6,9 @@ const prisma = new PrismaClient();
 async function main() {
   const passwordHash = await bcrypt.hash("Password123!", 10);
 
+  await prisma.recurrenceException.deleteMany();
+  await prisma.eventAttendee.deleteMany();
+  await prisma.calendarEvent.deleteMany();
   await prisma.refreshToken.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.knowledgeVersion.deleteMany();
@@ -48,7 +51,7 @@ async function main() {
       name: "Dunder Mifflin Paper Company",
       slug: "dunder-mifflin",
       isActive: true,
-      enabledFeatures: ["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge"]
+      enabledFeatures: ["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "calendar"]
     }
   });
 
@@ -87,7 +90,7 @@ async function main() {
         { resource: "employee", actions: ["create", "read", "update", "delete", "approve"] },
         { resource: "leave", actions: ["read", "approve", "hr_approve", "manage_policy"] },
         { resource: "attendance", actions: ["read", "read_team", "adjust", "exceptions"] },
-        { resource: "performance", actions: ["read", "review", "leaderboard"] },
+        { resource: "performance", actions: ["read", "review", "leaderboard", "hr-feedback"] },
         { resource: "expense", actions: ["read", "approve"] },
         { resource: "asset", actions: ["create", "read", "update", "delete", "assign"] },
         { resource: "knowledge", actions: ["create", "read", "update", "delete", "publish"] }
@@ -482,6 +485,81 @@ async function main() {
       });
     }
   }
+
+  // Seed Calendar Events
+  const event1 = await prisma.calendarEvent.create({
+    data: {
+      organizationId: org.id,
+      creatorId: jim.id,
+      title: "Scranton Sales Sync",
+      description: "Review paper sales pipeline, check client targets, and discuss Dwight's ideas.",
+      location: "Scranton Main Conference Room",
+      startTime: new Date("2026-07-06T10:00:00Z"),
+      endTime: new Date("2026-07-06T11:00:00Z"),
+      meetingLink: "https://zoom.us/j/dunder-mifflin-sync",
+      attendees: {
+        create: [
+          { userId: jim.id, status: "ACCEPTED" },
+          { userId: dwight.id, status: "PENDING" },
+          { userId: employeesList[1].id, status: "ACCEPTED" }, // Stanley
+        ]
+      }
+    }
+  });
+
+  const event2 = await prisma.calendarEvent.create({
+    data: {
+      organizationId: org.id,
+      creatorId: michael.id,
+      title: "All-Hands Branch Meeting",
+      description: "Michael leads branch-wide update and introduces new products.",
+      location: "Office Open Space",
+      startTime: new Date("2026-07-08T14:00:00Z"),
+      endTime: new Date("2026-07-08T15:30:00Z"),
+      meetingLink: "https://meet.google.com/abc-defg-hij",
+      attendees: {
+        create: [
+          { userId: michael.id, status: "ACCEPTED" },
+          { userId: jim.id, status: "ACCEPTED" },
+          { userId: dwight.id, status: "ACCEPTED" },
+          { userId: toby.id, status: "DECLINED" },
+          { userId: employeesList[0].id, status: "PENDING" }, // Pam
+        ]
+      }
+    }
+  });
+
+  // Daily Standup Recurring Event
+  const recurring1 = await prisma.calendarEvent.create({
+    data: {
+      organizationId: org.id,
+      creatorId: jim.id,
+      title: "Daily Standup meeting",
+      description: "Daily quick sync to align on tasks and blockers.",
+      location: "Sales Desk Area",
+      startTime: new Date("2026-07-06T09:00:00Z"),
+      endTime: new Date("2026-07-06T09:30:00Z"),
+      recurrenceType: "DAILY",
+      recurrenceInterval: 1,
+      recurrenceEndDate: new Date("2026-08-31T23:59:59Z"),
+      attendees: {
+        create: [
+          { userId: jim.id, status: "ACCEPTED" },
+          { userId: dwight.id, status: "ACCEPTED" },
+          { userId: employeesList[0].id, status: "ACCEPTED" }, // Pam
+        ]
+      }
+    }
+  });
+
+  // Create an exception: cancel the standup on Tuesday July 7th
+  await prisma.recurrenceException.create({
+    data: {
+      eventId: recurring1.id,
+      exceptionDate: new Date("2026-07-07T09:00:00Z"),
+      isCancelled: true
+    }
+  });
 }
 
 main()

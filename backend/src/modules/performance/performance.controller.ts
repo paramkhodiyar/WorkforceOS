@@ -126,6 +126,17 @@ export const publishReview = asyncHandler(async (req: Request, res: Response) =>
   return sendSuccess(res, result, "Performance review published successfully");
 });
 
+export const bulkPublishReviews = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const actorId = req.user!.id;
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) {
+    throw AppError.badRequest("ids must be an array of strings");
+  }
+  const result = await PerformanceService.bulkPublishReviews(orgId, actorId, ids, req);
+  return sendSuccess(res, result, "Performance reviews published successfully");
+});
+
 export const getLeaderboard = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
   const departmentId = req.query.departmentId as string;

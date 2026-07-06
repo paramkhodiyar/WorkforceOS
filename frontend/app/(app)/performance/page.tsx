@@ -23,6 +23,30 @@ export default function PerformancePage() {
   const [teamReviewsSearch, setTeamReviewsSearch] = useState('');
   const [teamReviewsPage, setTeamReviewsPage] = useState(1);
 
+  // New states for evaluation creation & releases
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createReviewForm, setCreateReviewForm] = useState({
+    subjectId: '',
+    period: '2026-Q1',
+    periodType: 'QUARTERLY' as 'MONTHLY' | 'QUARTERLY' | 'ANNUAL',
+    comments: ''
+  });
+
+  // HR Feedback Form states
+  const [hrCollaboration, setHrCollaboration] = useState(3);
+  const [hrCommunication, setHrCommunication] = useState(3);
+  const [hrDiscipline, setHrDiscipline] = useState(3);
+  const [hrInitiative, setHrInitiative] = useState(3);
+  const [hrConduct, setHrConduct] = useState(3);
+  const [hrFeedbackNote, setHrFeedbackNote] = useState('');
+  const [hrPublish, setHrPublish] = useState(false);
+  const [hrSubmitLoading, setHrSubmitLoading] = useState(false);
+
+  // Checkbox multi-select states for bulk release
+  const [selectedReviewIds, setSelectedReviewIds] = useState<string[]>([]);
+
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
@@ -33,14 +57,19 @@ export default function PerformancePage() {
   async function loadData() {
     try {
       setLoading(true);
-      // Fetch my reviews (regular user or subject view)
       const myReviewsRes = await api.performance.listReviews(false);
       setReviews(myReviewsRes.data || []);
 
-      // If manager/admin/HR, fetch team reviews
       if (showManagementFeatures) {
         const teamReviewsRes = await api.performance.listReviews(true);
         setTeamReviews(teamReviewsRes.data || []);
+        
+        try {
+          const empRes = await api.employees.list();
+          setEmployees(empRes.data || []);
+        } catch (e) {
+          console.error("Failed to load employees", e);
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -52,7 +81,19 @@ export default function PerformancePage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [showManagementFeatures]);
+
+  useEffect(() => {
+    if (selectedReview) {
+      setHrCollaboration(selectedReview.hrCollaboration ?? 3);
+      setHrCommunication(selectedReview.hrCommunication ?? 3);
+      setHrDiscipline(selectedReview.hrDiscipline ?? 3);
+      setHrInitiative(selectedReview.hrInitiative ?? 3);
+      setHrConduct(selectedReview.hrConduct ?? 3);
+      setHrFeedbackNote(selectedReview.hrFeedbackNote ?? '');
+      setHrPublish(selectedReview.isPublished ?? false);
+    }
+  }, [selectedReview]);
 
   async function handlePublishReview(id: string) {
     if (!confirm('Are you sure you want to release/publish this performance review? Once released, it will be visible to the employee.')) return;
@@ -62,6 +103,90 @@ export default function PerformancePage() {
       await loadData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to release performance review');
+    }
+  }
+
+  async function handleCreateReview(e: React.FormEvent) {
+    e.preventDefault();
+    if (!createReviewForm.subjectId) {
+      toast.error('Please select an employee');
+      return;
+    }
+    if (!createReviewForm.period.trim()) {
+      toast.error('Please specify the evaluation cycle period');
+      return;
+    }
+    try {
+      setCreateLoading(true);
+      await api.performance.createReview({
+        subjectId: createReviewForm.subjectId,
+        period: createReviewForm.period,
+        periodType: createReviewForm.periodType,
+        comments: createReviewForm.comments || undefined
+      });
+      toast.success('Performance review draft compiled successfully');
+      setIsCreateModalOpen(false);
+      setCreateReviewForm({ subjectId: '', period: '2026-Q1', periodType: 'QUARTERLY', comments: '' });
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create evaluation draft');
+    } finally {
+      setCreateLoading(false);
+    }
+  }
+
+  async function handleHrFeedbackSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedReview) return;
+    try {
+      setHrSubmitLoading(true);
+      await api.performance.submitHrFeedback(selectedReview.id, {
+        hrCollaboration,
+        hrCommunication,
+        hrDiscipline,
+        hrInitiative,
+        hrConduct,
+        hrFeedbackNote: hrFeedbackNote || undefined,
+        publish: hrPublish
+      });
+      toast.success(hrPublish ? 'Review published successfully' : 'HR feedback logged successfully');
+      setSelectedReview(null);
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save HR feedback');
+    } finally {
+      setHrSubmitLoading(false);
+    }
+  }
+
+  async function handleBulkPublish() {
+    if (selectedReviewIds.length === 0) return;
+    if (!confirm(`Are you sure you want to release/publish the ${selectedReviewIds.length} selected reviews? They will become visible to employees immediately.`)) return;
+    try {
+      await api.performance.bulkPublish(selectedReviewIds);
+      toast.success('Selected performance reviews released successfully');
+      setSelectedReviewIds([]);
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to release reviews');
+    }
+  }
+
+  async function handlePublishAll() {
+    const drafts = teamReviews.filter(r => !r.isPublished);
+    if (drafts.length === 0) {
+      toast.error('No draft reviews found to release');
+      return;
+    }
+    if (!confirm(`Are you sure you want to release/publish ALL ${drafts.length} draft reviews? They will become visible to employees immediately.`)) return;
+    try {
+      const draftIds = drafts.map(r => r.id);
+      await api.performance.bulkPublish(draftIds);
+      toast.success(`All ${drafts.length} performance reviews released successfully`);
+      setSelectedReviewIds([]);
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to release all reviews');
     }
   }
 
@@ -89,9 +214,20 @@ export default function PerformancePage() {
 
   return (
     <div className="space-y-6 font-sans">
-      <div>
-        <h1 className="text-headline-md font-bold text-on-surface">Performance Management</h1>
-        <p className="text-body-sm text-outline">Track professional objectives, review cycles, and performance feedback</p>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-headline-md font-bold text-on-surface">Performance Management</h1>
+          <p className="text-body-sm text-outline">Track professional objectives, review cycles, and performance feedback</p>
+        </div>
+        {showManagementFeatures && (
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-4 py-2 bg-primary hover:bg-blue-700 text-on-primary text-label-md font-bold rounded-xl transition-all active:scale-[0.98] shadow-sm flex items-center gap-1.5 cursor-pointer shrink-0"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            New Evaluation Draft
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -243,18 +379,39 @@ export default function PerformancePage() {
               <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm space-y-4">
                 <div className="flex justify-between items-center flex-wrap gap-4">
                   <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Team Reviews Dashboard</h2>
-                  <div className="relative w-48">
-                    <input
-                      type="text"
-                      placeholder="Search team reviews..."
-                      value={teamReviewsSearch}
-                      onChange={(e) => {
-                        setTeamReviewsSearch(e.target.value);
-                        setTeamReviewsPage(1);
-                      }}
-                      className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
-                    />
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    {/* Bulk operations controls */}
+                    {showManagementFeatures && teamReviews.some(r => !r.isPublished) && (
+                      <div className="flex gap-2 items-center bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold select-none">
+                        <span className="text-slate-500 font-bold uppercase tracking-wide text-[10px]">Release options:</span>
+                        <button
+                          disabled={selectedReviewIds.length === 0}
+                          onClick={handleBulkPublish}
+                          className="px-2.5 py-1 bg-primary hover:bg-blue-750 text-white text-[10px] font-bold rounded cursor-pointer disabled:opacity-40 transition-colors"
+                        >
+                          Release Selected ({selectedReviewIds.length})
+                        </button>
+                        <button
+                          onClick={handlePublishAll}
+                          className="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-55 text-slate-700 text-[10px] font-bold rounded cursor-pointer transition-colors"
+                        >
+                          Release All Drafts
+                        </button>
+                      </div>
+                    )}
+                    <div className="relative w-48">
+                      <input
+                        type="text"
+                        placeholder="Search team reviews..."
+                        value={teamReviewsSearch}
+                        onChange={(e) => {
+                          setTeamReviewsSearch(e.target.value);
+                          setTeamReviewsPage(1);
+                        }}
+                        className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                      />
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+                    </div>
                   </div>
                 </div>
 
@@ -262,6 +419,21 @@ export default function PerformancePage() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-surface-container-low/50">
+                        <th className="w-10 px-4 py-2.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked={teamReviews.length > 0 && teamReviews.filter(r => !r.isPublished).every(r => selectedReviewIds.includes(r.id))}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                const draftIds = teamReviews.filter(r => !r.isPublished).map(r => r.id);
+                                setSelectedReviewIds(draftIds);
+                              } else {
+                                setSelectedReviewIds([]);
+                              }
+                            }}
+                            className="cursor-pointer rounded border-slate-300 text-primary focus:ring-primary h-4 w-4"
+                          />
+                        </th>
                         <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
                         <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Cycle</th>
                         <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Score / Band</th>
@@ -272,13 +444,31 @@ export default function PerformancePage() {
                     <tbody className="divide-y divide-outline-variant text-body-sm">
                       {paginatedTeamReviews.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-outline">
+                          <td colSpan={6} className="px-4 py-8 text-center text-outline">
                             No team reviews found.
                           </td>
                         </tr>
                       ) : (
                         paginatedTeamReviews.map((rev) => (
                           <tr key={rev.id} className="hover:bg-surface-container-low transition-colors">
+                            <td className="px-4 py-3 text-center">
+                              {!rev.isPublished ? (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedReviewIds.includes(rev.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedReviewIds(prev => [...prev, rev.id]);
+                                    } else {
+                                      setSelectedReviewIds(prev => prev.filter(id => id !== rev.id));
+                                    }
+                                  }}
+                                  className="cursor-pointer rounded border-slate-300 text-primary focus:ring-primary h-4 w-4"
+                                />
+                              ) : (
+                                <span className="material-symbols-outlined text-[16px] text-slate-300 select-none">check_circle</span>
+                              )}
+                            </td>
                             <td className="px-4 py-3 font-semibold text-on-surface">
                               {rev.subject ? `${rev.subject.firstName} ${rev.subject.lastName}` : 'Unknown'}
                             </td>
@@ -499,47 +689,109 @@ export default function PerformancePage() {
               </div>
 
               {/* HR Qualitative Feedback */}
-              <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl space-y-3">
-                <div className="flex justify-between items-center border-b border-outline-variant pb-2">
-                  <span className="text-body-sm font-semibold text-on-surface">HR Qualitative Evaluation (Weight: 10%)</span>
-                  <span className="text-body-sm font-bold font-mono text-primary">
-                    {(() => {
-                      const vals = [
-                        selectedReview.hrCollaboration,
-                        selectedReview.hrCommunication,
-                        selectedReview.hrDiscipline,
-                        selectedReview.hrInitiative,
-                        selectedReview.hrConduct
-                      ].filter(v => v !== null && v !== undefined);
-                      if (vals.length === 0) return 'N/A';
-                      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-                      return `${avg.toFixed(1)} / 5.0`;
-                    })()}
-                  </span>
+              {!selectedReview.isPublished && (isHR || isAdmin) ? (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <div className="border-b border-slate-200 pb-2">
+                    <span className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest block">HR Qualitative Evaluation (Weight: 10%)</span>
+                  </div>
+                  <form onSubmit={handleHrFeedbackSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+                      {[
+                        { label: 'Collab', val: hrCollaboration, set: setHrCollaboration },
+                        { label: 'Comm', val: hrCommunication, set: setHrCommunication },
+                        { label: 'Discipline', val: hrDiscipline, set: setHrDiscipline },
+                        { label: 'Initiative', val: hrInitiative, set: setHrInitiative },
+                        { label: 'Conduct', val: hrConduct, set: setHrConduct },
+                      ].map((dim) => (
+                        <div key={dim.label} className="p-1 bg-white border border-slate-200 rounded text-center">
+                          <label className="text-[8px] text-outline font-bold uppercase block mb-1">{dim.label}</label>
+                          <select
+                            value={dim.val}
+                            onChange={(e) => dim.set(Number(e.target.value))}
+                            className="bg-transparent text-body-sm font-bold w-full text-center border-0 p-0 text-on-surface focus:ring-0 focus:outline-none cursor-pointer"
+                          >
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <option key={n} value={n}>{n}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-outline uppercase font-bold block">HR Feedback Remarks / Notes</label>
+                      <textarea
+                        value={hrFeedbackNote}
+                        onChange={(e) => setHrFeedbackNote(e.target.value)}
+                        placeholder="Add qualitative HR remarks regarding conduct, communication, or growth areas..."
+                        rows={2}
+                        className="w-full bg-white border border-slate-200 p-2.5 text-xs rounded-lg focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium text-on-surface"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between flex-wrap gap-4 pt-1.5 border-t border-slate-150">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={hrPublish}
+                          onChange={(e) => setHrPublish(e.target.checked)}
+                          className="cursor-pointer rounded border-slate-350 text-primary focus:ring-primary h-4 w-4"
+                        />
+                        <span className="text-[11px] text-slate-700 font-bold">Release to employee immediately</span>
+                      </label>
+                      <button
+                        type="submit"
+                        disabled={hrSubmitLoading}
+                        className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                      >
+                        {hrSubmitLoading ? 'Submitting...' : 'Save & Compute Score'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
-                  <div className="p-2 bg-surface-container-high rounded">
-                    <p className="text-[8px] text-outline font-bold uppercase">Collab</p>
-                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrCollaboration ?? '-'}</p>
+              ) : (
+                <div className="p-4 bg-surface-container-low border border-outline-variant rounded-xl space-y-3">
+                  <div className="flex justify-between items-center border-b border-outline-variant pb-2">
+                    <span className="text-body-sm font-semibold text-on-surface">HR Qualitative Evaluation (Weight: 10%)</span>
+                    <span className="text-body-sm font-bold font-mono text-primary">
+                      {(() => {
+                        const vals = [
+                          selectedReview.hrCollaboration,
+                          selectedReview.hrCommunication,
+                          selectedReview.hrDiscipline,
+                          selectedReview.hrInitiative,
+                          selectedReview.hrConduct
+                        ].filter(v => v !== null && v !== undefined);
+                        if (vals.length === 0) return 'N/A';
+                        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                        return `${avg.toFixed(1)} / 5.0`;
+                      })()}
+                    </span>
                   </div>
-                  <div className="p-2 bg-surface-container-high rounded">
-                    <p className="text-[8px] text-outline font-bold uppercase">Comm</p>
-                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrCommunication ?? '-'}</p>
-                  </div>
-                  <div className="p-2 bg-surface-container-high rounded">
-                    <p className="text-[8px] text-outline font-bold uppercase">Discipline</p>
-                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrDiscipline ?? '-'}</p>
-                  </div>
-                  <div className="p-2 bg-surface-container-high rounded">
-                    <p className="text-[8px] text-outline font-bold uppercase">Initiative</p>
-                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrInitiative ?? '-'}</p>
-                  </div>
-                  <div className="p-2 bg-surface-container-high rounded">
-                    <p className="text-[8px] text-outline font-bold uppercase">Conduct</p>
-                    <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrConduct ?? '-'}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+                    <div className="p-2 bg-surface-container-high rounded">
+                      <p className="text-[8px] text-outline font-bold uppercase">Collab</p>
+                      <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrCollaboration ?? '-'}</p>
+                    </div>
+                    <div className="p-2 bg-surface-container-high rounded">
+                      <p className="text-[8px] text-outline font-bold uppercase">Comm</p>
+                      <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrCommunication ?? '-'}</p>
+                    </div>
+                    <div className="p-2 bg-surface-container-high rounded">
+                      <p className="text-[8px] text-outline font-bold uppercase">Discipline</p>
+                      <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrDiscipline ?? '-'}</p>
+                    </div>
+                    <div className="p-2 bg-surface-container-high rounded">
+                      <p className="text-[8px] text-outline font-bold uppercase">Initiative</p>
+                      <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrInitiative ?? '-'}</p>
+                    </div>
+                    <div className="p-2 bg-surface-container-high rounded">
+                      <p className="text-[8px] text-outline font-bold uppercase">Conduct</p>
+                      <p className="text-body-sm font-bold mt-0.5">{selectedReview.hrConduct ?? '-'}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Evaluator Notes */}
@@ -583,6 +835,99 @@ export default function PerformancePage() {
                 Dismiss
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Evaluation Draft Creation Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl max-w-md w-full p-6 shadow-xl space-y-6 animate-slide-in-up">
+            <div className="flex justify-between items-start border-b border-outline-variant pb-4">
+              <div>
+                <h3 className="text-headline-sm font-bold text-on-surface">New Performance Evaluation</h3>
+                <p className="text-body-sm text-outline">Compile automatic activity metrics for an employee</p>
+              </div>
+              <button 
+                onClick={() => setIsCreateModalOpen(false)}
+                className="p-1 hover:bg-surface-container rounded-lg transition-colors text-outline hover:text-on-surface animate-fade-in"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateReview} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] text-outline uppercase font-bold block">Select Employee</label>
+                <select
+                  required
+                  value={createReviewForm.subjectId}
+                  onChange={(e) => setCreateReviewForm({ ...createReviewForm, subjectId: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium cursor-pointer"
+                >
+                  <option value="">Choose employee...</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.firstName} {emp.lastName} ({emp.designation})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-outline uppercase font-bold block">Cycle Type</label>
+                  <select
+                    value={createReviewForm.periodType}
+                    onChange={(e) => setCreateReviewForm({ ...createReviewForm, periodType: e.target.value as any })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium cursor-pointer"
+                  >
+                    <option value="MONTHLY">Monthly</option>
+                    <option value="QUARTERLY">Quarterly</option>
+                    <option value="ANNUAL">Annual</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-outline uppercase font-bold block">Period / Cycle</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 2026-Q1, 2026-06"
+                    value={createReviewForm.period}
+                    onChange={(e) => setCreateReviewForm({ ...createReviewForm, period: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-outline uppercase font-bold block">Evaluator Comments & Notes</label>
+                <textarea
+                  placeholder="Enter manager remarks, feedback, or justification for the review..."
+                  value={createReviewForm.comments}
+                  onChange={(e) => setCreateReviewForm({ ...createReviewForm, comments: e.target.value })}
+                  rows={4}
+                  className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-body-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-label-md font-bold transition-all cursor-pointer text-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="px-5 py-2.5 bg-primary hover:bg-blue-750 text-on-primary rounded-xl text-label-md font-bold transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {createLoading ? 'Compiling...' : 'Calculate & Save Draft'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -74,6 +74,12 @@ export default function SideNavBar() {
       show: features.includes('performance')
     },
     {
+      label: 'Calendar',
+      icon: 'calendar_today',
+      href: '/calendar',
+      show: features.includes('calendar')
+    },
+    {
       label: 'Payroll',
       icon: 'payments',
       href: '/payroll',

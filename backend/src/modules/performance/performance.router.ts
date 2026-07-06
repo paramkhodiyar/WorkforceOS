@@ -11,6 +11,7 @@ import {
   submitHrFeedback,
   recalculateScore,
   publishReview,
+  bulkPublishReviews,
   getLeaderboard
 } from "./performance.controller";
 import {
@@ -31,6 +32,7 @@ router.use(requireFeature("performance"));
 router.get("/metrics/:userId", validate(getMetricsSchema, "query"), getMetrics);
 router.get("/reviews", validate(getReviewsSchema, "query"), listReviews);
 router.post("/reviews", requirePermission("performance", "review"), validate(createReviewSchema), createReview);
+router.post("/reviews/bulk-publish", requirePermission("performance", "review"), bulkPublishReviews);
 router.get("/reviews/:id", getReviewById);
 router.patch("/reviews/:id", validate(updateReviewSchema), updateReview);
 router.post("/reviews/:id/hr-feedback", requirePermission("performance", "hr-feedback"), submitHrFeedback);

@@ -83,40 +83,36 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   Future<void> _checkAuthAndNavigate() async {
     final prefs = await SharedPreferences.getInstance();
-    final bool useBiometric = prefs.getBool('use_biometric') ?? true;
+
+    // Biometric is OFF by default — user must turn it on from the login page toggle
+    final bool useBiometric = prefs.getBool('use_biometric') ?? false;
+    final String? storedToken = prefs.getString('auth_token');
+    final bool hasStoredToken = storedToken != null && storedToken.isNotEmpty;
 
     final LocalAuthentication auth = LocalAuthentication();
-    final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
+    final bool canCheckBiometrics = await auth.canCheckBiometrics;
     final bool isDeviceSupported = await auth.isDeviceSupported();
 
-    if (useBiometric && (canAuthenticateWithBiometrics || isDeviceSupported)) {
-      // Navigate to Biometric Lock Screen with a smooth crossfade route
+    // Only gate with biometric when: toggle is ON + we have a session token to inject
+    if (useBiometric && hasStoredToken && (canCheckBiometrics || isDeviceSupported)) {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const BiometricLockScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
+            pageBuilder: (_, __, ___) => const BiometricLockScreen(),
+            transitionsBuilder: (_, animation, __, child) =>
+                FadeTransition(opacity: animation, child: child),
             transitionDuration: const Duration(milliseconds: 600),
           ),
         );
       }
     } else {
-      // Navigate directly to WebView Screen
+      // No stored session or biometric disabled — go straight to login (WebView)
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const WebViewScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
+            pageBuilder: (_, __, ___) => const WebViewScreen(),
+            transitionsBuilder: (_, animation, __, child) =>
+                FadeTransition(opacity: animation, child: child),
             transitionDuration: const Duration(milliseconds: 600),
           ),
         );

@@ -55,8 +55,8 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
             });
             if (refreshRes.ok) {
               const refreshData = await refreshRes.json();
-              const newAccessToken = refreshData.data.tokens.accessToken;
-              const newRefreshToken = refreshData.data.tokens.refreshToken;
+              const newAccessToken = refreshData.data.accessToken;
+              const newRefreshToken = refreshData.data.refreshToken;
               
               if (typeof window !== 'undefined') {
                 localStorage.setItem('token', newAccessToken);
@@ -112,7 +112,7 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
           window.location.href = '/login';
         }
       }
-    } else if (response.status === 401) {
+    } else if (response.status === 401 && path !== '/auth/login') {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');

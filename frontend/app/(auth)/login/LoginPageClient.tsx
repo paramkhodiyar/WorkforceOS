@@ -20,6 +20,7 @@ export default function LoginPageClient() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Mobile-only biometric toggle state
   const [isMobile, setIsMobile] = useState(false);
@@ -65,9 +66,15 @@ export default function LoginPageClient() {
     setError('');
     try {
       await login(email, password);
-      // AuthProvider.login() already posts save_token to the bridge
     } catch (err: any) {
-      setError(err.message || 'Invalid credentials');
+      const errMsg = err.message || '';
+      if (errMsg.includes('401') || errMsg.toLowerCase().includes('unauthorized') || errMsg.toLowerCase().includes('invalid credentials')) {
+        setError('Invalid email or password. Please verify your credentials and try again.');
+      } else if (errMsg.toLowerCase().includes('failed to fetch') || errMsg.toLowerCase().includes('network')) {
+        setError('Connection error. Please check your internet connection and try again.');
+      } else {
+        setError(errMsg || 'An unexpected error occurred. Please try again.');
+      }
     }
   }
 
@@ -165,14 +172,25 @@ export default function LoginPageClient() {
             </div>
             <div>
               <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
-                required
-                disabled={loading}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 transition-colors flex items-center justify-center p-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[20px] select-none">
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
+              </div>
             </div>
             <button
               type="submit"

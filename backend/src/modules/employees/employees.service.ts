@@ -125,6 +125,10 @@ export class EmployeesService {
         phone: string;
         altPhone?: string;
       };
+      leaveAllocations?: {
+        leaveType: string;
+        allocated: number;
+      }[];
     },
     actorId: string,
     req?: any
@@ -137,7 +141,7 @@ export class EmployeesService {
       throw AppError.conflict("Email is already in use");
     }
 
-    const { bankDetail, emergencyContact, ...coreUserData } = data;
+    const { bankDetail, emergencyContact, leaveAllocations, ...coreUserData } = data;
 
     const result = await prisma.$transaction(async (tx) => {
       const year = new Date().getFullYear();
@@ -191,22 +195,38 @@ export class EmployeesService {
         });
       }
 
-      const policies = await tx.leavePolicy.findMany({
-        where: { organizationId: orgId, isDeleted: false }
-      });
-
-      for (const policy of policies) {
-        await tx.leaveBalance.create({
-          data: {
-            userId: employee.id,
-            leaveType: policy.leaveType,
-            year,
-            allocated: policy.daysAllowed,
-            used: 0,
-            pending: 0,
-            remaining: policy.daysAllowed
-          }
+      if (leaveAllocations && leaveAllocations.length > 0) {
+        for (const allocation of leaveAllocations) {
+          await tx.leaveBalance.create({
+            data: {
+              userId: employee.id,
+              leaveType: allocation.leaveType as any,
+              year,
+              allocated: allocation.allocated,
+              used: 0,
+              pending: 0,
+              remaining: allocation.allocated
+            }
+          });
+        }
+      } else {
+        const policies = await tx.leavePolicy.findMany({
+          where: { organizationId: orgId, isDeleted: false }
         });
+
+        for (const policy of policies) {
+          await tx.leaveBalance.create({
+            data: {
+              userId: employee.id,
+              leaveType: policy.leaveType,
+              year,
+              allocated: policy.daysAllowed,
+              used: 0,
+              pending: 0,
+              remaining: policy.daysAllowed
+            }
+          });
+        }
       }
 
       return { employee, tempPassword };
@@ -305,7 +325,7 @@ export class EmployeesService {
       throw AppError.notFound("Employee profile not found");
     }
 
-    const { bankDetail, emergencyContact, ...coreUserData } = data;
+    const { bankDetail, emergencyContact, leaveAllocations, ...coreUserData } = data;
 
     const updatedUser = await prisma.$transaction(async (tx) => {
       const user = await tx.user.update({
@@ -345,6 +365,44 @@ export class EmployeesService {
             altPhone: emergencyContact.altPhone || null
           }
         });
+      }
+
+      if (leaveAllocations && leaveAllocations.length > 0) {
+        const year = new Date().getFullYear();
+        for (const allocation of leaveAllocations) {
+          const existingBalance = await tx.leaveBalance.findUnique({
+            where: {
+              userId_leaveType_year: {
+                userId: id,
+                leaveType: allocation.leaveType as any,
+                year
+              }
+            }
+          });
+
+          if (existingBalance) {
+            const newRemaining = allocation.allocated - existingBalance.used;
+            await tx.leaveBalance.update({
+              where: { id: existingBalance.id },
+              data: {
+                allocated: allocation.allocated,
+                remaining: newRemaining < 0 ? 0 : newRemaining
+              }
+            });
+          } else {
+            await tx.leaveBalance.create({
+              data: {
+                userId: id,
+                leaveType: allocation.leaveType as any,
+                year,
+                allocated: allocation.allocated,
+                used: 0,
+                pending: 0,
+                remaining: allocation.allocated
+              }
+            });
+          }
+        }
       }
 
       return user;

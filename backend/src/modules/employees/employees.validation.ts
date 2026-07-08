@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EmployeeType, TaxRegime, SalaryBand, SystemRole } from "@prisma/client";
+import { EmployeeType, TaxRegime, SalaryBand, SystemRole, LeaveType } from "@prisma/client";
 
 export const createEmployeeSchema = z.object({
   email: z.string().email(),
@@ -53,7 +53,12 @@ export const createEmployeeSchema = z.object({
     relation: z.string().min(1),
     phone: z.string().min(1),
     altPhone: z.string().optional()
-  }).optional()
+  }).optional(),
+
+  leaveAllocations: z.array(z.object({
+    leaveType: z.nativeEnum(LeaveType),
+    allocated: z.number().int().nonnegative()
+  })).optional()
 });
 
 export const updateEmployeeSchema = z.object({
@@ -107,5 +112,9 @@ export const updateEmployeeSchema = z.object({
     relation: z.string().min(1).optional(),
     phone: z.string().min(1).optional(),
     altPhone: z.string().optional()
-  }).optional()
+  }).optional(),
+  leaveAllocations: z.array(z.object({
+    leaveType: z.nativeEnum(LeaveType),
+    allocated: z.number().int().nonnegative()
+  })).optional()
 });

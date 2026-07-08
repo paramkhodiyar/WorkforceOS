@@ -716,32 +716,38 @@ export default function DashboardPage() {
         {isAdmin && (
           <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
             <h2 className="text-headline-sm font-bold text-on-surface mb-1">System Feature Controls</h2>
-            <p className="text-body-sm text-outline mb-6">Enable or disable module routes across your organization.</p>
+            <p className="text-body-sm text-outline mb-6">Enable or disable module routes across your organization. Disabling a feature removes it from the sidebar and navigation options for all users.</p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {[
-                { id: 'assets', label: 'Assets Tracker', desc: 'Hardware inventory catalog' },
-                { id: 'knowledge', label: 'Knowledge Wiki', desc: 'Handbooks and policies' },
-                { id: 'payroll', label: 'Compensation Logs', desc: 'Payslips execution run' },
-                { id: 'leave', label: 'Leave Workflows', desc: 'Requests review inbox' }
+                { id: 'employees', label: 'Employees Directory', desc: 'Onboarding & profile records' },
+                { id: 'attendance', label: 'Attendance & Geofencing', desc: 'Check-in with GPS verification' },
+                { id: 'leave', label: 'Leave Workflows', desc: 'Requests review and balances' },
+                { id: 'tasks', label: 'Task Management', desc: 'State-machine task boards' },
+                { id: 'performance', label: 'Performance Feedback', desc: 'Reviews and team appraisals' },
+                { id: 'payroll', label: 'Payroll & Compliance', desc: 'Generate payslips & compliance' },
+                { id: 'expenses', label: 'Expense Filing', desc: 'Reimbursement claims & approvals' },
+                { id: 'assets', label: 'Asset Tracker', desc: 'Hardware inventory catalog' },
+                { id: 'knowledge', label: 'Knowledge Wiki', desc: 'Handbooks and policy pages' },
+                { id: 'calendar', label: 'Shared Calendar', desc: 'Events and holiday calendar' }
               ].map(mod => {
                 const isEnabled = features.includes(mod.id);
                 return (
-                  <div key={mod.id} className="p-5 bg-slate-50 border border-slate-100 rounded-xl flex flex-col justify-between">
+                  <div key={mod.id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex flex-col justify-between">
                     <div>
-                      <span className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full border ${
-                        isEnabled ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-200 text-slate-655 border-slate-300'
+                      <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${
+                        isEnabled ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-200 text-slate-650 border-slate-300'
                       }`}>
                         {isEnabled ? 'Active' : 'Disabled'}
                       </span>
-                      <h3 className="text-label-md font-bold text-on-surface mt-4">{mod.label}</h3>
-                      <p className="text-[11px] text-outline mt-1 leading-relaxed">{mod.desc}</p>
+                      <h3 className="text-label-sm font-bold text-on-surface mt-3">{mod.label}</h3>
+                      <p className="text-[10px] text-outline mt-1 leading-relaxed">{mod.desc}</p>
                     </div>
                     <button
                       onClick={() => handleToggleFeature(mod.id)}
-                      className={`mt-6 w-full py-2.5 rounded-lg text-[11px] font-bold uppercase transition-all active:scale-95 border cursor-pointer ${
+                      className={`mt-4 w-full py-2 rounded-lg text-[10px] font-bold uppercase transition-all active:scale-95 border cursor-pointer ${
                         isEnabled
-                          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                          ? 'bg-red-50 text-red-650 border-red-150 hover:bg-red-100'
                           : 'bg-primary text-on-primary border-primary hover:bg-blue-700'
                       }`}
                     >

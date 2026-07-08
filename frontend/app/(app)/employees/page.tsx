@@ -60,6 +60,9 @@ export default function EmployeesPage() {
   const [probationEndDate, setProbationEndDate] = useState('');
   const [workLocation, setWorkLocation] = useState('');
   const [shiftId, setShiftId] = useState('');
+  const [sickLeaves, setSickLeaves] = useState('12');
+  const [casualLeaves, setCasualLeaves] = useState('12');
+  const [earnedLeaves, setEarnedLeaves] = useState('12');
 
   // Step 3: Compensation
   const [salaryBand, setSalaryBand] = useState('BAND_A');
@@ -156,6 +159,12 @@ export default function EmployeesPage() {
         altPhone: emergencyAltPhone || undefined
       } : undefined;
 
+      const leaveAllocations = [
+        { leaveType: 'SICK', allocated: Number(sickLeaves) || 0 },
+        { leaveType: 'CASUAL', allocated: Number(casualLeaves) || 0 },
+        { leaveType: 'EARNED', allocated: Number(earnedLeaves) || 0 }
+      ];
+
       const payload: any = {
         firstName,
         lastName,
@@ -182,7 +191,8 @@ export default function EmployeesPage() {
         ctcAnnual: ctcAnnual ? Number(ctcAnnual) : undefined,
         systemRole: systemRoleField || undefined,
         bankDetail,
-        emergencyContact
+        emergencyContact,
+        leaveAllocations
       };
 
       if (editingEmployee) {
@@ -238,6 +248,9 @@ export default function EmployeesPage() {
       setEmergencyPhone('');
       setEmergencyAltPhone('');
       setSystemRoleField('EMPLOYEE');
+      setSickLeaves('12');
+      setCasualLeaves('12');
+      setEarnedLeaves('12');
       setActiveStep(0);
     } catch (err: any) {
       toast.error(err.message || 'Failed to process employee request');
@@ -318,6 +331,19 @@ export default function EmployeesPage() {
     }
 
     setSystemRoleField(emp.systemRole || 'EMPLOYEE');
+
+    if (emp.leaveBalances && emp.leaveBalances.length > 0) {
+      const sickBal = emp.leaveBalances.find((b: any) => b.leaveType === 'SICK');
+      const casualBal = emp.leaveBalances.find((b: any) => b.leaveType === 'CASUAL');
+      const earnedBal = emp.leaveBalances.find((b: any) => b.leaveType === 'EARNED');
+      setSickLeaves(sickBal ? String(sickBal.allocated) : '12');
+      setCasualLeaves(casualBal ? String(casualBal.allocated) : '12');
+      setEarnedLeaves(earnedBal ? String(earnedBal.allocated) : '12');
+    } else {
+      setSickLeaves('12');
+      setCasualLeaves('12');
+      setEarnedLeaves('12');
+    }
     setEnrollResult(null);
     setActiveStep(0);
     setShowModal(true);
@@ -430,6 +456,9 @@ export default function EmployeesPage() {
               setEmergencyPhone('');
               setEmergencyAltPhone('');
               setSystemRoleField('EMPLOYEE');
+              setSickLeaves('12');
+              setCasualLeaves('12');
+              setEarnedLeaves('12');
               setEnrollResult(null);
               setActiveStep(0);
               setShowModal(true);
@@ -493,7 +522,7 @@ export default function EmployeesPage() {
         ) : (
           <>
             {/* Mobile View - Sleek Profile Cards */}
-            <div className="block md:hidden space-y-4">
+            <div className="block md:hidden p-5 space-y-4">
               {paginatedEmployees.length === 0 ? (
                 <div className="py-12 text-center text-body-sm text-outline">
                   No employees match your active filter settings.
@@ -1049,6 +1078,43 @@ export default function EmployeesPage() {
                             </option>
                           ))}
                         </select>
+                      </div>
+                    </div>
+
+                    {/* Leave Allocations */}
+                    <div className="space-y-3 pt-2">
+                      <h3 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Leave Allocations (Days per Year)</h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Sick Leaves</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={sickLeaves}
+                            onChange={(e) => setSickLeaves(e.target.value)}
+                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Casual Leaves</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={casualLeaves}
+                            onChange={(e) => setCasualLeaves(e.target.value)}
+                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Earned Leaves</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={earnedLeaves}
+                            onChange={(e) => setEarnedLeaves(e.target.value)}
+                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

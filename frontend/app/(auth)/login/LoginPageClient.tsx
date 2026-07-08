@@ -25,27 +25,6 @@ export default function LoginPageClient() {
   const [isMobile, setIsMobile] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
-  const [showQuickLogin, setShowQuickLogin] = useState(false);
-
-  const SEED_USERS = [
-    { email: 'superadmin@workforceos.com', label: 'Super Admin', role: 'SUPER_ADMIN' },
-    { email: 'michael@dunder-mifflin.com', label: 'Regional Manager', role: 'ORG_ADMIN' },
-    { email: 'toby@dunder-mifflin.com', label: 'HR Manager', role: 'HR_MANAGER' },
-    { email: 'jim@dunder-mifflin.com', label: 'Team Lead', role: 'TEAM_MANAGER' },
-    { email: 'dwight@dunder-mifflin.com', label: 'Dept Head', role: 'DEPARTMENT_HEAD' },
-    { email: 'pam@dunder-mifflin.com', label: 'Staff Member', role: 'EMPLOYEE' }
-  ];
-
-  async function handleQuickLogin(userEmail: string) {
-    setEmail(userEmail);
-    setPassword('Password123!');
-    setError('');
-    try {
-      await login(userEmail, 'Password123!');
-    } catch (err: any) {
-      setError(err.message || 'Quick login failed');
-    }
-  }
 
   useEffect(() => {
     const mobile = isInFlutterWebView();
@@ -203,37 +182,6 @@ export default function LoginPageClient() {
               {loading ? 'Authenticating...' : 'Sign In'}
             </button>
           </form>
-
-          {/* Quick Demo Sign-In Panel */}
-          <div className="border-t border-slate-150 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowQuickLogin(!showQuickLogin)}
-              className="w-full flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-slate-800 transition-colors cursor-pointer"
-            >
-              <span>Quick Demo Sign-In</span>
-              <span className="material-symbols-outlined text-[16px]">
-                {showQuickLogin ? 'expand_less' : 'expand_more'}
-              </span>
-            </button>
-            
-            {showQuickLogin && (
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                {SEED_USERS.map(u => (
-                  <button
-                    key={u.email}
-                    type="button"
-                    onClick={() => handleQuickLogin(u.email)}
-                    disabled={loading}
-                    className="p-2.5 text-left bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer hover:border-slate-300"
-                  >
-                    <p className="text-[11px] font-bold text-slate-900 truncate">{u.label}</p>
-                    <p className="text-[9px] text-slate-500 font-bold tracking-wider uppercase mt-0.5">{u.role.replace('_', ' ')}</p>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Legal footer */}
           <p className="text-center text-[11px] text-slate-400">

@@ -1,16 +1,22 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// WebViewScreen — the main app shell.
+///
+/// [injectedToken]: When provided (after biometric unlock in SplashScreen),
+///   this JWT is written into the web app's localStorage once the login page
+///   finishes loading, immediately redirecting to /dashboard without a password.
+///
+/// Bridge messages from the web app (WorkforceOSBridge.postMessage):
+///   { type: 'save_token',        token: '...' }  → persist JWT to SharedPrefs
+///   { type: 'clear_token' }                       → remove JWT from SharedPrefs
+///   { type: 'set_biometric_pref', enabled: bool } → save biometric toggle pref
 class WebViewScreen extends StatefulWidget {
-  /// If provided, this token is injected into localStorage so the user
-  /// is automatically logged-in after a successful biometric unlock.
   final String? injectedToken;
-
   const WebViewScreen({super.key, this.injectedToken});
 
   @override
@@ -22,61 +28,59 @@ class _WebViewScreenState extends State<WebViewScreen> {
   bool _isLoading = true;
   double _loadingProgress = 0.0;
 
+  static const String _appUrl = 'https://workforceos1.vercel.app/login';
+
   @override
   void initState() {
     super.initState();
-    // Init the controller first (no URL yet), then request permissions,
-    // then load the URL — so the Android grant is in place before the
-    // page's navigator.geolocation fires.
-    _initWebViewController();
-    _ensurePermissionsThenLoad();
+    _initController();
+    // Request location permission BEFORE loading the URL so that
+    // navigator.geolocation is already authorized when the page fires it.
+    _ensureLocationThenLoad();
   }
 
-  // ── Permissions ──────────────────────────────────────────────────────────
+  // ── Permission ────────────────────────────────────────────────────────────
 
-  Future<void> _ensurePermissionsThenLoad() async {
-    // ── Location ────────────────────────────────────────────────────────────
-    final locationStatus = await Permission.locationWhenInUse.status;
+  Future<void> _ensureLocationThenLoad() async {
+    final status = await Permission.locationWhenInUse.status;
 
-    if (locationStatus.isGranted) {
-      // Already granted — load immediately
+    if (status.isGranted) {
       _loadUrl();
       return;
     }
 
-    if (locationStatus.isPermanentlyDenied) {
-      // User permanently denied before — show settings dialog, then load
-      // without GPS (user consciously chose this).
-      if (mounted) _showPermissionSettingsDialog();
-      _loadUrl();
+    if (status.isPermanentlyDenied) {
+      if (mounted) _showLocationSettingsDialog();
+      _loadUrl(); // load anyway, just without GPS
       return;
     }
 
-    // First-time or denied-once — request it, then load regardless
+    // First-time request
     final result = await Permission.locationWhenInUse.request();
     if (result.isPermanentlyDenied && mounted) {
-      _showPermissionSettingsDialog();
+      _showLocationSettingsDialog();
     }
-    // Always load the page; GPS just won't be available if denied.
-    _loadUrl();
+    _loadUrl(); // always load, GPS optional
   }
 
   void _loadUrl() {
-    _controller.loadRequest(Uri.parse('https://workforceos1.vercel.app/login'));
+    _controller.loadRequest(Uri.parse(_appUrl));
   }
 
-  void _showPermissionSettingsDialog() {
+  void _showLocationSettingsDialog() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Location Permission',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            style:
+                TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         content: const Text(
-          'WorkforceOS uses your location to verify attendance check-ins. '
-          'Without it, clock-in will still work but without GPS verification.\n\n'
-          'To enable, go to App Settings → Permissions → Location.',
-          style: TextStyle(fontSize: 13),
+          'WorkforceOS uses GPS to verify attendance check-ins.\n\n'
+          'Without it, clock-in still works but without location verification.\n\n'
+          'To enable: App Settings → Permissions → Location.',
+          style: TextStyle(fontSize: 13, height: 1.5),
         ),
         actions: [
           TextButton(
@@ -101,137 +105,108 @@ class _WebViewScreenState extends State<WebViewScreen> {
     );
   }
 
-  // ── WebView ───────────────────────────────────────────────────────────────
+  // ── WebView Controller ────────────────────────────────────────────────────
 
-  void _initWebViewController() {
-    final WebViewController controller = WebViewController();
-
-    controller
+  void _initController() {
+    final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.white)
-      // Bridge: web JS calls WorkforceOSBridge.postMessage(json)
       ..addJavaScriptChannel(
         'WorkforceOSBridge',
-        onMessageReceived: (JavaScriptMessage message) async {
-          try {
-            final data = jsonDecode(message.message) as Map<String, dynamic>;
-            final type = data['type'] as String?;
-            final prefs = await SharedPreferences.getInstance();
-
-            if (type == 'save_token') {
-              final token = data['token'] as String?;
-              if (token != null && token.isNotEmpty) {
-                await prefs.setString('auth_token', token);
-                debugPrint('WorkforceOSBridge: token saved');
-              }
-            } else if (type == 'clear_token') {
-              await prefs.remove('auth_token');
-              debugPrint('WorkforceOSBridge: token cleared');
-            } else if (type == 'set_biometric_pref') {
-              final enabled = data['enabled'] as bool? ?? false;
-              await prefs.setBool('use_biometric', enabled);
-              debugPrint('WorkforceOSBridge: biometric pref set to $enabled');
-            } else if (type == 'trigger_biometric') {
-              // Web is asking Flutter to run biometric auth and inject token
-              final String? storedToken = prefs.getString('auth_token');
-              if (storedToken == null || storedToken.isEmpty) {
-                debugPrint('WorkforceOSBridge: no stored token for biometric bypass');
-                return;
-              }
-              final auth = LocalAuthentication();
-              try {
-                final bool ok = await auth.authenticate(
-                  localizedReason: 'Scan your fingerprint to access WorkforceOS',
-                  options: const AuthenticationOptions(
-                    stickyAuth: true,
-                    biometricOnly: false,
-                  ),
-                );
-                if (ok && mounted) {
-                  final escaped = storedToken
-                      .replaceAll("'", "\\'")
-                      .replaceAll('"', '\\"');
-                  await _controller.runJavaScript(
-                    "window.localStorage.setItem('token', '$escaped');"
-                    "window.location.replace('/dashboard');",
-                  );
-                }
-              } catch (e) {
-                debugPrint('WorkforceOSBridge: biometric error $e');
-              }
-            }
-          } catch (e) {
-            debugPrint('WorkforceOSBridge parse error: $e');
+        onMessageReceived: _onBridgeMessage,
+      )
+      ..setNavigationDelegate(NavigationDelegate(
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() => _loadingProgress = progress / 100.0);
           }
         },
-      )
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (int progress) {
-            if (mounted) {
-              setState(() => _loadingProgress = progress / 100.0);
-            }
-          },
-          onPageStarted: (String url) {
-            if (mounted) setState(() => _isLoading = true);
-          },
-          onPageFinished: (String url) async {
-            if (mounted) setState(() => _isLoading = false);
-            // After page loads, if we have an injected token AND the page is
-            // the login page, push the token into localStorage and redirect.
-            if (widget.injectedToken != null && url.contains('/login')) {
-              final escaped = widget.injectedToken!
-                  .replaceAll("'", "\\'")
-                  .replaceAll('"', '\\"');
-              await controller.runJavaScript(
-                "window.localStorage.setItem('token', '$escaped');"
-                "window.location.replace('/dashboard');",
-              );
-            }
-          },
-          onWebResourceError: (WebResourceError error) {
-            debugPrint('WebView error: ${error.description}');
-          },
-        ),
-      )
-      // Don't load the URL here — _ensurePermissionsThenLoad() calls _loadUrl()
-      // after the native location grant is confirmed.
-      ;
+        onPageStarted: (_) {
+          if (mounted) setState(() => _isLoading = true);
+        },
+        onPageFinished: (url) async {
+          if (mounted) setState(() => _isLoading = false);
+          // If we arrived here with an injectedToken and the login page loaded,
+          // silently put the token in localStorage and redirect to dashboard.
+          if (widget.injectedToken != null && url.contains('/login')) {
+            final escaped = widget.injectedToken!
+                .replaceAll("'", "\\'")
+                .replaceAll('"', '\\"');
+            await controller.runJavaScript(
+              "window.localStorage.setItem('token','$escaped');"
+              "window.location.replace('/dashboard');",
+            );
+          }
+        },
+        onWebResourceError: (e) =>
+            debugPrint('WebView error: ${e.description}'),
+      ));
 
-    // ── Android-specific setup ──────────────────────────────────────────────
+    // Android: auto-grant geolocation/camera once native permission is held
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(false);
       (controller.platform as AndroidWebViewController)
-          .setMediaPlaybackRequiresUserGesture(false);
-
-      // Auto-grant any permissions the website requests (location, camera)
-      // because we already obtained native permission above.
-      (controller.platform as AndroidWebViewController)
-          .setOnPlatformPermissionRequest(
-        (PlatformWebViewPermissionRequest request) {
-          debugPrint('WebView requesting permissions: ${request.types}');
-          request.grant();
-        },
-      );
+        ..setMediaPlaybackRequiresUserGesture(false)
+        ..setOnPlatformPermissionRequest(
+          (PlatformWebViewPermissionRequest req) {
+            debugPrint('WebView permission request: ${req.types}');
+            req.grant();
+          },
+        );
     }
 
     _controller = controller;
+    // NOTE: URL is NOT loaded here — _ensureLocationThenLoad() calls _loadUrl()
   }
 
-  // ── Back navigation ────────────────────────────────────────────────────────
+  // ── Bridge message handler ────────────────────────────────────────────────
+
+  Future<void> _onBridgeMessage(JavaScriptMessage message) async {
+    try {
+      final data = jsonDecode(message.message) as Map<String, dynamic>;
+      final type = data['type'] as String?;
+      final prefs = await SharedPreferences.getInstance();
+
+      switch (type) {
+        case 'save_token':
+          final token = data['token'] as String?;
+          if (token != null && token.isNotEmpty) {
+            await prefs.setString('auth_token', token);
+            debugPrint('Bridge: token saved (${token.length} chars)');
+          }
+
+        case 'clear_token':
+          await prefs.remove('auth_token');
+          await prefs.setBool('use_biometric', false);
+          debugPrint('Bridge: token + biometric pref cleared');
+
+        case 'set_biometric_pref':
+          final enabled = data['enabled'] as bool? ?? false;
+          await prefs.setBool('use_biometric', enabled);
+          debugPrint('Bridge: biometric pref → $enabled');
+
+        default:
+          debugPrint('Bridge: unknown message type "$type"');
+      }
+    } catch (e) {
+      debugPrint('Bridge parse error: $e  |  raw=${message.message}');
+    }
+  }
+
+  // ── Back button → WebView history → exit dialog ───────────────────────────
 
   Future<bool> _onWillPop() async {
     if (await _controller.canGoBack()) {
       await _controller.goBack();
-      return false; // handled — don't close app
+      return false;
     }
 
-    // Nothing to go back to — ask the user
-    final bool? shouldExit = await showDialog<bool>(
+    final bool? exit = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withOpacity(0.4),
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -240,74 +215,66 @@ class _WebViewScreenState extends State<WebViewScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFEFF6FF), // blue-50
+                  color: Color(0xFFEFF6FF),
                 ),
                 child: const Icon(Icons.exit_to_app_rounded,
                     color: Color(0xFF3B82F6), size: 28),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Exit WorkforceOS?',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
+              const Text('Exit WorkforceOS?',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  )),
               const SizedBox(height: 8),
               const Text(
                 'Are you sure you want to close the app?',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF64748B),
-                  height: 1.4,
-                ),
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF475569),
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Stay',
-                          style: TextStyle(fontWeight: FontWeight.w600)),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF475569),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
+                    child: const Text('Stay',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(ctx).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3B82F6),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Exit',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3B82F6),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
+                    child: const Text('Exit',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
-                ],
-              ),
+                ),
+              ]),
             ],
           ),
         ),
       ),
     );
 
-    return shouldExit ?? false;
+    return exit ?? false;
   }
 
   // ── UI ────────────────────────────────────────────────────────────────────
@@ -318,67 +285,22 @@ class _WebViewScreenState extends State<WebViewScreen> {
       onWillPop: _onWillPop,
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              WebViewWidget(controller: _controller),
-
-              // Thin progress indicator across the top
-              if (_isLoading)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 3,
-                  child: LinearProgressIndicator(
-                    value: _loadingProgress,
-                    backgroundColor: Colors.transparent,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF3B82F6)),
-                  ),
+        body: Stack(
+          children: [
+            SafeArea(child: WebViewWidget(controller: _controller)),
+            if (_isLoading)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: LinearProgressIndicator(
+                  value: _loadingProgress > 0 ? _loadingProgress : null,
+                  backgroundColor: Colors.transparent,
+                  color: const Color(0xFF3B82F6),
+                  minHeight: 3,
                 ),
-
-              // Full-screen branded loader on first boot
-              if (_isLoading && _loadingProgress < 0.3)
-                Container(
-                  color: Colors.white,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            'assets/logo.png',
-                            width: 64,
-                            height: 64,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        const SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF3B82F6),
-                            strokeWidth: 3,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Loading WorkforceOS...',
-                          style: TextStyle(
-                            color: Color(0xFF475569),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

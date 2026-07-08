@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'biometric_lock_screen.dart';
-import 'webview_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'webview_screen.dart';
 
+/// SplashScreen — the ONLY entry point.
+///
+/// Decision tree:
+///   1. Load SharedPreferences
+///   2. If use_biometric=true AND auth_token exists:
+///        → run LocalAuthentication.authenticate()
+///        → SUCCESS: WebViewScreen(injectedToken: token) → lands on /dashboard
+///        → FAILURE: WebViewScreen() → lands on /login (password required)
+///   3. Otherwise:
+///        → WebViewScreen() → /login
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -12,198 +20,171 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
-  late AnimationController _logoController;
-  late AnimationController _auraController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _rotationAnimation;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _auraPulse;
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _anim;
+  late Animation<double> _fadeIn;
+  late Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
+    _anim = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900));
+    _fadeIn = CurvedAnimation(parent: _anim, curve: Curves.easeOut);
+    _scale = Tween<double>(begin: 0.85, end: 1.0)
+        .animate(CurvedAnimation(parent: _anim, curve: Curves.easeOut));
+    _anim.forward();
 
-    // Controller for the logo entry animations
-    _logoController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    );
-
-    // Bouncy scale animation
-    _scaleAnimation = Tween<double>(begin: 0.2, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _logoController,
-        curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
-      ),
-    );
-
-    // Bouncy playfull rotation animation
-    _rotationAnimation = Tween<double>(begin: -0.2, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _logoController,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
-      ),
-    );
-
-    // Fade-in animation
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _logoController,
-        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
-      ),
-    );
-
-    // Controller for the continuous aura pulse effect
-    _auraController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-
-    _auraPulse = Tween<double>(begin: 0.85, end: 1.15).animate(
-      CurvedAnimation(
-        parent: _auraController,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    // Start logo entry animation
-    _logoController.forward();
-
-    // Transition to biometric check or webview screen after animation completes
-    Timer(const Duration(milliseconds: 2800), _checkAuthAndNavigate);
+    // Wait for logo to animate in, then decide where to go
+    Future.delayed(const Duration(milliseconds: 1800), _decideNavigation);
   }
 
   @override
   void dispose() {
-    _logoController.dispose();
-    _auraController.dispose();
+    _anim.dispose();
     super.dispose();
   }
 
-  Future<void> _checkAuthAndNavigate() async {
+  // ────────────────────────────────────────────────────────────────────────────
+
+  Future<void> _decideNavigation() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Biometric is OFF by default — user must turn it on from the login page toggle
     final bool useBiometric = prefs.getBool('use_biometric') ?? false;
     final String? storedToken = prefs.getString('auth_token');
-    final bool hasStoredToken = storedToken != null && storedToken.isNotEmpty;
+    final bool hasToken =
+        storedToken != null && storedToken.trim().isNotEmpty;
 
-    final LocalAuthentication auth = LocalAuthentication();
-    final bool canCheckBiometrics = await auth.canCheckBiometrics;
-    final bool isDeviceSupported = await auth.isDeviceSupported();
-
-    // Only gate with biometric when: toggle is ON + we have a session token to inject
-    if (useBiometric && hasStoredToken && (canCheckBiometrics || isDeviceSupported)) {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const BiometricLockScreen(),
-            transitionsBuilder: (_, animation, __, child) =>
-                FadeTransition(opacity: animation, child: child),
-            transitionDuration: const Duration(milliseconds: 600),
-          ),
-        );
-      }
+    if (useBiometric && hasToken) {
+      await _runBiometricThenNavigate(storedToken!, prefs);
     } else {
-      // No stored session or biometric disabled — go straight to login (WebView)
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const WebViewScreen(),
-            transitionsBuilder: (_, animation, __, child) =>
-                FadeTransition(opacity: animation, child: child),
-            transitionDuration: const Duration(milliseconds: 600),
-          ),
-        );
-      }
+      _goToLogin();
     }
   }
+
+  Future<void> _runBiometricThenNavigate(
+      String token, SharedPreferences prefs) async {
+    final auth = LocalAuthentication();
+
+    // Check device capability first
+    final bool capable =
+        await auth.canCheckBiometrics || await auth.isDeviceSupported();
+    if (!capable) {
+      // Device can't do biometrics — fall back to password login
+      _goToLogin();
+      return;
+    }
+
+    try {
+      final bool ok = await auth.authenticate(
+        localizedReason: 'Scan your fingerprint to access WorkforceOS',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false, // allow device PIN as fallback
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (ok) {
+        // ✅ Biometric passed — inject token so WebView skips login
+        _goToWebView(injectedToken: token);
+      } else {
+        // ❌ Biometric cancelled/failed — go to normal login
+        _goToLogin();
+      }
+    } catch (e) {
+      debugPrint('Biometric error: $e');
+      _goToLogin();
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+
+  void _goToLogin() {
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => const WebViewScreen(),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
+
+  void _goToWebView({String? injectedToken}) {
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) =>
+            WebViewScreen(injectedToken: injectedToken),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.white,
-              Color(0xFFF8FAFC), // Slate 50
-            ],
-          ),
-        ),
-        child: Center(
-          child: AnimatedBuilder(
-            animation: Listenable.merge([_logoController, _auraController]),
-            builder: (context, child) {
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Glowing Aura Effect
-                  Opacity(
-                    opacity: _fadeAnimation.value * 0.4,
-                    child: Transform.scale(
-                      scale: _scaleAnimation.value * _auraPulse.value * 1.5,
-                      child: Container(
-                        width: 140,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF60A5FA).withOpacity(0.35), // Soft sky blue glow
-                              blurRadius: 50,
-                              spreadRadius: 15,
-                            ),
-                          ],
-                        ),
+      backgroundColor: Colors.white,
+      body: Center(
+        child: FadeTransition(
+          opacity: _fadeIn,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF3B82F6).withOpacity(0.15),
+                        blurRadius: 30,
+                        spreadRadius: 4,
+                        offset: const Offset(0, 8),
                       ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      fit: BoxFit.contain,
                     ),
                   ),
-
-                  // Logo Card Frame
-                  Opacity(
-                    opacity: _fadeAnimation.value,
-                    child: Transform.scale(
-                      scale: _scaleAnimation.value,
-                      child: Transform.rotate(
-                        angle: _rotationAnimation.value,
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            border: Border.all(
-                              color: const Color(0xFFE2E8F0), // Slate 200
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
-                                blurRadius: 25,
-                                spreadRadius: 4,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(60),
-                            child: Image.asset(
-                              'assets/logo.png',
-                              width: 96,
-                              height: 96,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'WorkforceOS',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -0.3,
                   ),
-                ],
-              );
-            },
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your workforce, unified.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

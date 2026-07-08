@@ -8,6 +8,7 @@ import { CommentDialog } from '../../../components/ui/CommentDialog';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
+import { CustomDatePicker } from '../../../components/ui/CustomDatePicker';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 
 export default function TasksPage() {
@@ -768,15 +769,11 @@ export default function TasksPage() {
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-label-xs font-bold text-slate-700 uppercase">Due Date</label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-sm transition-all outline-none font-medium text-slate-700"
-                  />
-                </div>
+                <CustomDatePicker
+                  label="Due Date"
+                  value={dueDate}
+                  onChange={(val) => setDueDate(val)}
+                />
               </div>
 
               {/* Task Scope Selection */}

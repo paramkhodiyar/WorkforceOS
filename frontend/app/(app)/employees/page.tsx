@@ -8,6 +8,7 @@ import { useToast } from '../../../lib/toast/ToastProvider';
 import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
+import { CustomDatePicker } from '../../../components/ui/CustomDatePicker';
 
 export default function EmployeesPage() {
   const { user } = useAuth();
@@ -849,12 +850,10 @@ export default function EmployeesPage() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Date of Birth</label>
-                        <input
-                          type="date"
+                        <CustomDatePicker
+                          label="Date of Birth"
                           value={dateOfBirth}
-                          onChange={(e) => setDateOfBirth(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          onChange={(val) => setDateOfBirth(val)}
                         />
                       </div>
                       <div>
@@ -1008,23 +1007,19 @@ export default function EmployeesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Join Date</label>
-                        <input
-                          type="date"
+                        <CustomDatePicker
+                          label="Join Date"
                           value={joinDate}
-                          onChange={(e) => setJoinDate(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          onChange={(val) => setJoinDate(val)}
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Probation End Date</label>
-                        <input
-                          type="date"
+                        <CustomDatePicker
+                          label="Probation End Date"
                           value={probationEndDate}
-                          onChange={(e) => setProbationEndDate(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          onChange={(val) => setProbationEndDate(val)}
                         />
                       </div>
                     </div>

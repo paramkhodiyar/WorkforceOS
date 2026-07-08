@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import { CustomDatePicker } from '../../../components/ui/CustomDatePicker';
 
 function ProfileContent() {
   const { user } = useAuth();
@@ -381,12 +382,10 @@ function ProfileContent() {
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Date of Birth</label>
-                        <input
-                          type="date"
+                        <CustomDatePicker
+                          label="Date of Birth"
                           value={dateOfBirth}
-                          onChange={(e) => setDateOfBirth(e.target.value)}
-                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-lg text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          onChange={(val) => setDateOfBirth(val)}
                         />
                       </div>
                     </div>

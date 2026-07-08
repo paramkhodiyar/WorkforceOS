@@ -40,7 +40,8 @@ export default function BottomNavBar() {
     { label: 'Expenses Claims', icon: 'receipt_long', href: '/expenses', show: features.includes('expenses') },
     { label: 'Assets Check-out', icon: 'inventory_2', href: '/assets', show: features.includes('assets') },
     { label: 'Knowledge Base', icon: 'menu_book', href: '/knowledge', show: features.includes('knowledge') },
-    { label: 'Audit Trail', icon: 'history', href: '/audit', show: isAdmin && features.includes('audit') }
+    { label: 'Audit Trail', icon: 'history', href: '/audit', show: isAdmin && features.includes('audit') },
+    { label: 'Settings', icon: 'settings', href: '/settings', show: isAdmin || isHR }
   ].filter(tab => tab.show);
 
   return (

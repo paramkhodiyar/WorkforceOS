@@ -25,49 +25,75 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   void initState() {
     super.initState();
-    _ensurePermissions();
+    // Init the controller first (no URL yet), then request permissions,
+    // then load the URL — so the Android grant is in place before the
+    // page's navigator.geolocation fires.
     _initWebViewController();
+    _ensurePermissionsThenLoad();
   }
 
   // ── Permissions ──────────────────────────────────────────────────────────
 
-  Future<void> _ensurePermissions() async {
+  Future<void> _ensurePermissionsThenLoad() async {
+    // ── Location ────────────────────────────────────────────────────────────
     final locationStatus = await Permission.locationWhenInUse.status;
-    final cameraStatus = await Permission.camera.status;
 
-    // Request only what isn't granted yet (avoid bothering the user twice)
-    if (!locationStatus.isGranted) {
-      final result = await Permission.locationWhenInUse.request();
-      if (result.isPermanentlyDenied && mounted) {
-        _showPermissionSettingsDialog(
-          'Location Permission Required',
-          'WorkforceOS needs your location to record attendance check-ins. '
-          'Please enable "Location" in App Settings.',
-        );
-        return;
-      }
+    if (locationStatus.isGranted) {
+      // Already granted — load immediately
+      _loadUrl();
+      return;
     }
-    if (!cameraStatus.isGranted) {
-      await Permission.camera.request();
+
+    if (locationStatus.isPermanentlyDenied) {
+      // User permanently denied before — show settings dialog, then load
+      // without GPS (user consciously chose this).
+      if (mounted) _showPermissionSettingsDialog();
+      _loadUrl();
+      return;
     }
+
+    // First-time or denied-once — request it, then load regardless
+    final result = await Permission.locationWhenInUse.request();
+    if (result.isPermanentlyDenied && mounted) {
+      _showPermissionSettingsDialog();
+    }
+    // Always load the page; GPS just won't be available if denied.
+    _loadUrl();
   }
 
-  void _showPermissionSettingsDialog(String title, String message) {
+  void _loadUrl() {
+    _controller.loadRequest(Uri.parse('https://workforceos1.vercel.app/login'));
+  }
+
+  void _showPermissionSettingsDialog() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(message),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Location Permission',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: const Text(
+          'WorkforceOS uses your location to verify attendance check-ins. '
+          'Without it, clock-in will still work but without GPS verification.\n\n'
+          'To enable, go to App Settings → Permissions → Location.',
+          style: TextStyle(fontSize: 13),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Not Now'),
+            child: const Text('Continue without GPS'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               openAppSettings();
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B82F6),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
             child: const Text('Open Settings'),
           ),
         ],
@@ -168,7 +194,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://workforceos1.vercel.app/login'));
+      // Don't load the URL here — _ensurePermissionsThenLoad() calls _loadUrl()
+      // after the native location grant is confirmed.
+      ;
 
     // ── Android-specific setup ──────────────────────────────────────────────
     if (controller.platform is AndroidWebViewController) {

@@ -101,6 +101,7 @@ export default function DashboardPage() {
   const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
   const isClockedIn = !!(attendanceStatus?.checkIn && !attendanceStatus?.checkOut);
+  const isShiftCompleted = !!(attendanceStatus?.checkIn && attendanceStatus?.checkOut);
 
   async function loadDashboardData() {
     try {
@@ -252,6 +253,34 @@ export default function DashboardPage() {
 
         {/* Quick Check-In/Check-Out Widget */}
         <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
+            {/* ── Shift Controls ── */}
+            {isShiftCompleted ? (
+              // Day is done — show a clear completed state
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-label-sm font-bold text-slate-900 uppercase tracking-wider">Shift Controls</h3>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                    Shift Complete
+                  </span>
+                </div>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center gap-3 text-center">
+                  <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-green-600 text-[26px]">check_circle</span>
+                  </div>
+                  <div>
+                    <p className="text-label-sm font-bold text-slate-900">Today's shift is complete</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      {new Date(attendanceStatus.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {' → '}
+                      {new Date(attendanceStatus.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-400 border-t border-slate-200 w-full pt-2">
+                    Only one check-in/out cycle is allowed per day. See you tomorrow! 👋
+                  </p>
+                </div>
+              </div>
+            ) : (
             <div className="flex justify-between items-center">
               <h3 className="text-label-sm font-bold text-slate-900 uppercase tracking-wider">Shift Controls</h3>
               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
@@ -260,8 +289,9 @@ export default function DashboardPage() {
                 {isClockedIn ? 'Clocked In' : 'Clocked Out'}
               </span>
             </div>
+            )}
 
-            {!isClockedIn ? (
+            {!isShiftCompleted && !isClockedIn ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
                   {(['WFO', 'WFH', 'FIELD'] as const).map(mode => (
@@ -288,7 +318,7 @@ export default function DashboardPage() {
                   {checking ? 'Clocking In...' : 'Clock In Now'}
                 </button>
               </div>
-            ) : (
+            ) : !isShiftCompleted && isClockedIn ? (
               <div className="space-y-3">
                 <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center text-body-xs font-semibold text-slate-700">
                   <span>Logged Mode: <strong className="text-slate-950 uppercase">{attendanceStatus.workMode === 'WFM' ? 'WFH' : attendanceStatus.workMode}</strong></span>
@@ -304,7 +334,7 @@ export default function DashboardPage() {
                   {checking ? 'Clocking Out...' : 'Clock Out Now'}
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
 
         {/* 2x2 KPIs Grid */}

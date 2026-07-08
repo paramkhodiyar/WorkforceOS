@@ -13,6 +13,18 @@ function getAuthToken(): string | null {
   return null;
 }
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
 async function request(path: string, options: RequestInit = {}): Promise<any> {
   const token = getAuthToken();
   const headers: Record<string, string> = {
@@ -30,12 +42,84 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
   });
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 && path !== '/auth/refresh' && path !== '/auth/login') {
+      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+      if (refreshToken) {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          try {
+            const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken }),
+            });
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json();
+              const newAccessToken = refreshData.data.tokens.accessToken;
+              const newRefreshToken = refreshData.data.tokens.refreshToken;
+              
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('token', newAccessToken);
+                localStorage.setItem('refreshToken', newRefreshToken);
+              }
+              
+              isRefreshing = false;
+              onRefreshed(newAccessToken);
+            } else {
+              isRefreshing = false;
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                window.location.href = '/login';
+              }
+              const errorData = await refreshRes.json().catch(() => ({}));
+              throw new Error(errorData.message || `Refresh failed with status ${refreshRes.status}`);
+            }
+          } catch (refreshErr) {
+            isRefreshing = false;
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('token');
+              localStorage.removeItem('refreshToken');
+              window.location.href = '/login';
+            }
+            throw refreshErr;
+          }
+        }
+
+        // Wait for the token to be refreshed
+        return new Promise((resolve) => {
+          subscribeTokenRefresh((newToken) => {
+            headers['Authorization'] = `Bearer ${newToken}`;
+            resolve(
+              fetch(`${API_BASE}${path}`, {
+                ...options,
+                headers,
+              }).then((res) => {
+                if (!res.ok) {
+                  return res.json().catch(() => ({})).then((errorData) => {
+                    throw new Error(errorData.message || `Retry request failed with status ${res.status}`);
+                  });
+                }
+                return res.json();
+              })
+            );
+          });
+        });
+      } else {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          window.location.href = '/login';
+        }
+      }
+    } else if (response.status === 401) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         window.location.href = '/login';
       }
     }
+
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || `Request failed with status ${response.status}`);
   }

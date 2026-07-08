@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await api.auth.login(email, password);
       const token = response.data.tokens.accessToken;
       localStorage.setItem('token', token);
+      localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
       setUser(response.data.user);
       // Notify native Flutter app to save token for biometric bypass
       if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
@@ -88,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   function logout(): void {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     setUser(null);
     setFeatures([]);
     // Notify native Flutter app to clear the stored biometric token

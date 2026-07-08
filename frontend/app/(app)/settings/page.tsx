@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [featureToggling, setFeatureToggling] = useState(false);
 
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [deptForm, setDeptForm] = useState<{ id?: string; name: string; headId: string | null; employeeIds: string[] }>({
@@ -79,10 +80,13 @@ export default function SettingsPage() {
       : [...features, featureName];
     
     try {
+      setFeatureToggling(true);
       await api.organization.updateFeatures(user.organizationId, nextFeatures);
       setFeatures(nextFeatures);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to toggle feature.');
+    } finally {
+      setFeatureToggling(false);
     }
   }
 
@@ -891,6 +895,16 @@ export default function SettingsPage() {
                 {submitting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {featureToggling && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900/50 backdrop-blur-md font-sans">
+          <div className="bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-4 max-w-xs text-center border border-slate-200">
+            <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm font-bold text-slate-800">Updating Modules</p>
+            <p className="text-[11px] text-outline leading-relaxed">Applying organization configuration and updating user menus... Please wait.</p>
           </div>
         </div>
       )}

@@ -65,7 +65,7 @@ export class DepartmentsService {
     return dept;
   }
 
-  static async createDepartment(orgId: string, data: { name: string; headId?: string | null }) {
+  static async createDepartment(orgId: string, data: { name: string; headId?: string | null; employeeIds?: string[] }) {
     if (data.headId) {
       const user = await prisma.user.findFirst({
         where: { id: data.headId, organizationId: orgId, isDeleted: false }
@@ -79,7 +79,10 @@ export class DepartmentsService {
       data: {
         name: data.name,
         organizationId: orgId,
-        headId: data.headId || null
+        headId: data.headId || null,
+        employees: data.employeeIds ? {
+          connect: data.employeeIds.map((id) => ({ id }))
+        } : undefined
       }
     });
   }

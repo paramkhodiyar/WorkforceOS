@@ -18,10 +18,12 @@ export default function SettingsPage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
-  const [deptForm, setDeptForm] = useState<{ id?: string; name: string; headId: string | null }>({
+  const [deptForm, setDeptForm] = useState<{ id?: string; name: string; headId: string | null; employeeIds: string[] }>({
     name: '',
     headId: null,
+    employeeIds: [],
   });
+  const [deptMemberSearch, setDeptMemberSearch] = useState('');
 
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [teamForm, setTeamForm] = useState<{ id?: string; name: string; departmentId: string; leadId: string | null; memberIds: string[] }>({
@@ -108,15 +110,17 @@ export default function SettingsPage() {
         await api.departments.update(deptForm.id, {
           name: deptForm.name,
           headId: deptForm.headId || null,
+          employeeIds: deptForm.employeeIds,
         });
       } else {
         await api.departments.create({
           name: deptForm.name,
           headId: deptForm.headId || null,
+          employeeIds: deptForm.employeeIds,
         });
       }
       setIsDeptModalOpen(false);
-      setDeptForm({ name: '', headId: null });
+      setDeptForm({ name: '', headId: null, employeeIds: [] });
       loadData();
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to save department.');
@@ -217,7 +221,7 @@ export default function SettingsPage() {
           {activeTab === 'departments' && (
             <button
               onClick={() => {
-                setDeptForm({ name: '', headId: null });
+                setDeptForm({ name: '', headId: null, employeeIds: [] });
                 setIsDeptModalOpen(true);
               }}
               className="px-5 py-2.5 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-sm font-bold shadow-sm transition-all cursor-pointer"
@@ -326,9 +330,21 @@ export default function SettingsPage() {
                           </div>
                           <div className="flex gap-1.5">
                             <button
-                              onClick={() => {
-                                setDeptForm({ id: dept.id, name: dept.name, headId: dept.headId });
-                                setIsDeptModalOpen(true);
+                              onClick={async () => {
+                                try {
+                                  const res = await api.departments.get(dept.id);
+                                  const fullDept = res.data;
+                                  setDeptForm({
+                                    id: fullDept.id,
+                                    name: fullDept.name,
+                                    headId: fullDept.headId,
+                                    employeeIds: fullDept.employees?.map((m: any) => m.id) || [],
+                                  });
+                                  setDeptMemberSearch('');
+                                  setIsDeptModalOpen(true);
+                                } catch (err: any) {
+                                  setErrorMessage(err.message || 'Failed to load department details');
+                                }
                               }}
                               className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[9px] rounded uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
                             >
@@ -379,9 +395,21 @@ export default function SettingsPage() {
                                   {
                                     label: 'Edit',
                                     icon: 'edit',
-                                    onClick: () => {
-                                      setDeptForm({ id: dept.id, name: dept.name, headId: dept.headId });
-                                      setIsDeptModalOpen(true);
+                                    onClick: async () => {
+                                      try {
+                                        const res = await api.departments.get(dept.id);
+                                        const fullDept = res.data;
+                                        setDeptForm({
+                                          id: fullDept.id,
+                                          name: fullDept.name,
+                                          headId: fullDept.headId,
+                                          employeeIds: fullDept.employees?.map((m: any) => m.id) || [],
+                                        });
+                                        setDeptMemberSearch('');
+                                        setIsDeptModalOpen(true);
+                                      } catch (err: any) {
+                                        setErrorMessage(err.message || 'Failed to load department details');
+                                      }
                                     }
                                   },
                                   {
@@ -684,6 +712,42 @@ export default function SettingsPage() {
                   placeholder="Select a department head..."
                   searchPlaceholder="Search employees..."
                 />
+              </div>
+              <div className="space-y-1">
+                <label className="text-label-xs font-bold text-slate-700 uppercase">Department Members</label>
+                <input
+                  type="text"
+                  value={deptMemberSearch}
+                  onChange={(e) => setDeptMemberSearch(e.target.value)}
+                  placeholder="Filter employees..."
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-sm transition-all outline-none font-medium mb-2"
+                />
+                <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 max-h-40 overflow-y-auto space-y-2">
+                  {employees.filter(emp =>
+                    `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(deptMemberSearch.toLowerCase())
+                  ).map((emp) => (
+                    <label key={emp.id} className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={deptForm.employeeIds?.includes(emp.id) || false}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const newEmployeeIds = checked
+                            ? [...(deptForm.employeeIds || []), emp.id]
+                            : (deptForm.employeeIds || []).filter(id => id !== emp.id);
+                          setDeptForm({ ...deptForm, employeeIds: newEmployeeIds });
+                        }}
+                        className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                      />
+                      <span>{emp.firstName} {emp.lastName} ({emp.designation || 'Staff'})</span>
+                    </label>
+                  ))}
+                  {employees.filter(emp =>
+                    `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(deptMemberSearch.toLowerCase())
+                  ).length === 0 && (
+                    <p className="text-xs text-slate-400 font-medium text-center py-2">No employees match your filter</p>
+                  )}
+                </div>
               </div>
               <div className="flex gap-3 justify-end pt-2">
                 <button

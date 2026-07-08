@@ -11,7 +11,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <SideNavBar />
       <div className="flex-1 flex flex-col md:pl-64">
         <TopNavBar />
-        <main className="flex-1 pt-24 pb-16 md:pb-6 min-h-screen px-6 overflow-x-hidden">
+        <main className="flex-1 pt-24 pb-16 md:pb-6 min-h-screen px-4 md:px-6 overflow-x-hidden">
           {children}
         </main>
       </div>

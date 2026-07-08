@@ -207,7 +207,7 @@ export default function SettingsPage() {
   }));
 
   return (
-    <div className="flex-1 font-sans p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="flex-1 font-sans py-4 md:py-6 px-0 md:px-4 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-headline-md font-extrabold text-on-surface">Organization Settings</h1>
@@ -250,10 +250,10 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="flex gap-2 p-1 bg-slate-100 rounded-xl max-w-sm">
+      <div className="flex overflow-x-auto whitespace-nowrap gap-1.5 p-1 bg-slate-100 rounded-xl w-full sm:w-max scrollbar-none">
         <button
           onClick={() => setActiveTab('departments')}
-          className={`flex-1 py-2 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-none px-4 py-2.5 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'departments'
               ? 'bg-white text-primary shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
@@ -263,7 +263,7 @@ export default function SettingsPage() {
         </button>
         <button
           onClick={() => setActiveTab('teams')}
-          className={`flex-1 py-2 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-none px-4 py-2.5 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'teams' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -271,7 +271,7 @@ export default function SettingsPage() {
         </button>
         <button
           onClick={() => setActiveTab('features')}
-          className={`flex-1 py-2 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-none px-4 py-2.5 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'features' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -286,7 +286,7 @@ export default function SettingsPage() {
       ) : (
         <>
           {activeTab === 'departments' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6 space-y-4">
               <div className="flex justify-between items-center flex-wrap gap-4">
                 <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Departments</h2>
                 <div className="relative w-48">
@@ -434,7 +434,7 @@ export default function SettingsPage() {
           )}
 
           {activeTab === 'teams' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6 space-y-4">
               <div className="flex justify-between items-center flex-wrap gap-4">
                 <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Teams</h2>
                 <div className="relative w-48">
@@ -607,7 +607,7 @@ export default function SettingsPage() {
             </div>
           )}
           {activeTab === 'features' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6 space-y-6">
               <div>
                 <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-1">System Feature Controls</h2>
                 <p className="text-body-sm text-outline">Enable or disable module routes across your organization. Disabling a feature removes it from the sidebar and navigation options for all users.</p>

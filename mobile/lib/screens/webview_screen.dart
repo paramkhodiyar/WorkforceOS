@@ -132,7 +132,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
             final escaped = widget.injectedToken!
                 .replaceAll("'", "\\'")
                 .replaceAll('"', '\\"');
-            await controller.runJavaScript(
+            // Use _controller (the class field) — not the local `controller`
+            // which can't be referenced inside its own init expression closure.
+            await _controller.runJavaScript(
               "window.localStorage.setItem('token','$escaped');"
               "window.location.replace('/dashboard');",
             );

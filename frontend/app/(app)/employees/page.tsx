@@ -847,9 +847,9 @@ export default function EmployeesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">DOB</label>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Date of Birth</label>
                         <input
                           type="date"
                           value={dateOfBirth}
@@ -862,7 +862,7 @@ export default function EmployeesPage() {
                         <select
                           value={gender}
                           onChange={(e) => setGender(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium animate-none"
+                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
                         >
                           <option value="">Select Gender</option>
                           <option value="Male">Male</option>
@@ -872,13 +872,16 @@ export default function EmployeesPage() {
                       </div>
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Blood Group</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. O+"
+                        <select
                           value={bloodGroup}
                           onChange={(e) => setBloodGroup(e.target.value)}
                           className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        />
+                        >
+                          <option value="">Select Blood Group</option>
+                          {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(bg => (
+                            <option key={bg} value={bg}>{bg}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 

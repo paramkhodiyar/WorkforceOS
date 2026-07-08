@@ -8,8 +8,8 @@ import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function SettingsPage() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'departments' | 'teams'>('departments');
+  const { user, features, setFeatures } = useAuth();
+  const [activeTab, setActiveTab] = useState<'departments' | 'teams' | 'features'>('departments');
   const [departments, setDepartments] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -67,6 +67,20 @@ export default function SettingsPage() {
       setErrorMessage(err.message || 'Failed to load configuration data.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleToggleFeature(featureName: string) {
+    if (!user?.organizationId) return;
+    const nextFeatures = features.includes(featureName)
+      ? features.filter((f: string) => f !== featureName)
+      : [...features, featureName];
+    
+    try {
+      await api.organization.updateFeatures(user.organizationId, nextFeatures);
+      setFeatures(nextFeatures);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to toggle feature.');
     }
   }
 
@@ -200,7 +214,7 @@ export default function SettingsPage() {
           <p className="text-body-sm text-outline">Manage organization departments, teams, and administrative roles.</p>
         </div>
         <div>
-          {activeTab === 'departments' ? (
+          {activeTab === 'departments' && (
             <button
               onClick={() => {
                 setDeptForm({ name: '', headId: null });
@@ -210,7 +224,8 @@ export default function SettingsPage() {
             >
               Add Department
             </button>
-          ) : (
+          )}
+          {activeTab === 'teams' && (
             <button
               onClick={() => {
                 setTeamForm({ name: '', departmentId: departments[0]?.id || '', leadId: null, memberIds: [] });
@@ -235,7 +250,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="flex gap-2 p-1 bg-slate-100 rounded-xl max-w-xs">
+      <div className="flex gap-2 p-1 bg-slate-100 rounded-xl max-w-sm">
         <button
           onClick={() => setActiveTab('departments')}
           className={`flex-1 py-2 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer ${
@@ -253,6 +268,14 @@ export default function SettingsPage() {
           }`}
         >
           Teams
+        </button>
+        <button
+          onClick={() => setActiveTab('features')}
+          className={`flex-1 py-2 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer ${
+            activeTab === 'features' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          App Management
         </button>
       </div>
 
@@ -581,6 +604,54 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+          {activeTab === 'features' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+              <div>
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-1">System Feature Controls</h2>
+                <p className="text-body-sm text-outline">Enable or disable module routes across your organization. Disabling a feature removes it from the sidebar and navigation options for all users.</p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[
+                  { id: 'employees', label: 'Employees Directory', desc: 'Onboarding & profile records' },
+                  { id: 'attendance', label: 'Attendance & Geofencing', desc: 'Check-in with GPS verification' },
+                  { id: 'leave', label: 'Leave Workflows', desc: 'Requests review and balances' },
+                  { id: 'tasks', label: 'Task Management', desc: 'State-machine task boards' },
+                  { id: 'performance', label: 'Performance Feedback', desc: 'Reviews and team appraisals' },
+                  { id: 'payroll', label: 'Payroll & Compliance', desc: 'Generate payslips & compliance' },
+                  { id: 'expenses', label: 'Expense Filing', desc: 'Reimbursement claims & approvals' },
+                  { id: 'assets', label: 'Asset Tracker', desc: 'Hardware inventory catalog' },
+                  { id: 'knowledge', label: 'Knowledge Wiki', desc: 'Handbooks and policy pages' },
+                  { id: 'calendar', label: 'Shared Calendar', desc: 'Events and holiday calendar' }
+                ].map(mod => {
+                  const isEnabled = features.includes(mod.id);
+                  return (
+                    <div key={mod.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between">
+                      <div>
+                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${
+                          isEnabled ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-200 text-slate-650 border-slate-300'
+                        }`}>
+                          {isEnabled ? 'Active' : 'Disabled'}
+                        </span>
+                        <h3 className="text-label-sm font-bold text-on-surface mt-3">{mod.label}</h3>
+                        <p className="text-[10px] text-outline mt-1 leading-relaxed">{mod.desc}</p>
+                      </div>
+                      <button
+                        onClick={() => handleToggleFeature(mod.id)}
+                        className={`mt-4 w-full py-2 rounded-lg text-[10px] font-bold uppercase transition-all active:scale-95 border cursor-pointer ${
+                          isEnabled
+                            ? 'bg-red-50 text-red-650 border-red-150 hover:bg-red-100'
+                            : 'bg-primary text-on-primary border-primary hover:bg-blue-700'
+                        }`}
+                      >
+                        {isEnabled ? 'Disable' : 'Enable'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </>

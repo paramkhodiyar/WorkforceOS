@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 
 // Detect if running inside the Flutter WebView bridge
@@ -20,6 +21,7 @@ export default function LoginPageClient() {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [hasStoredSession, setHasStoredSession] = useState(false);
   const [bioLoading, setBioLoading] = useState(false);
+  const [showBioConsent, setShowBioConsent] = useState(false);
 
   useEffect(() => {
     const mobile = isNativeMobile();
@@ -33,13 +35,28 @@ export default function LoginPageClient() {
   }, []);
 
   function toggleBiometric() {
-    const next = !biometricEnabled;
-    setBiometricEnabled(next);
-    localStorage.setItem('biometric_enabled', next ? 'true' : 'false');
-    // Tell Flutter to persist the preference
+    if (!biometricEnabled) {
+      // Show consent before enabling
+      setShowBioConsent(true);
+      return;
+    }
+    // Disabling — no consent needed
+    setBiometricEnabled(false);
+    localStorage.setItem('biometric_enabled', 'false');
     if ((window as any).WorkforceOSBridge) {
       (window as any).WorkforceOSBridge.postMessage(
-        JSON.stringify({ type: 'set_biometric_pref', enabled: next })
+        JSON.stringify({ type: 'set_biometric_pref', enabled: false })
+      );
+    }
+  }
+
+  function confirmBioConsent() {
+    setShowBioConsent(false);
+    setBiometricEnabled(true);
+    localStorage.setItem('biometric_enabled', 'true');
+    if ((window as any).WorkforceOSBridge) {
+      (window as any).WorkforceOSBridge.postMessage(
+        JSON.stringify({ type: 'set_biometric_pref', enabled: true })
       );
     }
   }
@@ -215,8 +232,57 @@ export default function LoginPageClient() {
               {loading ? 'Authenticating...' : 'Sign In'}
             </button>
           </form>
+
+          {/* Legal footer */}
+          <p className="text-center text-[11px] text-slate-400 mt-4">
+            By signing in you agree to our{' '}
+            <Link href="/terms-conditions" target="_blank" className="text-blue-500 hover:underline">Terms of Service</Link>
+            {' '}and{' '}
+            <Link href="/privacy-policy" target="_blank" className="text-blue-500 hover:underline">Privacy Policy</Link>.
+          </p>
         </div>
       </div>
+
+      {/* Biometric Consent Modal */}
+      {showBioConsent && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex justify-center">
+              <div className="h-14 w-14 rounded-2xl bg-blue-100 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[32px] text-blue-600">fingerprint</span>
+              </div>
+            </div>
+            <h3 className="text-center text-lg font-bold text-slate-900">Enable Biometric Login?</h3>
+            <div className="text-sm text-slate-600 space-y-2 leading-relaxed">
+              <p>By enabling biometric login, you consent to the following:</p>
+              <ul className="list-disc pl-5 space-y-1 text-[13px]">
+                <li>Your device's fingerprint sensor will be used to authenticate you on future logins.</li>
+                <li><strong>WorkforceOS does not store or transmit your fingerprint data.</strong> Scanning is handled entirely by Android's secure enclave.</li>
+                <li>An authentication token is stored securely on your device. This token is cleared when you sign out.</li>
+                <li>You may disable biometric login at any time from this screen.</li>
+              </ul>
+            </div>
+            <p className="text-[11px] text-slate-400 border-t pt-3">
+              This consent is in accordance with the <strong>DPDP Act 2023</strong> and IT Rules 2011 (India).
+              Biometric data is classified as Sensitive Personal Data.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setShowBioConsent(false)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmBioConsent}
+                className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700"
+              >
+                I Consent & Enable
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

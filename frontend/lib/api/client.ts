@@ -61,6 +61,17 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
               if (typeof window !== 'undefined') {
                 localStorage.setItem('token', newAccessToken);
                 localStorage.setItem('refreshToken', newRefreshToken);
+                // Keep Flutter's stored token in sync after a silent refresh
+                // so that biometric injection on next cold start uses a valid token.
+                if ((window as any).WorkforceOSBridge) {
+                  (window as any).WorkforceOSBridge.postMessage(
+                    JSON.stringify({
+                      type: 'save_token',
+                      token: newAccessToken,
+                      refreshToken: newRefreshToken,
+                    })
+                  );
+                }
               }
               
               isRefreshing = false;

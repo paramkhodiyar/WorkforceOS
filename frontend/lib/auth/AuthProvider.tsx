@@ -65,9 +65,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('token', token);
       localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
       setUser(response.data.user);
-      // Notify native Flutter app to save token for biometric bypass
+      // Notify native Flutter app to save both tokens for biometric bypass
       if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
-        (window as any).WorkforceOSBridge.postMessage(JSON.stringify({ type: 'save_token', token }));
+        (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
+          type: 'save_token',
+          token,
+          refreshToken: response.data.tokens.refreshToken,
+        }));
       }
       try {
         const orgRes = await api.organization.get();

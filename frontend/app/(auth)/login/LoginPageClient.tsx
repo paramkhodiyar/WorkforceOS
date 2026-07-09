@@ -31,7 +31,17 @@ export default function LoginPageClient() {
     const mobile = isInFlutterWebView();
     setIsMobile(mobile);
     if (mobile) {
-      setBiometricEnabled(localStorage.getItem('biometric_enabled') === 'true');
+      // Ask Flutter for the real persisted preference.
+      // Flutter responds by calling window.__workforceBiometricPref(enabled).
+      (window as any).__workforceBiometricPref = (enabled: boolean) => {
+        setBiometricEnabled(enabled);
+        // Keep localStorage in sync for UX continuity within the session.
+        localStorage.setItem('biometric_enabled', enabled ? 'true' : 'false');
+      };
+      // First check localStorage for instant render, then reconcile with Flutter.
+      const cached = localStorage.getItem('biometric_enabled') === 'true';
+      setBiometricEnabled(cached);
+      sendBridge({ type: 'get_biometric_pref' });
     }
   }, []);
 

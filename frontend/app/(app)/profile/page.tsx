@@ -221,12 +221,34 @@ function ProfileContent() {
     );
   }
 
-  const bandDetails: Record<string, any> = {
-    BAND_A: { basic: 45000, hra: 20000, allowances: 10000, deductions: 5000, tax: 4000 },
-    BAND_B: { basic: 30000, hra: 12000, allowances: 8000, deductions: 3500, tax: 2000 },
-    BAND_C: { basic: 20000, hra: 10000, allowances: 5000, deductions: 2500, tax: 1000 }
+  const basic = profile.basicSalary 
+    ? profile.basicSalary 
+    : profile.salaryBand === 'BAND_A' ? 80000
+    : profile.salaryBand === 'BAND_B' ? 50000
+    : profile.salaryBand === 'BAND_C' ? 35000
+    : profile.salaryBand === 'BAND_D' ? 25000
+    : 18000; // BAND_E
+
+  const hra = Math.round(basic * 0.40);
+  const allowances = profile.ctcAnnual 
+    ? Math.max(0, Math.round((profile.ctcAnnual / 12) - basic - hra))
+    : Math.round(basic * 0.20);
+  const deductions = profile.pfApplicable ? Math.round(basic * 0.12) : 0;
+  
+  const annualCTC = profile.ctcAnnual ?? (basic + hra + allowances) * 12;
+  let taxRate = 0;
+  if (annualCTC > 1200000) taxRate = 0.15;
+  else if (annualCTC > 800000) taxRate = 0.10;
+  else if (annualCTC > 500000) taxRate = 0.05;
+  const tax = Math.round((annualCTC * taxRate) / 12);
+
+  const compDetails = {
+    basic,
+    hra,
+    allowances,
+    deductions,
+    tax
   };
-  const compDetails = bandDetails[profile.salaryBand] || bandDetails.BAND_B;
   const grossSalary = compDetails.basic + compDetails.hra + compDetails.allowances;
   const netSalary = grossSalary - compDetails.deductions - compDetails.tax;
 
@@ -774,9 +796,15 @@ function ProfileContent() {
                 <div>
                   <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Compensation & Salary Structure</h3>
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center">
-                    <div>
+                     <div>
                       <p className="text-[10px] text-outline uppercase font-semibold">Salary Grade Band</p>
-                      <p className="text-title-md font-bold text-on-surface mt-0.5">{profile.salaryBand || 'BAND_A'}</p>
+                      <p className="text-title-md font-bold text-on-surface mt-0.5">
+                        {profile.salaryBand === 'BAND_A' ? 'Band A (VP / C-Suite)'
+                         : profile.salaryBand === 'BAND_B' ? 'Band B (Director / Head)'
+                         : profile.salaryBand === 'BAND_C' ? 'Band C (Lead / Manager)'
+                         : profile.salaryBand === 'BAND_D' ? 'Band D (Associate / Staff)'
+                         : 'Band E (Intern / Junior)'}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] text-outline uppercase font-semibold">Estimated Net Take Home</p>

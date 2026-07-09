@@ -9,6 +9,7 @@ import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
 import { CustomDatePicker } from '../../../components/ui/CustomDatePicker';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
 
 export default function EmployeesPage() {
   const { user } = useAuth();
@@ -78,6 +79,8 @@ export default function EmployeesPage() {
   const [accountHolderName, setAccountHolderName] = useState('');
   const [panNumber, setPanNumber] = useState('');
   const [aadhaarLast4, setAadhaarLast4] = useState('');
+  const [showAccountNumber, setShowAccountNumber] = useState(false);
+  const [showPanNumber, setShowPanNumber] = useState(false);
 
   // Step 5: Emergency Contact
   const [emergencyName, setEmergencyName] = useState('');
@@ -886,30 +889,26 @@ export default function EmployeesPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Gender</label>
-                        <select
+                        <CustomSelect
+                          label="Gender"
                           value={gender}
-                          onChange={(e) => setGender(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        >
-                          <option value="">Select Gender</option>
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Other">Other</option>
-                        </select>
+                          onChange={(val) => setGender(val)}
+                          placeholder="Select Gender"
+                          options={[
+                            { value: 'Male', label: 'Male' },
+                            { value: 'Female', label: 'Female' },
+                            { value: 'Other', label: 'Other' },
+                          ]}
+                        />
                       </div>
                       <div className="col-span-1 md:col-span-2">
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Blood Group</label>
-                        <select
+                        <CustomSelect
+                          label="Blood Group"
                           value={bloodGroup}
-                          onChange={(e) => setBloodGroup(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        >
-                          <option value="">Select Blood Group</option>
-                          {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(bg => (
-                            <option key={bg} value={bg}>{bg}</option>
-                          ))}
-                        </select>
+                          onChange={(val) => setBloodGroup(val)}
+                          placeholder="Select Blood Group"
+                          options={['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(bg => ({ value: bg, label: bg }))}
+                        />
                       </div>
                     </div>
 
@@ -989,50 +988,43 @@ export default function EmployeesPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Employee Type</label>
-                        <select
+                        <CustomSelect
+                          label="Employee Type"
                           value={employeeType}
-                          onChange={(e) => setEmployeeType(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        >
-                          <option value="FULL_TIME">Full Time</option>
-                          <option value="PART_TIME">Part Time</option>
-                          <option value="INTERN">Intern</option>
-                          <option value="CONTRACTOR">Contractor</option>
-                        </select>
+                          onChange={(val) => setEmployeeType(val)}
+                          options={[
+                            { value: 'FULL_TIME', label: 'Full Time' },
+                            { value: 'PART_TIME', label: 'Part Time' },
+                            { value: 'INTERN', label: 'Intern' },
+                            { value: 'CONTRACTOR', label: 'Contractor' },
+                          ]}
+                        />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Department</label>
-                        <select
+                        <CustomSelect
+                          label="Department"
                           value={departmentId}
-                          onChange={(e) => setDepartmentId(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        >
-                          <option value="">Select Department</option>
-                          {departments.map((d: any) => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
-                          ))}
-                        </select>
+                          onChange={(val) => setDepartmentId(val)}
+                          placeholder="Select Department"
+                          options={departments.map((d: any) => ({ value: d.id, label: d.name }))}
+                        />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Manager / Supervisor</label>
-                        <select
+                        <CustomSelect
+                          label="Manager / Supervisor"
                           value={managerId}
-                          onChange={(e) => setManagerId(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        >
-                          <option value="">Select Manager</option>
-                          {employees
+                          onChange={(val) => setManagerId(val)}
+                          placeholder="Select Manager"
+                          options={employees
                             .filter((emp: any) => !editingEmployee || emp.id !== editingEmployee.id)
-                            .map((emp: any) => (
-                              <option key={emp.id} value={emp.id}>
-                                {emp.firstName} {emp.lastName} ({emp.designation || 'Staff'})
-                              </option>
-                            ))}
-                        </select>
+                            .map((emp: any) => ({
+                              value: emp.id,
+                              label: `${emp.firstName} ${emp.lastName} (${emp.designation || 'Staff'})`
+                            }))}
+                        />
                       </div>
                     </div>
 
@@ -1065,19 +1057,16 @@ export default function EmployeesPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Shift Configuration</label>
-                        <select
+                        <CustomSelect
+                          label="Shift Configuration"
                           value={shiftId}
-                          onChange={(e) => setShiftId(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        >
-                          <option value="">Select Shift Config</option>
-                          {shifts.map((s: any) => (
-                            <option key={s.id} value={s.id}>
-                              {s.name} ({s.checkInStart} - {s.checkInDeadline} deadline)
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => setShiftId(val)}
+                          placeholder="Select Shift Config"
+                          options={shifts.map((s: any) => ({
+                            value: s.id,
+                            label: `${s.name} (${s.checkInStart} - ${s.checkInDeadline} deadline)`
+                          }))}
+                        />
                       </div>
                     </div>
 
@@ -1125,18 +1114,18 @@ export default function EmployeesPage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Salary Band</label>
-                        <select
+                        <CustomSelect
+                          label="Salary Band"
                           value={salaryBand}
-                          onChange={(e) => setSalaryBand(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        >
-                          <option value="BAND_A">Band A (Executive)</option>
-                          <option value="BAND_B">Band B (Senior)</option>
-                          <option value="BAND_C">Band C (Lead / Manager)</option>
-                          <option value="BAND_D">Band D (Director / Head)</option>
-                          <option value="BAND_E">Band E (VP / C-Suite)</option>
-                        </select>
+                          onChange={(val) => setSalaryBand(val)}
+                          options={[
+                            { value: 'BAND_A', label: 'Band A (VP / C-Suite)' },
+                            { value: 'BAND_B', label: 'Band B (Director / Head)' },
+                            { value: 'BAND_C', label: 'Band C (Lead / Manager)' },
+                            { value: 'BAND_D', label: 'Band D (Associate / Staff)' },
+                            { value: 'BAND_E', label: 'Band E (Intern / Junior)' },
+                          ]}
+                        />
                       </div>
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Basic Monthly Salary (₹)</label>
@@ -1152,15 +1141,15 @@ export default function EmployeesPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Tax Regime</label>
-                        <select
+                        <CustomSelect
+                          label="Tax Regime"
                           value={taxRegime}
-                          onChange={(e) => setTaxRegime(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        >
-                          <option value="NEW">New Tax Regime</option>
-                          <option value="OLD">Old Tax Regime</option>
-                        </select>
+                          onChange={(val) => setTaxRegime(val)}
+                          options={[
+                            { value: 'NEW', label: 'New Tax Regime' },
+                            { value: 'OLD', label: 'Old Tax Regime' },
+                          ]}
+                        />
                       </div>
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">CTC Annual (₹)</label>
@@ -1226,21 +1215,43 @@ export default function EmployeesPage() {
                       </div>
                       <div className="col-span-1 md:col-span-2">
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Account Number</label>
-                        <input
-                          type="text"
-                          value={accountNumber}
-                          onChange={(e) => setAccountNumber(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showAccountNumber ? "text" : "password"}
+                            value={accountNumber}
+                            onChange={(e) => setAccountNumber(e.target.value)}
+                            className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowAccountNumber(!showAccountNumber)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">
+                              {showAccountNumber ? "visibility_off" : "visibility"}
+                            </span>
+                          </button>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">PAN Number</label>
-                        <input
-                          type="text"
-                          value={panNumber}
-                          onChange={(e) => setPanNumber(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showPanNumber ? "text" : "password"}
+                            value={panNumber}
+                            onChange={(e) => setPanNumber(e.target.value)}
+                            className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPanNumber(!showPanNumber)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">
+                              {showPanNumber ? "visibility_off" : "visibility"}
+                            </span>
+                          </button>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Aadhaar Last 4 Digits</label>
@@ -1341,7 +1352,14 @@ export default function EmployeesPage() {
                         </div>
                         <div>
                           <span className="text-slate-400 block font-normal text-[10px] uppercase">Salary Band / Monthly</span>
-                          <span className="text-slate-800">{salaryBand} {basicSalary ? `/ ₹${basicSalary}` : ''}</span>
+                          <span className="text-slate-800">
+                            {salaryBand === 'BAND_A' ? 'Band A (VP / C-Suite)'
+                             : salaryBand === 'BAND_B' ? 'Band B (Director / Head)'
+                             : salaryBand === 'BAND_C' ? 'Band C (Lead / Manager)'
+                             : salaryBand === 'BAND_D' ? 'Band D (Associate / Staff)'
+                             : 'Band E (Intern / Junior)'}
+                            {basicSalary ? ` / ₹${Number(basicSalary).toLocaleString()}` : ''}
+                          </span>
                         </div>
                         <div>
                           <span className="text-slate-400 block font-normal text-[10px] uppercase">Bank Account</span>

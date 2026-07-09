@@ -335,8 +335,18 @@ export class EmployeesService {
 
       if (bankDetail) {
         const updateData: any = { ...bankDetail };
-        if (bankDetail.accountNumber) updateData.accountNumber = encrypt(bankDetail.accountNumber);
-        if (bankDetail.panNumber) updateData.panNumber = encrypt(bankDetail.panNumber);
+        
+        if (bankDetail.accountNumber && !bankDetail.accountNumber.includes('*')) {
+          updateData.accountNumber = encrypt(bankDetail.accountNumber);
+        } else {
+          delete updateData.accountNumber;
+        }
+
+        if (bankDetail.panNumber && !bankDetail.panNumber.includes('*')) {
+          updateData.panNumber = encrypt(bankDetail.panNumber);
+        } else {
+          delete updateData.panNumber;
+        }
 
         await tx.bankDetail.upsert({
           where: { userId: id },
@@ -344,10 +354,10 @@ export class EmployeesService {
           create: {
             userId: id,
             bankName: bankDetail.bankName || "",
-            accountNumber: encrypt(bankDetail.accountNumber || ""),
+            accountNumber: bankDetail.accountNumber && !bankDetail.accountNumber.includes('*') ? encrypt(bankDetail.accountNumber) : "",
             ifscCode: bankDetail.ifscCode || "",
             accountHolderName: bankDetail.accountHolderName || "",
-            panNumber: encrypt(bankDetail.panNumber || ""),
+            panNumber: bankDetail.panNumber && !bankDetail.panNumber.includes('*') ? encrypt(bankDetail.panNumber) : "",
             aadhaarLast4: bankDetail.aadhaarLast4 || null
           }
         });

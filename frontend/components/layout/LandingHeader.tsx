@@ -3,11 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '../../lib/auth/AuthProvider';
 
 export function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { user } = useAuth();
+  const homeHref = user ? '/dashboard' : '/';
   const isHomepage = pathname === '/';
 
   useEffect(() => {
@@ -57,7 +60,7 @@ export function LandingHeader() {
       >
         {/* Left Side: Brand Wordmark */}
         <Link 
-          href="/" 
+          href={homeHref} 
           className="flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-slate-900 font-sans cursor-pointer hover:opacity-90 transition-opacity"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
@@ -112,7 +115,7 @@ export function LandingHeader() {
           {/* Header row inside Mobile menu */}
           <div className="flex items-center justify-between h-16">
             <Link
-              href="/"
+              href={homeHref}
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-slate-900 cursor-pointer"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}

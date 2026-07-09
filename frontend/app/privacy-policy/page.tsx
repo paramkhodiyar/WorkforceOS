@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import BackHomeButton from '../../components/ui/BackHomeButton';
 
 export const metadata = {
   title: 'Privacy Policy | WorkforceOS',
@@ -21,9 +22,7 @@ export default function PrivacyPolicyPage() {
           <span className="h-7 w-7 rounded bg-primary text-white flex items-center justify-center font-extrabold text-sm">W</span>
           <span className="font-extrabold text-lg tracking-wider text-slate-900">WorkforceOS</span>
         </div>
-        <Link href="/" className="text-[11px] font-bold uppercase tracking-wider text-primary hover:text-blue-750 transition-colors border border-primary/20 px-3.5 py-2 rounded-xl bg-primary/5 hover:bg-primary/10">
-          Back to Home
-        </Link>
+        <BackHomeButton />
       </header>
 
       <main className="flex-1 max-w-4xl w-full mx-auto px-6 py-12">

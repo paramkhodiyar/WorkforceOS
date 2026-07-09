@@ -600,8 +600,8 @@ export default function DashboardPage() {
                           <p className="text-[10px] text-outline uppercase font-semibold mt-0.5">{item.leaveType} Leave</p>
                           <p className="text-body-sm text-on-surface-variant font-medium mt-2">"{item.reason}"</p>
                         </div>
-                        <div className="flex gap-2">
-                          <Link href="/leave" className="flex-1 py-2 bg-primary text-on-primary text-center rounded-lg text-[11px] font-bold shadow-sm hover:bg-blue-700 transition-colors">
+                        <div className="flex justify-end pt-1">
+                          <Link href="/leave" className="px-5 py-2 bg-primary text-on-primary text-center rounded-xl text-[11px] font-bold shadow-sm hover:bg-blue-700 transition-all cursor-pointer">
                             Review Queue
                           </Link>
                         </div>

@@ -104,6 +104,12 @@ export default function SideNavBar() {
       show: features.includes('knowledge')
     },
     {
+      label: 'Password Manager',
+      icon: 'vpn_key',
+      href: '/password-manager',
+      show: isAdmin
+    },
+    {
       label: 'Audit Log',
       icon: 'history',
       href: '/audit',

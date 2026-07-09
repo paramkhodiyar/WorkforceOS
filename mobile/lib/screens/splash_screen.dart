@@ -53,18 +53,19 @@ class _SplashScreenState extends State<SplashScreen>
 
     final bool useBiometric = prefs.getBool('use_biometric') ?? false;
     final String? storedToken = prefs.getString('auth_token');
+    final String? storedRefresh = prefs.getString('refresh_token');
     final bool hasToken =
         storedToken != null && storedToken.trim().isNotEmpty;
 
     if (useBiometric && hasToken) {
-      await _runBiometricThenNavigate(storedToken!, prefs);
+      await _runBiometricThenNavigate(storedToken!, storedRefresh, prefs);
     } else {
       _goToLogin();
     }
   }
 
   Future<void> _runBiometricThenNavigate(
-      String token, SharedPreferences prefs) async {
+      String token, String? refreshToken, SharedPreferences prefs) async {
     final auth = LocalAuthentication();
 
     // Check device capability first
@@ -88,8 +89,8 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
 
       if (ok) {
-        // ✅ Biometric passed — inject token so WebView skips login
-        _goToWebView(injectedToken: token);
+        // ✅ Biometric passed — inject both tokens so WebView skips login
+        _goToWebView(injectedToken: token, injectedRefreshToken: refreshToken);
       } else {
         // ❌ Biometric cancelled/failed — go to normal login
         _goToLogin();
@@ -114,12 +115,12 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  void _goToWebView({String? injectedToken}) {
+  void _goToWebView({String? injectedToken, String? injectedRefreshToken}) {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, __, ___) =>
-            WebViewScreen(injectedToken: injectedToken),
+            WebViewScreen(injectedToken: injectedToken, injectedRefreshToken: injectedRefreshToken),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 500),

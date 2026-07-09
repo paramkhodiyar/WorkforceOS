@@ -10,14 +10,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// [injectedToken]: When provided (after biometric unlock in SplashScreen),
 ///   this JWT is written into the web app's localStorage once the login page
 ///   finishes loading, immediately redirecting to /dashboard without a password.
+/// [injectedRefreshToken]: The refresh token paired with the injectedToken.
 ///
 /// Bridge messages from the web app (WorkforceOSBridge.postMessage):
-///   { type: 'save_token',        token: '...' }  → persist JWT to SharedPrefs
-///   { type: 'clear_token' }                       → remove JWT from SharedPrefs
-///   { type: 'set_biometric_pref', enabled: bool } → save biometric toggle pref
+///   { type: 'save_token',        token: '...', refreshToken: '...' }  → persist both tokens
+///   { type: 'clear_token' }                                           → remove both tokens
+///   { type: 'set_biometric_pref', enabled: bool }                     → save biometric toggle pref
+///   { type: 'get_biometric_pref' }                                    → read pref and call back into JS
 class WebViewScreen extends StatefulWidget {
   final String? injectedToken;
-  const WebViewScreen({super.key, this.injectedToken});
+  final String? injectedRefreshToken;
+  const WebViewScreen({super.key, this.injectedToken, this.injectedRefreshToken});
 
   @override
   State<WebViewScreen> createState() => _WebViewScreenState();
@@ -129,13 +132,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
           // If we arrived here with an injectedToken and the login page loaded,
           // silently put the token in localStorage and redirect to dashboard.
           if (widget.injectedToken != null && url.contains('/login')) {
-            final escaped = widget.injectedToken!
-                .replaceAll("'", "\\'")
-                .replaceAll('"', '\\"');
-            // Use _controller (the class field) — not the local `controller`
-            // which can't be referenced inside its own init expression closure.
+            final escapedToken = widget.injectedToken!
+                .replaceAll("'", "\\'").replaceAll('"', '\\"');
+            final escapedRefresh = (widget.injectedRefreshToken ?? '')
+                .replaceAll("'", "\\'").replaceAll('"', '\\"');
             await _controller.runJavaScript(
-              "window.localStorage.setItem('token','$escaped');"
+              "window.localStorage.setItem('token','$escapedToken');"
+              "window.localStorage.setItem('refreshToken','$escapedRefresh');"
               "window.location.replace('/dashboard');",
             );
           }
@@ -172,20 +175,35 @@ class _WebViewScreenState extends State<WebViewScreen> {
       switch (type) {
         case 'save_token':
           final token = data['token'] as String?;
+          final refreshToken = data['refreshToken'] as String?;
           if (token != null && token.isNotEmpty) {
             await prefs.setString('auth_token', token);
-            debugPrint('Bridge: token saved (${token.length} chars)');
+            debugPrint('Bridge: access token saved (${token.length} chars)');
+          }
+          if (refreshToken != null && refreshToken.isNotEmpty) {
+            await prefs.setString('refresh_token', refreshToken);
+            debugPrint('Bridge: refresh token saved (${refreshToken.length} chars)');
           }
 
         case 'clear_token':
           await prefs.remove('auth_token');
-          await prefs.setBool('use_biometric', false);
-          debugPrint('Bridge: token + biometric pref cleared');
+          await prefs.remove('refresh_token');
+          // NOTE: we intentionally keep 'use_biometric' so the user's
+          // biometric preference survives a logout and triggers on next open.
+          debugPrint('Bridge: tokens cleared (biometric pref preserved)');
 
         case 'set_biometric_pref':
           final enabled = data['enabled'] as bool? ?? false;
           await prefs.setBool('use_biometric', enabled);
           debugPrint('Bridge: biometric pref → $enabled');
+
+        case 'get_biometric_pref':
+          final bioPref = prefs.getBool('use_biometric') ?? false;
+          // Call back into the web page so the toggle reflects the real pref.
+          await _controller.runJavaScript(
+            'if(window.__workforceBiometricPref) window.__workforceBiometricPref($bioPref);'
+          );
+          debugPrint('Bridge: returned biometric pref → $bioPref');
 
         default:
           debugPrint('Bridge: unknown message type "$type"');

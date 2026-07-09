@@ -12,7 +12,8 @@ import {
   uploadDocument,
   listDocuments,
   deleteDocument,
-  getDirectory
+  getDirectory,
+  resetPassword
 } from "./employees.controller";
 import { createEmployeeSchema, updateEmployeeSchema } from "./employees.validation";
 
@@ -34,6 +35,7 @@ router.post("/", requirePermission("employee", "create"), validate(createEmploye
 router.get("/directory", getDirectory);
 router.get("/:id", requirePermission("employee", "read"), getEmployeeById);
 router.patch("/:id", requirePermission("employee", "update"), validate(updateEmployeeSchema), updateEmployee);
+router.patch("/:id/reset-password", requirePermission("employee", "update"), resetPassword);
 router.delete("/:id", requirePermission("employee", "delete"), deleteEmployee);
 
 router.post("/:id/documents", requirePermission("employee", "update"), upload.single("document"), uploadDocument);

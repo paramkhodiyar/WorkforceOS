@@ -74,7 +74,8 @@ export class AuthService {
         lastName: user.lastName,
         systemRole: user.systemRole,
         organizationId: user.organizationId,
-        roles: formattedRoles
+        roles: formattedRoles,
+        forcePasswordChange: user.forcePasswordChange
       }
     };
   }
@@ -172,7 +173,10 @@ export class AuthService {
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { passwordHash }
+      data: { 
+        passwordHash,
+        forcePasswordChange: false
+      }
     });
 
     await redis.del(`user:session:${userId}`).catch(() => {});

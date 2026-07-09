@@ -1,19 +1,26 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/AuthProvider';
 import AppShell from '../../components/layout/AppShell';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else if (user.forcePasswordChange && pathname !== '/reset-password') {
+        router.push('/reset-password');
+      } else if (!user.forcePasswordChange && pathname === '/reset-password') {
+        router.push('/dashboard');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, pathname]);
 
   if (loading) {
     return (
@@ -28,6 +35,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return null;
+  }
+
+  // If the user must change password, we render the page without the standard AppShell sidebar/header navigation to lock them down!
+  if (user.forcePasswordChange && pathname === '/reset-password') {
+    return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 w-full">{children}</div>;
   }
 
   return <AppShell>{children}</AppShell>;

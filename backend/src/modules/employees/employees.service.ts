@@ -1,5 +1,5 @@
 import { prisma } from "../../config/database";
-import { hashPassword } from "../../utils/hash.util";
+import { hashPassword, comparePassword } from "../../utils/hash.util";
 import { AuditService } from "../audit/audit.service";
 import { NotificationService } from "../notifications/notifications.service";
 import { AuditAction, UserStatus, NotificationType, SalaryBand, EmployeeType, TaxRegime, SystemRole } from "@prisma/client";
@@ -165,7 +165,8 @@ export class EmployeesService {
           passwordHash,
           organizationId: orgId,
           status: UserStatus.ACTIVE,
-          systemRole: data.systemRole || "EMPLOYEE"
+          systemRole: data.systemRole || "EMPLOYEE",
+          forcePasswordChange: true
         }
       });
 
@@ -510,4 +511,59 @@ export class EmployeesService {
       }
     });
   }
+
+  static async resetPassword(
+    employeeId: string,
+    orgId: string,
+    adminId: string,
+    adminPass: string,
+    newPass: string,
+    req?: any
+   ) {
+     const admin = await prisma.user.findFirst({
+       where: { id: adminId, organizationId: orgId, isDeleted: false }
+     });
+     if (!admin || (admin.systemRole !== "SUPER_ADMIN" && admin.systemRole !== "ORG_ADMIN")) {
+       throw AppError.forbidden("Access denied: only administrators can reset passwords");
+     }
+
+     const matches = await comparePassword(adminPass, admin.passwordHash);
+     if (!matches) {
+       throw AppError.badRequest("Invalid administrator password");
+     }
+
+     const employee = await prisma.user.findFirst({
+       where: { id: employeeId, organizationId: orgId, isDeleted: false }
+     });
+     if (!employee) {
+       throw AppError.notFound("Employee not found");
+     }
+
+     const passwordHash = await hashPassword(newPass);
+     const updatedEmployee = await prisma.user.update({
+       where: { id: employeeId },
+       data: { 
+         passwordHash,
+         forcePasswordChange: true 
+       }
+     });
+
+     await prisma.refreshToken.updateMany({
+       where: { userId: employeeId },
+       data: { isRevoked: true }
+     });
+
+     await AuditService.log({
+       organizationId: orgId,
+       actorId: adminId,
+       action: AuditAction.UPDATED,
+       module: "employees",
+       targetId: employeeId,
+       targetType: "User",
+       newValue: { passwordReset: true, forcePasswordChange: true },
+       req
+     });
+
+     return updatedEmployee;
+   }
 }

@@ -17,8 +17,19 @@ function ProfileContent() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'personal' | 'job' | 'compensation' | 'leave'>('personal');
+  const [activeTab, setActiveTab] = useState<string>('personal');
   const [attendanceStatus, setAttendanceStatus] = useState<'ACTIVE' | 'OFFLINE' | 'COMPLETED'>('OFFLINE');
+
+  // Password Reset / Security states
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [forgotOldPassword, setForgotOldPassword] = useState(false);
+  const [superAdminEmail, setSuperAdminEmail] = useState('');
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
   
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -84,6 +95,19 @@ function ProfileContent() {
       } catch (err) {
         console.error(err);
       }
+
+      try {
+        const dirRes = await api.employees.directory();
+        const adminUser = dirRes.data?.find((u: any) => u.systemRole === 'SUPER_ADMIN' || u.systemRole === 'ORG_ADMIN');
+        if (adminUser) {
+          setSuperAdminEmail(adminUser.email);
+        } else {
+          setSuperAdminEmail('admin@dunder-mifflin.com');
+        }
+      } catch (err) {
+        console.error('Failed to load superadmin email:', err);
+        setSuperAdminEmail('admin@dunder-mifflin.com');
+      }
     } catch (err) {
       console.error(err);
       if (!isOwnProfile) {
@@ -91,6 +115,35 @@ function ProfileContent() {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      toast.error('All password fields are required');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
+    setPasswordUpdating(true);
+    try {
+      await api.auth.changePassword({ oldPassword, newPassword });
+      toast.success('Password updated successfully');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      const msg = err.message || 'Failed to update password';
+      toast.error(msg);
+    } finally {
+      setPasswordUpdating(false);
     }
   }
 
@@ -256,7 +309,8 @@ function ProfileContent() {
     { id: 'personal', name: 'Personal Info' },
     { id: 'job', name: 'Job Details' },
     ...(canViewCompensation ? [{ id: 'compensation', name: 'Compensation' }] : []),
-    { id: 'leave', name: 'Leave Balances' }
+    { id: 'leave', name: 'Leave Balances' },
+    ...(isOwnProfile ? [{ id: 'security', name: 'Security' }] : [])
   ];
 
   return (
@@ -878,6 +932,123 @@ function ProfileContent() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'security' && isOwnProfile && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-2">Change Password</h3>
+                  <p className="text-body-sm text-outline mb-4">Choose a strong password to protect your account and data privacy.</p>
+                </div>
+
+                <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+                  <div>
+                    <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Current Password</label>
+                    <div className="relative">
+                      <input
+                        type={showOldPassword ? "text" : "password"}
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOldPassword(!showOldPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          {showOldPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          {showNewPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Confirm New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          {showConfirmPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setForgotOldPassword(!forgotOldPassword)}
+                      className="text-xs font-semibold text-primary hover:underline self-start cursor-pointer"
+                    >
+                      Forgot your current password?
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={passwordUpdating}
+                      className="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-label-md font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                    >
+                      {passwordUpdating ? (
+                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : null}
+                      Update Password
+                    </button>
+                  </div>
+                </form>
+
+                {forgotOldPassword && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl max-w-md animate-fade-in">
+                    <p className="text-label-md font-bold flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px]">info</span>
+                      Reset Current Password
+                    </p>
+                    <p className="text-xs mt-1.5 leading-relaxed text-slate-600">
+                      To reset your lost password, please request your System Administrator. You can email them directly at:
+                    </p>
+                    <a
+                      href={`mailto:${superAdminEmail}?subject=Password Reset Request&body=Hi Administrator,%0D%0A%0D%0AI have forgotten my password for WorkforceOS. Could you please reset it for me?%0D%0A%0D%0AMy Employee ID is: ${profile.employeeId}.`}
+                      className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-blue-900 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors border border-blue-200"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">mail</span>
+                      {superAdminEmail}
+                    </a>
                   </div>
                 )}
               </div>

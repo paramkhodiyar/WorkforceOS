@@ -135,8 +135,18 @@ export const api = {
         body: JSON.stringify({ email, password }),
       }),
     me: (): Promise<any> => request('/auth/me'),
+    changePassword: (data: any): Promise<any> =>
+      request('/auth/change-password', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
   },
   employees: {
+    resetPassword: (employeeId: string, data: any): Promise<any> =>
+      request(`/employees/${employeeId}/reset-password`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
     list: (filters?: any): Promise<any> => {
       const query = filters ? '?' + new URLSearchParams(filters).toString() : '';
       return request(`/employees${query}`);

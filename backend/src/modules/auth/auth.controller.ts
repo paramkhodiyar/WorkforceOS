@@ -89,7 +89,8 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     roles: formattedRoles,
     departmentHead: user.departmentHead,
     teamLead: user.teamLead,
-    teams: user.teams
+    teams: user.teams,
+    forcePasswordChange: user.forcePasswordChange
   };
 
   return sendSuccess(res, userProfile);

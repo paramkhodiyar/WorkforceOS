@@ -100,10 +100,26 @@ export const getDirectory = asyncHandler(async (req: Request, res: Response) => 
       designation: true,
       avatarUrl: true,
       departmentId: true,
+      systemRole: true,
       department: { select: { name: true } }
     },
     orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
   });
   return sendSuccess(res, users);
 });
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const adminId = req.user!.id;
+  const employeeId = req.params.id;
+  const { adminPassword, newPassword } = req.body;
+
+  if (!adminPassword || !newPassword) {
+    throw AppError.badRequest("Administrator password and new employee password are required");
+  }
+
+  await EmployeesService.resetPassword(employeeId, orgId, adminId, adminPassword, newPassword, req);
+  return sendSuccess(res, null, "Employee password reset successfully");
+});
+
 

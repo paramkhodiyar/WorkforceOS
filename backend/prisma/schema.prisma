@@ -255,6 +255,7 @@ model User {
   taxRegime        TaxRegime  @default(NEW)
   probationEndDate DateTime?
   ctcAnnual        Float?
+  forcePasswordChange Boolean    @default(false)
 
   organization       Organization     @relation(fields: [organizationId], references: [id])
   department         Department?      @relation("DepartmentMembers", fields: [departmentId], references: [id])

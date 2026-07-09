@@ -91,6 +91,16 @@ export default function EmployeesPage() {
   // Step 6: Review & Access
   const [systemRoleField, setSystemRoleField] = useState('EMPLOYEE');
 
+  // Admin Reset Password states
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetTargetEmployee, setResetTargetEmployee] = useState<any>(null);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [newEmployeePassword, setNewEmployeePassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [showNewEmployeePassword, setShowNewEmployeePassword] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetSuccessPassword, setResetSuccessPassword] = useState('');
+
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
@@ -366,6 +376,34 @@ export default function EmployeesPage() {
       toast.success('Employee deleted successfully');
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete employee');
+    }
+  }
+
+  async function handleResetPasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetTargetEmployee) return;
+    if (!adminPassword || !newEmployeePassword) {
+      toast.error('Both administrator and new employee passwords are required');
+      return;
+    }
+    if (newEmployeePassword.length < 8) {
+      toast.error('New password must be at least 8 characters long');
+      return;
+    }
+    setResetSubmitting(true);
+    try {
+      await api.employees.resetPassword(resetTargetEmployee.id, {
+        adminPassword,
+        newPassword: newEmployeePassword
+      });
+      setResetSuccessPassword(newEmployeePassword);
+      setAdminPassword('');
+      setNewEmployeePassword('');
+      toast.success(`Password for ${resetTargetEmployee.firstName} reset successfully`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to reset employee password');
+    } finally {
+      setResetSubmitting(false);
     }
   }
 
@@ -663,6 +701,19 @@ export default function EmployeesPage() {
                                 icon: 'visibility',
                                 onClick: () => router.push(`/profile?id=${emp.id}`)
                               },
+                              ...(isAdmin ? [
+                                {
+                                  label: 'Reset Password',
+                                  icon: 'lock_reset',
+                                  onClick: () => {
+                                    setResetTargetEmployee(emp);
+                                    setAdminPassword('');
+                                    setNewEmployeePassword('');
+                                    setResetSuccessPassword('');
+                                    setShowResetModal(true);
+                                  }
+                                }
+                              ] : []),
                               ...((isAdmin || isHR) ? [
                                 {
                                   label: 'Edit Details',
@@ -1442,6 +1493,178 @@ export default function EmployeesPage() {
           </div>
         </div>
       )}
+
+      {showResetModal && resetTargetEmployee && (
+        <div className="fixed inset-0 bg-slate-950/40 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-xl w-full max-w-md p-6 overflow-hidden">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
+              <h2 className="text-headline-sm font-bold text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[24px]">lock_reset</span>
+                Reset Password
+              </h2>
+              <button
+                onClick={() => {
+                  setShowResetModal(false);
+                  setResetTargetEmployee(null);
+                  setResetSuccessPassword('');
+                }}
+                className="p-1.5 hover:bg-slate-50 rounded-full cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {resetSuccessPassword ? (
+              <div className="space-y-6">
+                <div className="p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl">
+                  <p className="text-label-md font-bold">Password reset successfully!</p>
+                  <p className="text-xs mt-1">Please copy the new credentials below and share them securely with the employee.</p>
+                </div>
+
+                <div className="space-y-3 p-4 bg-slate-50 border border-slate-150 rounded-xl">
+                  <div>
+                    <span className="text-[10px] text-outline font-bold uppercase block">Employee Name</span>
+                    <span className="text-body-sm font-bold text-on-surface">
+                      {resetTargetEmployee.firstName} {resetTargetEmployee.lastName}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-outline font-bold uppercase block">New Password</span>
+                    <div className="flex items-center justify-between mt-1 p-2.5 bg-white border border-slate-200 rounded-lg">
+                      <span className="text-body-sm font-mono font-bold text-primary select-all">
+                        {resetSuccessPassword}
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(resetSuccessPassword);
+                          toast.success('Password copied to clipboard');
+                        }}
+                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => {
+                      setShowResetModal(false);
+                      setResetTargetEmployee(null);
+                      setResetSuccessPassword('');
+                    }}
+                    className="px-6 py-2.5 bg-primary hover:bg-blue-700 text-white rounded-xl text-label-md font-bold transition-all cursor-pointer shadow-md"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs leading-relaxed">
+                  <p className="font-bold flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px]">warning</span>
+                    Security Verification Required
+                  </p>
+                  <p className="mt-1 text-slate-700">
+                    To reset the password for <strong>{resetTargetEmployee.firstName} {resetTargetEmployee.lastName}</strong>, please verify your own administrator credentials. This action will terminate all other active sessions for this employee.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">
+                    Your Admin Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showAdminPassword ? "text" : "password"}
+                      required
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="Enter your current password"
+                      className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPassword(!showAdminPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        {showAdminPassword ? "visibility_off" : "visibility"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">
+                    New Employee Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewEmployeePassword ? "text" : "password"}
+                      required
+                      value={newEmployeePassword}
+                      onChange={(e) => setNewEmployeePassword(e.target.value)}
+                      placeholder="Minimum 8 characters"
+                      className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewEmployeePassword(!showNewEmployeePassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        {showNewEmployeePassword ? "visibility_off" : "visibility"}
+                      </span>
+                    </button>
+                  </div>
+                  <div className="flex justify-between items-center mt-1.5">
+                    <span className="text-[10px] text-outline font-semibold">Choose a strong, unique password</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const generated = `DM-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+                        setNewEmployeePassword(generated);
+                        setShowNewEmployeePassword(true);
+                      }}
+                      className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+                    >
+                      Generate Secure Password
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowResetModal(false);
+                      setResetTargetEmployee(null);
+                    }}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-on-surface rounded-xl text-label-md font-bold transition-all active:scale-[0.98] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resetSubmitting}
+                    className="px-5 py-2.5 bg-primary hover:bg-blue-700 text-white rounded-xl text-label-md font-bold transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  >
+                    {resetSubmitting ? (
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : null}
+                    Confirm Reset
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      
 
 
     </div>

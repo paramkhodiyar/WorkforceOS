@@ -379,7 +379,10 @@ function ProfileContent() {
         </div>
 
         <div className="md:col-span-2 bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex border-b border-slate-100 bg-slate-50/50 px-4">
+          <div 
+            className="flex border-b border-slate-100 bg-slate-50/50 px-4 overflow-x-auto whitespace-nowrap scrollbar-none"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {tabs.map(tab => (
               <button
                 key={tab.id}
@@ -387,7 +390,7 @@ function ProfileContent() {
                   setActiveTab(tab.id as any);
                   setEditing(false);
                 }}
-                className={`px-4 py-3.5 text-label-sm font-bold border-b-2 transition-all cursor-pointer ${
+                className={`px-4 py-3.5 text-label-sm font-bold border-b-2 transition-all cursor-pointer shrink-0 ${
                   activeTab === tab.id
                     ? 'border-primary text-primary'
                     : 'border-transparent text-outline hover:text-on-surface'

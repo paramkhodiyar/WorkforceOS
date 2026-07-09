@@ -216,7 +216,17 @@ class _WebViewScreenState extends State<WebViewScreen> {
   // ── Back button → WebView history → exit dialog ───────────────────────────
 
   Future<bool> _onWillPop() async {
-    if (await _controller.canGoBack()) {
+    final String? currentUrl = await _controller.currentUrl();
+    
+    // Check if we are on dashboard or login or root pages where pressing back should exit the app
+    final bool isRootOrDashboard = currentUrl == null || 
+        currentUrl.isEmpty || 
+        currentUrl.endsWith('/dashboard') || 
+        currentUrl.endsWith('/dashboard/') ||
+        currentUrl.endsWith('/login') ||
+        currentUrl.endsWith('/login/');
+
+    if (!isRootOrDashboard && await _controller.canGoBack()) {
       await _controller.goBack();
       return false;
     }
@@ -225,8 +235,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       context: context,
       barrierColor: Colors.black.withOpacity(0.4),
       builder: (ctx) => Dialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(24.0),

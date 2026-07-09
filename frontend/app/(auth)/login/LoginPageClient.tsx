@@ -22,12 +22,26 @@ export default function LoginPageClient() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Forgot password flow
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('superadmin@workforceos.com');
+
   // Mobile-only biometric toggle state
   const [isMobile, setIsMobile] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
 
   useEffect(() => {
+    // Load admin contact email
+    const { api } = require('../../../lib/api/client');
+    api.auth.getAdminContact()
+      .then((res: any) => {
+        if (res.data?.email) {
+          setForgotEmail(res.data.email);
+        }
+      })
+      .catch(() => {});
+
     const mobile = isInFlutterWebView();
     setIsMobile(mobile);
     if (mobile) {
@@ -202,6 +216,15 @@ export default function LoginPageClient() {
                 </button>
               </div>
             </div>
+            <div className="flex justify-end mt-1">
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(true)}
+                className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+              >
+                Forgot Password?
+              </button>
+            </div>
             <button
               type="submit"
               disabled={loading}
@@ -254,6 +277,40 @@ export default function LoginPageClient() {
                 className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700"
               >
                 I Consent & Enable
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── Forgot Password Info Modal ───────────────────────────────── */}
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex justify-center">
+              <div className="h-14 w-14 rounded-2xl bg-blue-100 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[32px] text-blue-600">lock_reset</span>
+              </div>
+            </div>
+            <h3 className="text-center text-lg font-bold text-slate-900">Forgot Password?</h3>
+            <div className="text-sm text-slate-655 leading-relaxed space-y-2">
+              <p>For security and DPDP compliance, WorkforceOS passwords must be reset securely by an administrator.</p>
+              <p className="text-xs text-slate-500">Please send a request to your System or HR Administrator to reset your password. You can email them directly at:</p>
+            </div>
+            <div className="pt-2 flex justify-center">
+              <a
+                href={`mailto:${forgotEmail}?subject=Password Reset Request&body=Hi Administrator,%0D%0A%0D%0AI have forgotten my password for WorkforceOS. Could you please reset it?%0D%0A%0D%0AMy registered email is: [Enter Your Email here]`}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-900 bg-blue-100 hover:bg-blue-200 px-3.5 py-2.5 rounded-xl transition-colors border border-blue-200"
+              >
+                <span className="material-symbols-outlined text-[16px]">mail</span>
+                {forgotEmail}
+              </a>
+            </div>
+            <div className="pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setShowForgotModal(false)}
+                className="w-full py-2.5 bg-slate-150 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>

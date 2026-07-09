@@ -103,3 +103,19 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
   await AuthService.changePassword(userId, orgId, oldPassword, newPassword, req);
   return sendSuccess(res, null, "Password updated successfully");
 });
+
+export const getAdminContact = asyncHandler(async (req: Request, res: Response) => {
+  const adminUser = await prisma.user.findFirst({
+    where: {
+      systemRole: "SUPER_ADMIN",
+      isDeleted: false
+    },
+    select: {
+      email: true
+    }
+  });
+  return sendSuccess(res, {
+    email: adminUser?.email || "superadmin@workforceos.com"
+  });
+});
+

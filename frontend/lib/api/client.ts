@@ -151,6 +151,7 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
+    getAdminContact: (): Promise<any> => request('/auth/admin-contact'),
   },
   employees: {
     resetPassword: (employeeId: string, data: any): Promise<any> =>

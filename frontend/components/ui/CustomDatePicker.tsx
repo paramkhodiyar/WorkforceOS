@@ -114,9 +114,26 @@ export function CustomDatePicker({ label, value, onChange, min, placeholder, req
             >
               <span className="material-symbols-outlined text-[18px] text-slate-600">chevron_left</span>
             </button>
-            <span className="text-[12px] font-extrabold text-slate-800">
-              {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
-            </span>
+            <div className="flex items-center gap-1 font-sans">
+              <select
+                value={viewDate.getMonth()}
+                onChange={(e) => setViewDate(new Date(viewDate.getFullYear(), parseInt(e.target.value), 1))}
+                className="bg-transparent text-[11px] font-extrabold text-slate-800 outline-none cursor-pointer hover:text-primary transition-colors py-0.5 border-none focus:ring-0 p-0"
+              >
+                {MONTHS.map((m, idx) => (
+                  <option key={m} value={idx}>{m}</option>
+                ))}
+              </select>
+              <select
+                value={viewDate.getFullYear()}
+                onChange={(e) => setViewDate(new Date(parseInt(e.target.value), viewDate.getMonth(), 1))}
+                className="bg-transparent text-[11px] font-extrabold text-slate-800 outline-none cursor-pointer hover:text-primary transition-colors py-0.5 border-none focus:ring-0 p-0"
+              >
+                {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() + 10 - i).map(yr => (
+                  <option key={yr} value={yr}>{yr}</option>
+                ))}
+              </select>
+            </div>
             <button
               type="button"
               onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}

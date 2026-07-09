@@ -811,7 +811,7 @@ export default function EmployeesPage() {
                 {/* Step 0: Personal Info */}
                 {activeStep === 0 && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">First Name *</label>
                         <input
@@ -834,7 +834,7 @@ export default function EmployeesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Work Email *</label>
                         <input
@@ -856,7 +856,7 @@ export default function EmployeesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Personal Email</label>
                         <input
@@ -877,7 +877,7 @@ export default function EmployeesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <CustomDatePicker
                           label="Date of Birth"
@@ -898,7 +898,7 @@ export default function EmployeesPage() {
                           <option value="Other">Other</option>
                         </select>
                       </div>
-                      <div>
+                      <div className="col-span-1 md:col-span-2">
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Blood Group</label>
                         <select
                           value={bloodGroup}
@@ -915,8 +915,8 @@ export default function EmployeesPage() {
 
                     <div className="space-y-3 pt-2">
                       <h3 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Address Details</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="col-span-1 md:col-span-2">
                           <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Address Line 1</label>
                           <input
                             type="text"
@@ -925,7 +925,7 @@ export default function EmployeesPage() {
                             className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
                           />
                         </div>
-                        <div className="col-span-2">
+                        <div className="col-span-1 md:col-span-2">
                           <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Address Line 2</label>
                           <input
                             type="text"
@@ -978,7 +978,7 @@ export default function EmployeesPage() {
                 {/* Step 1: Professional Info */}
                 {activeStep === 1 && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Designation</label>
                         <input
@@ -1003,7 +1003,7 @@ export default function EmployeesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Department</label>
                         <select
@@ -1036,7 +1036,7 @@ export default function EmployeesPage() {
                       </div>
                     </div>
 
-                     <div className="grid grid-cols-2 gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <CustomDatePicker
                           label="Join Date"
@@ -1053,7 +1053,7 @@ export default function EmployeesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Work Location</label>
                         <input
@@ -1084,7 +1084,7 @@ export default function EmployeesPage() {
                     {/* Leave Allocations */}
                     <div className="space-y-3 pt-2">
                       <h3 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Leave Allocations (Days per Year)</h3>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Sick Leaves</label>
                           <input
@@ -1123,7 +1123,7 @@ export default function EmployeesPage() {
                 {/* Step 2: Compensation */}
                 {activeStep === 2 && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Salary Band</label>
                         <select
@@ -1150,7 +1150,7 @@ export default function EmployeesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Tax Regime</label>
                         <select
@@ -1196,8 +1196,8 @@ export default function EmployeesPage() {
                       <p className="text-body-xs font-medium">Bank details and PAN are securely encrypted at rest using industry-grade AES-256-GCM. These fields are masked for authorized views.</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="col-span-1 md:col-span-2">
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Account Holder Name</label>
                         <input
                           type="text"
@@ -1224,7 +1224,7 @@ export default function EmployeesPage() {
                           className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
                         />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1 md:col-span-2">
                         <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Account Number</label>
                         <input
                           type="text"

@@ -11,22 +11,15 @@ export default function SideNavBar() {
   const { user, features } = useAuth();
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
 
-  const systemRole = user?.systemRole;
-  const userRoles = user?.roles || [];
-  const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
-  const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
-  const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
-  const isLeaderOrHead = (user?.departmentHead && user.departmentHead.length > 0) || (user?.teamLead && user.teamLead.length > 0);
-  const isActualManager = isManager || isLeaderOrHead;
-  const hasTeamsOrDepts =
-    isLeaderOrHead ||
-    (user?.teams && user.teams.length > 0) ||
-    user?.departmentId !== null;
-  const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
-
   useEffect(() => {
+    if (!user) return;
+    const sysRole = user.systemRole;
+    const usrRoles = user.roles || [];
+    const isHrRole = usrRoles.some((r: any) => r.roleName === 'HR_MANAGER');
+    const isAdminRole = sysRole === 'SUPER_ADMIN' || sysRole === 'ORG_ADMIN';
+
     function checkPending() {
-      if (isAdmin || isHR) {
+      if (isAdminRole || isHrRole) {
         api.employees.listProfileRequests()
           .then(res => {
             const pending = res.data?.some((r: any) => r.status === 'PENDING');
@@ -42,7 +35,22 @@ export default function SideNavBar() {
       window.addEventListener('profile-requests-updated', checkPending);
       return () => window.removeEventListener('profile-requests-updated', checkPending);
     }
-  }, [isAdmin, isHR]);
+  }, [user]);
+
+  if (!user) return null;
+
+  const systemRole = user.systemRole;
+  const userRoles = user.roles || [];
+  const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
+  const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
+  const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
+  const isLeaderOrHead = (user.departmentHead && user.departmentHead.length > 0) || (user.teamLead && user.teamLead.length > 0);
+  const isActualManager = isManager || isLeaderOrHead;
+  const hasTeamsOrDepts =
+    isLeaderOrHead ||
+    (user.teams && user.teams.length > 0) ||
+    user.departmentId !== null;
+  const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
 
   const menuItems = [
     {
@@ -136,8 +144,6 @@ export default function SideNavBar() {
       show: isAdmin && features.includes('audit')
     }
   ];
-
-  if (!user || !systemRole) return null;
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface-container-lowest flex flex-col p-5 z-40 hidden md:flex">

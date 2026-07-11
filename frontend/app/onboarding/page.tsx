@@ -509,7 +509,9 @@ export default function OnboardingPage() {
                     accept=".xlsx,.xls,.csv"
                     onChange={handleFileChange}
                   />
-                  <span className="text-4xl mb-3">📊</span>
+                  <svg className="w-10 h-10 text-green-600 fill-current mb-3 shrink-0" viewBox="0 0 24 24">
+                    <path d="M21.17 3.25Q21.5 3.25 21.75 3.5T22 4.08V19.92Q22 20.5 21.75 20.75T21.17 21H7.83Q7.5 21 7.25 20.75T7 20.17V17H2.83Q2.5 17 2.25 16.75T2 16.17V7.83Q2 7.5 2.25 7.25T2.83 7H7V3.83Q7 3.25 7.83 3.25M7 9H4.5V11H7M7 13H4.5V15H7M20 5H9V19H20M11 7H13.5V9.5H11M11 11H13.5V13.5H11M11 15H13.5V17.5H11M15 7H18V9.5H15M15 11H18V13.5H15M15 15H18V17.5H15" />
+                  </svg>
                   <span className="text-sm font-bold text-slate-700 block mb-1">
                     {file ? file.name : 'Select or drag employee spreadsheet here'}
                   </span>
@@ -731,10 +733,12 @@ export default function OnboardingPage() {
                           <td className="p-2">
                             <button
                               onClick={() => handleDeleteEmployee(row.index)}
-                              className="text-red-500 hover:text-red-700 font-bold p-1"
+                              className="text-red-500 hover:text-red-750 p-1 flex items-center justify-center transition-colors rounded hover:bg-red-50"
                               title="Delete Row"
                             >
-                              🗑
+                              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                              </svg>
                             </button>
                           </td>
                         </tr>
@@ -864,11 +868,11 @@ export default function OnboardingPage() {
                   >
                     {isSubmitting ? (
                       <>
-                        <span className="animate-spin text-xs">⏳</span>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0"></div>
                         <span>Setting Up Workspace...</span>
                       </>
                     ) : (
-                      <span>Complete Setup & Import ✓</span>
+                      <span>Complete Setup & Import</span>
                     )}
                   </button>
                 </div>

@@ -439,14 +439,17 @@ export default function HomepageClient() {
           </p>
 
           {/* Interactive Workspace Simulator Container */}
-          <div className="w-full max-w-[850px] mx-auto bg-white border border-slate-300 rounded-[24px] p-6 shadow-sm flex flex-col md:flex-row gap-6 relative overflow-hidden select-none">
+          <div className="w-full max-w-[850px] mx-auto bg-white border border-slate-350 rounded-[24px] p-6 shadow-sm flex flex-col md:flex-row gap-6 relative overflow-hidden select-none">
             
             {/* Left Column: Local Folder (Excel Source) */}
             <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-left flex flex-col justify-between h-[280px] relative">
               <div>
                 <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-3">Local Files</span>
                 <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg shadow-sm">
-                  <span className="text-xl">📁</span>
+                  {/* Folder Icon SVG */}
+                  <svg className="w-5 h-5 text-slate-500 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                  </svg>
                   <div>
                     <span className="text-xs font-bold text-slate-700 block">Desktop</span>
                     <span className="text-[10px] text-slate-400">2 files found</span>
@@ -470,7 +473,10 @@ export default function HomepageClient() {
                     transformOrigin: 'center'
                   }}
                 >
-                  <span className="text-2xl">📊</span>
+                  {/* Spreadsheet Icon SVG */}
+                  <svg className="w-6 h-6 text-green-600 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M21.17 3.25Q21.5 3.25 21.75 3.5T22 4.08V19.92Q22 20.5 21.75 20.75T21.17 21H7.83Q7.5 21 7.25 20.75T7 20.17V17H2.83Q2.5 17 2.25 16.75T2 16.17V7.83Q2 7.5 2.25 7.25T2.83 7H7V3.83Q7 3.25 7.83 3.25M7 9H4.5V11H7M7 13H4.5V15H7M20 5H9V19H20M11 7H13.5V9.5H11M11 11H13.5V13.5H11M11 15H13.5V17.5H11M15 7H18V9.5H15M15 11H18V13.5H15M15 15H18V17.5H15" />
+                  </svg>
                   <div className="text-left">
                     <span className="text-xs font-bold text-green-800 block font-sans">employee_directory.xlsx</span>
                     <span className="text-[9px] text-green-600 block font-sans">14 employees • 2 sheets</span>
@@ -480,8 +486,11 @@ export default function HomepageClient() {
                 {/* Hand/Cursor Drag Indicator */}
                 {simState === 'idle' && (
                   <div className="absolute top-[65%] left-[55%] animate-bounce-short z-30 pointer-events-none flex flex-col items-center">
-                    <span className="text-2xl">👆</span>
-                    <span className="text-[9px] bg-slate-900 text-white font-bold px-1.5 py-0.5 rounded shadow">Drag Me</span>
+                    {/* Drag pointer hand SVG */}
+                    <svg className="w-6 h-6 text-slate-800 fill-current filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]" viewBox="0 0 24 24">
+                      <path d="M9 11.75V5c0-1.66 1.34-3 3-3s3 1.34 3 3v6.75c.98-.66 2.23-.42 2.92.57l.08.12c.57.87.41 2.05-.36 2.73l-4.14 3.7c-.57.51-1.31.79-2.07.79H10c-1.66 0-3-1.34-3-3v-2.31c0-.85.53-1.61 1.32-1.9l.68-.29M12 4c-.55 0-1 .45-1 1v6.75l-.92.39c-.26.11-.43.37-.43.66v2.31c0 1.1.9 2 2 2h1.43c.48 0 .94-.18 1.3-.5l4.13-3.7c.25-.22.3-.61.12-.89l-.07-.1c-.22-.32-.62-.4-.94-.18L15 14.25V5c0-.55-.45-1-1-1s-1 .45-1 1v7h-1v-7c0-.55-.45-1-1-1" />
+                    </svg>
+                    <span className="text-[9px] bg-slate-900 text-white font-bold px-1.5 py-0.5 rounded shadow mt-1">Drag Me</span>
                   </div>
                 )}
               </div>
@@ -491,7 +500,7 @@ export default function HomepageClient() {
 
             {/* Middle Indicator */}
             <div className="hidden md:flex items-center justify-center">
-              <span className="text-slate-300 text-2xl font-bold">→</span>
+              <span className="text-slate-350 text-2xl font-bold">→</span>
             </div>
 
             {/* Right Column: WorkforceOS Destination */}
@@ -509,7 +518,10 @@ export default function HomepageClient() {
                   <div className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 ${
                     simState === 'dragging' ? 'border-blue-500 bg-blue-55/40 text-blue-600' : 'border-slate-350 text-slate-400'
                   }`}>
-                    <span className="text-2xl mb-2">📥</span>
+                    {/* Cloud Upload Icon SVG */}
+                    <svg className="w-8 h-8 text-blue-500 fill-none stroke-current stroke-2 mb-2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
                     <span className="text-xs font-bold text-center block font-sans">Drop Excel sheet here</span>
                     <span className="text-[9.5px] text-slate-400 mt-1 text-center font-sans">Supports xlsx, csv, multi-sheets</span>
                   </div>
@@ -517,7 +529,8 @@ export default function HomepageClient() {
 
                 {(simState === 'dropped' || simState === 'processing') && (
                   <div className="w-full px-4 flex flex-col items-center justify-center animate-fade-in">
-                    <span className="text-xl animate-spin mb-3">⚙️</span>
+                    {/* Circular Spinner Loader */}
+                    <div className="w-8 h-8 border-[3px] border-blue-100 border-t-blue-600 rounded-full animate-spin mb-3"></div>
                     <span className="text-xs font-bold text-slate-700 block mb-1 font-sans">
                       {simProgress < 35 && "Reading Excel sheets..."}
                       {simProgress >= 35 && simProgress < 65 && "Parsing employee records..."}
@@ -533,8 +546,11 @@ export default function HomepageClient() {
 
                 {simState === 'success' && (
                   <div className="w-full text-center flex flex-col items-center justify-center px-4" style={{ animation: "fade-in 0.4s ease-out forwards" }}>
-                    <div className="w-14 h-14 bg-green-550 rounded-full flex items-center justify-center text-white text-3xl shadow-md border-4 border-white mb-3" style={{ animation: "scaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards" }}>
-                      ✓
+                    {/* Apple Success Spring scaling checkmark in matching green */}
+                    <div className="w-12 h-12 bg-green-50 border border-green-200 rounded-full flex items-center justify-center shadow-sm mb-3" style={{ animation: "scaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards" }}>
+                      <svg className="w-6 h-6 stroke-green-600 fill-none stroke-[3.5] stroke-linecap-round stroke-linejoin-round" viewBox="0 0 24 24">
+                        <polyline points="20 6 9 17 4 12" className="draw-checkmark" />
+                      </svg>
                     </div>
                     <span className="text-xs font-extrabold text-green-700 uppercase tracking-widest block mb-1 font-sans">Onboarding Successful</span>
                     <span className="text-sm font-bold text-slate-800 block font-sans">Dunder Mifflin Inc. Setup Completed</span>

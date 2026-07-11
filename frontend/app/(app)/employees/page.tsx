@@ -867,66 +867,66 @@ export default function EmployeesPage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">First Name *</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">First Name *</label>
                         <input
                           type="text"
                           required
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Last Name *</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Last Name *</label>
                         <input
                           type="text"
                           required
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Work Email *</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Work Email *</label>
                         <input
                           type="email"
                           required
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Work Phone</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Work Phone</label>
                         <input
                           type="text"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Personal Email</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Personal Email</label>
                         <input
                           type="email"
                           value={personalEmail}
                           onChange={(e) => setPersonalEmail(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Personal Phone</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Personal Phone</label>
                         <input
                           type="text"
                           value={personalPhone}
                           onChange={(e) => setPersonalPhone(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                     </div>
@@ -967,57 +967,57 @@ export default function EmployeesPage() {
                       <h3 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Address Details</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="col-span-1 md:col-span-2">
-                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Address Line 1</label>
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Address Line 1</label>
                           <input
                             type="text"
                             value={addressLine1}
                             onChange={(e) => setAddressLine1(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                           />
                         </div>
                         <div className="col-span-1 md:col-span-2">
-                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Address Line 2</label>
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Address Line 2</label>
                           <input
                             type="text"
                             value={addressLine2}
                             onChange={(e) => setAddressLine2(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">City</label>
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">City</label>
                           <input
                             type="text"
                             value={addressCity}
                             onChange={(e) => setAddressCity(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">State</label>
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">State</label>
                           <input
                             type="text"
                             value={addressState}
                             onChange={(e) => setAddressState(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Pincode</label>
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Pincode</label>
                           <input
                             type="text"
                             value={addressPincode}
                             onChange={(e) => setAddressPincode(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Country</label>
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Country</label>
                           <input
                             type="text"
                             value={addressCountry}
                             onChange={(e) => setAddressCountry(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                           />
                         </div>
                       </div>
@@ -1030,12 +1030,12 @@ export default function EmployeesPage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Designation</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Designation</label>
                         <input
                           type="text"
                           value={designation}
                           onChange={(e) => setDesignation(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div>
@@ -1098,13 +1098,13 @@ export default function EmployeesPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Work Location</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Work Location</label>
                         <input
                           type="text"
                           placeholder="e.g. Scranton HQ"
                           value={workLocation}
                           onChange={(e) => setWorkLocation(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div>
@@ -1126,33 +1126,33 @@ export default function EmployeesPage() {
                       <h3 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Leave Allocations (Days per Year)</h3>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Sick Leaves</label>
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Sick Leaves</label>
                           <input
                             type="number"
                             min="0"
                             value={sickLeaves}
                             onChange={(e) => setSickLeaves(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Casual Leaves</label>
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Casual Leaves</label>
                           <input
                             type="number"
                             min="0"
                             value={casualLeaves}
                             onChange={(e) => setCasualLeaves(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Earned Leaves</label>
+                          <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Earned Leaves</label>
                           <input
                             type="number"
                             min="0"
                             value={earnedLeaves}
                             onChange={(e) => setEarnedLeaves(e.target.value)}
-                            className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                           />
                         </div>
                       </div>
@@ -1179,13 +1179,13 @@ export default function EmployeesPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Basic Monthly Salary (₹)</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Basic Monthly Salary (₹)</label>
                         <input
                           type="number"
                           min="0"
                           value={basicSalary}
                           onChange={(e) => setBasicSalary(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                     </div>
@@ -1203,13 +1203,13 @@ export default function EmployeesPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">CTC Annual (₹)</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">CTC Annual (₹)</label>
                         <input
                           type="number"
                           min="0"
                           value={ctcAnnual}
                           onChange={(e) => setCtcAnnual(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                     </div>
@@ -1238,40 +1238,40 @@ export default function EmployeesPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="col-span-1 md:col-span-2">
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Account Holder Name</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Account Holder Name</label>
                         <input
                           type="text"
                           value={accountHolderName}
                           onChange={(e) => setAccountHolderName(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Bank Name</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Bank Name</label>
                         <input
                           type="text"
                           value={bankName}
                           onChange={(e) => setBankName(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">IFSC Code</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">IFSC Code</label>
                         <input
                           type="text"
                           value={ifscCode}
                           onChange={(e) => setIfscCode(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div className="col-span-1 md:col-span-2">
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Account Number</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Account Number</label>
                         <div className="relative">
                           <input
                             type={showAccountNumber ? "text" : "password"}
                             value={accountNumber}
                             onChange={(e) => setAccountNumber(e.target.value)}
-                            className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                            className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono text-slate-800 shadow-sm"
                           />
                           <button
                             type="button"
@@ -1285,13 +1285,13 @@ export default function EmployeesPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">PAN Number</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">PAN Number</label>
                         <div className="relative">
                           <input
                             type={showPanNumber ? "text" : "password"}
                             value={panNumber}
                             onChange={(e) => setPanNumber(e.target.value)}
-                            className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                            className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono text-slate-800 shadow-sm"
                           />
                           <button
                             type="button"
@@ -1305,14 +1305,14 @@ export default function EmployeesPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Aadhaar Last 4 Digits</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Aadhaar Last 4 Digits</label>
                         <input
                           type="text"
                           maxLength={4}
                           placeholder="e.g. 1234"
                           value={aadhaarLast4}
                           onChange={(e) => setAadhaarLast4(e.target.value.replace(/\D/g, ''))}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                     </div>
@@ -1324,40 +1324,40 @@ export default function EmployeesPage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="col-span-2">
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Contact Name</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Contact Name</label>
                         <input
                           type="text"
                           value={emergencyName}
                           onChange={(e) => setEmergencyName(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Relation</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Relation</label>
                         <input
                           type="text"
                           placeholder="e.g. Spouse, Parent, Sibling"
                           value={emergencyRelation}
                           onChange={(e) => setEmergencyRelation(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Phone Number</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Phone Number</label>
                         <input
                           type="text"
                           value={emergencyPhone}
                           onChange={(e) => setEmergencyPhone(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Alternative Phone Number</label>
+                        <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">Alternative Phone Number</label>
                         <input
                           type="text"
                           value={emergencyAltPhone}
                           onChange={(e) => setEmergencyAltPhone(e.target.value)}
-                          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                         />
                       </div>
                     </div>
@@ -1368,11 +1368,11 @@ export default function EmployeesPage() {
                 {activeStep === 5 && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">System Permission Role</label>
+                      <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">System Permission Role</label>
                       <select
                         value={systemRoleField}
                         onChange={(e) => setSystemRoleField(e.target.value)}
-                        className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium"
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium text-slate-800 shadow-sm"
                       >
                         <option value="SUPER_ADMIN">Super Admin</option>
                         <option value="ORG_ADMIN">Organization Admin</option>
@@ -1573,7 +1573,7 @@ export default function EmployeesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">
+                  <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">
                     Your Admin Password
                   </label>
                   <div className="relative">
@@ -1583,7 +1583,7 @@ export default function EmployeesPage() {
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
                       placeholder="Enter your current password"
-                      className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                      className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono text-slate-800 shadow-sm"
                     />
                     <button
                       type="button"
@@ -1598,7 +1598,7 @@ export default function EmployeesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">
+                  <label className="text-[10px] text-outline uppercase font-bold tracking-wider block mb-1.5">
                     New Employee Password
                   </label>
                   <div className="relative">
@@ -1608,7 +1608,7 @@ export default function EmployeesPage() {
                       value={newEmployeePassword}
                       onChange={(e) => setNewEmployeePassword(e.target.value)}
                       placeholder="Minimum 8 characters"
-                      className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono"
+                      className="w-full px-4 py-2.5 pr-10 bg-white border border-slate-200 focus:border-primary rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary outline-none font-medium font-mono text-slate-800 shadow-sm"
                     />
                     <button
                       type="button"

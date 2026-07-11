@@ -83,21 +83,43 @@ function ProfileContent() {
       const res = await api.employees.get(targetId);
       setProfile(res.data);
 
-      try {
-        const teamRes = await api.attendance.team();
-        const member = teamRes.data?.find((m: any) => m.id === targetId);
-        const todayRecord = member?.attendances?.[0];
-        if (todayRecord) {
-          if (!todayRecord.checkOut) {
-            setAttendanceStatus('ACTIVE');
+      if (isOwnProfile) {
+        try {
+          const todayRes = await api.attendance.getCurrentStatus();
+          const todayRecord = todayRes.data;
+          if (todayRecord) {
+            if (!todayRecord.checkOut) {
+              setAttendanceStatus('ACTIVE');
+            } else {
+              setAttendanceStatus('COMPLETED');
+            }
           } else {
-            setAttendanceStatus('COMPLETED');
+            setAttendanceStatus('OFFLINE');
           }
-        } else {
+        } catch (err) {
+          console.error(err);
           setAttendanceStatus('OFFLINE');
         }
-      } catch (err) {
-        console.error(err);
+      } else if (isAdmin || isHR) {
+        try {
+          const teamRes = await api.attendance.team();
+          const member = teamRes.data?.find((m: any) => m.id === targetId);
+          const todayRecord = member?.attendances?.[0];
+          if (todayRecord) {
+            if (!todayRecord.checkOut) {
+              setAttendanceStatus('ACTIVE');
+            } else {
+              setAttendanceStatus('COMPLETED');
+            }
+          } else {
+            setAttendanceStatus('OFFLINE');
+          }
+        } catch (err) {
+          console.error(err);
+          setAttendanceStatus('OFFLINE');
+        }
+      } else {
+        setAttendanceStatus('OFFLINE');
       }
 
       try {

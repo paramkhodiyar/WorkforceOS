@@ -421,9 +421,12 @@ export default function SettingsPage() {
       </div>
 
       {errorMessage && (
-        <div className="p-4 bg-error-container text-error rounded-xl text-body-sm font-medium border border-error/20 flex items-center justify-between">
-          <span>{errorMessage}</span>
-          <button onClick={() => setErrorMessage('')} className="text-error hover:opacity-80 font-bold cursor-pointer">
+        <div className="p-4 bg-error-container text-error rounded-xl text-body-sm font-medium border border-error/20 flex items-start justify-between gap-4">
+          <span className="flex-1 min-w-0 break-words">{errorMessage}</span>
+          <button 
+            onClick={() => setErrorMessage('')} 
+            className="text-error hover:opacity-80 font-bold cursor-pointer shrink-0 transition-opacity"
+          >
             Dismiss
           </button>
         </div>

@@ -37,3 +37,25 @@ export const updateOrgFeatures = asyncHandler(async (req: Request, res: Response
   const updated = await OrganizationService.updateFeatures(orgId, enabledFeatures, req.user!.id, req);
   return sendSuccess(res, updated, "Organization features configured successfully");
 });
+
+export const updateOrgLocation = asyncHandler(async (req: Request, res: Response) => {
+  if (req.user!.systemRole !== "SUPER_ADMIN" && req.user!.systemRole !== "ORG_ADMIN") {
+    throw AppError.forbidden("Only organization administrators are authorized to configure geofencing settings");
+  }
+
+  const { orgId } = req.params;
+
+  if (req.user!.systemRole === "ORG_ADMIN" && req.user!.organizationId !== orgId) {
+    throw AppError.forbidden("You can only configure geofencing settings for your own organization");
+  }
+
+  const { officeLatitude, officeLongitude, officeRadius } = req.body;
+
+  const updated = await OrganizationService.updateLocation(
+    orgId,
+    { officeLatitude, officeLongitude, officeRadius },
+    req.user!.id,
+    req
+  );
+  return sendSuccess(res, updated, "Organization geofencing configured successfully");
+});

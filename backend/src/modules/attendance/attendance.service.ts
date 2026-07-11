@@ -54,9 +54,12 @@ export class AttendanceService {
     const status = isLate ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
 
     let notes: string | undefined = undefined;
-    const OFFICE_LAT = 12.9716;
-    const OFFICE_LNG = 77.5946;
-    const MAX_RADIUS_METERS = 200;
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId }
+    });
+    const OFFICE_LAT = org?.officeLatitude ?? 12.9716;
+    const OFFICE_LNG = org?.officeLongitude ?? 77.5946;
+    const MAX_RADIUS_METERS = org?.officeRadius ?? 200;
 
     if (workMode === "WFO" && gpsLat !== undefined && gpsLng !== undefined && gpsLat !== null && gpsLng !== null) {
       const R = 6371e3; // Earth's radius in meters

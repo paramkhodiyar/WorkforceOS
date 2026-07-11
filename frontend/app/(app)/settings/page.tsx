@@ -9,7 +9,7 @@ import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function SettingsPage() {
   const { user, features, setFeatures } = useAuth();
-  const [activeTab, setActiveTab] = useState<'departments' | 'teams' | 'features'>('departments');
+  const [activeTab, setActiveTab] = useState<'departments' | 'teams' | 'features' | 'location'>('departments');
   const [departments, setDepartments] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -17,6 +17,11 @@ export default function SettingsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [featureToggling, setFeatureToggling] = useState(false);
+
+  const [officeLat, setOfficeLat] = useState<string>('');
+  const [officeLng, setOfficeLng] = useState<string>('');
+  const [officeRadius, setOfficeRadius] = useState<string>('');
+  const [savingLocation, setSavingLocation] = useState(false);
 
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [deptForm, setDeptForm] = useState<{ id?: string; name: string; headId: string | null; employeeIds: string[] }>({
@@ -56,15 +61,21 @@ export default function SettingsPage() {
   async function loadData() {
     try {
       setLoading(true);
-      const [deptRes, teamRes, empRes] = await Promise.all([
+      const [deptRes, teamRes, empRes, orgRes] = await Promise.all([
         api.departments.list(),
         api.teams.list(),
         api.employees.list({ limit: 1000 }),
+        api.organization.get(),
       ]);
 
       setDepartments(deptRes.data || []);
       setTeams(teamRes.data || []);
       setEmployees(empRes.data || []);
+      if (orgRes?.data) {
+        setOfficeLat(orgRes.data.officeLatitude !== null ? String(orgRes.data.officeLatitude) : '');
+        setOfficeLng(orgRes.data.officeLongitude !== null ? String(orgRes.data.officeLongitude) : '');
+        setOfficeRadius(orgRes.data.officeRadius !== null ? String(orgRes.data.officeRadius) : '');
+      }
       setErrorMessage('');
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to load configuration data.');
@@ -87,6 +98,44 @@ export default function SettingsPage() {
       setErrorMessage(err.message || 'Failed to toggle feature.');
     } finally {
       setFeatureToggling(false);
+    }
+  }
+
+  async function handleSaveLocation(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user?.organizationId) return;
+
+    try {
+      setSavingLocation(true);
+      setErrorMessage('');
+
+      const lat = officeLat.trim() ? parseFloat(officeLat) : null;
+      const lng = officeLng.trim() ? parseFloat(officeLng) : null;
+      const rad = officeRadius.trim() ? parseFloat(officeRadius) : null;
+
+      if ((lat !== null && isNaN(lat)) || (lng !== null && isNaN(lng)) || (rad !== null && isNaN(rad))) {
+        throw new Error('Please enter valid numeric values for latitude, longitude, and radius.');
+      }
+
+      await api.organization.updateLocation(user.organizationId, {
+        officeLatitude: lat,
+        officeLongitude: lng,
+        officeRadius: rad,
+      });
+
+      // Refresh data
+      const orgRes = await api.organization.get();
+      if (orgRes?.data) {
+        setOfficeLat(orgRes.data.officeLatitude !== null ? String(orgRes.data.officeLatitude) : '');
+        setOfficeLng(orgRes.data.officeLongitude !== null ? String(orgRes.data.officeLongitude) : '');
+        setOfficeRadius(orgRes.data.officeRadius !== null ? String(orgRes.data.officeRadius) : '');
+      }
+
+      alert('Office geofencing configuration updated successfully.');
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to save location settings.');
+    } finally {
+      setSavingLocation(false);
     }
   }
 
@@ -285,6 +334,16 @@ export default function SettingsPage() {
         >
           App Management
         </button>
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('location')}
+            className={`flex-1 sm:flex-none px-4 py-2.5 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'location' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Office Location
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -684,6 +743,93 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
+            </div>
+          )}
+          {activeTab === 'location' && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm max-w-lg space-y-6">
+              <div>
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-1">Office Location & Geofencing</h2>
+                <p className="text-body-sm text-outline">
+                  Configure your office coordinates and maximum geofencing allowance radius. 
+                  Clock-ins marked as WFO (Work From Office) will verify users are within bounds.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveLocation} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                      Office Latitude
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 12.9716"
+                      value={officeLat}
+                      onChange={(e) => setOfficeLat(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold"
+                    />
+                  </div>
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                      Office Longitude
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 77.5946"
+                      value={officeLng}
+                      onChange={(e) => setOfficeLng(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                    Allowable Radius (meters)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 200"
+                    value={officeRadius}
+                    onChange={(e) => setOfficeRadius(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold"
+                  />
+                  <p className="text-[10px] text-slate-450">
+                    Minimum: 10m. Reverts to default 200m if empty.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex justify-between items-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition((pos) => {
+                          setOfficeLat(pos.coords.latitude.toFixed(6));
+                          setOfficeLng(pos.coords.longitude.toFixed(6));
+                        }, (err) => {
+                          alert("Unable to fetch current GPS coordinates. Please enter manually.");
+                        });
+                      } else {
+                        alert("Geolocation is not supported by your browser.");
+                      }
+                    }}
+                    className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-650 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-primary">my_location</span>
+                    <span>Use Current Location</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={savingLocation}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    {savingLocation && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0"></div>}
+                    <span>Save Geofencing</span>
+                  </button>
+                </div>
+              </form>
             </div>
           )}
         </>

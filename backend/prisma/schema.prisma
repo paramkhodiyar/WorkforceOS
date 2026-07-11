@@ -171,6 +171,9 @@ model Organization {
   isDeleted   Boolean  @default(false)
   deletedAt   DateTime?
   enabledFeatures String[] @default(["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "notifications", "audit", "calendar"])
+  officeLatitude  Float?
+  officeLongitude Float?
+  officeRadius    Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

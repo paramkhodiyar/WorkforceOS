@@ -348,6 +348,11 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ enabledFeatures }),
       }),
+    updateLocation: (orgId: string, data: { officeLatitude: number | null; officeLongitude: number | null; officeRadius: number | null }): Promise<any> =>
+      request(`/organization/${orgId}/location`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
   },
   notifications: {
     list: (): Promise<any> => request('/notifications'),

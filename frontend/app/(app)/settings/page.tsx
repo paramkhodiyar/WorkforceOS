@@ -152,7 +152,7 @@ export default function SettingsPage() {
     }
 
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       setAddressSuggestions(data || []);
     } catch (err) {

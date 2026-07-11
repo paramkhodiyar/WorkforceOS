@@ -150,12 +150,24 @@ class _WebViewScreenState extends State<WebViewScreen> {
     // Android: auto-grant geolocation/camera once native permission is held
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(false);
-      (controller.platform as AndroidWebViewController)
+      final androidController = controller.platform as AndroidWebViewController;
+      
+      androidController
         ..setMediaPlaybackRequiresUserGesture(false)
         ..setOnPlatformPermissionRequest(
           (PlatformWebViewPermissionRequest req) {
             debugPrint('WebView permission request: ${req.types}');
             req.grant();
+          },
+        )
+        ..setGeolocationPermissionsPromptCallbacks(
+          onShowPrompt: (request) async {
+            debugPrint('WebView geolocation request origin: ${request.origin}');
+            final status = await Permission.locationWhenInUse.request();
+            return GeolocationPermissionsResponse(
+              allow: status.isGranted,
+              retain: true,
+            );
           },
         );
     }

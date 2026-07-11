@@ -27,6 +27,10 @@ export default function DateTimePicker({ label, value, onChange, min, placeholde
   // Raw text while user is typing — null means display real value
   const [hourDraft, setHourDraft] = useState<string | null>(null);
   const [minDraft, setMinDraft] = useState<string | null>(null);
+  
+  const [showMonthSelect, setShowMonthSelect] = useState(false);
+  const [showYearSelect, setShowYearSelect] = useState(false);
+  const [yearSearch, setYearSearch] = useState('');
 
   useEffect(() => {
     if (value) {
@@ -171,16 +175,110 @@ export default function DateTimePicker({ label, value, onChange, min, placeholde
         >
 
           {/* ── Month nav ── */}
-          <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
+          <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100 relative">
             <button type="button" onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1))}
-              className="p-1 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer">
+              className="p-1 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer shrink-0 z-10">
               <span className="material-symbols-outlined text-[18px] text-slate-600">chevron_left</span>
             </button>
-            <span className="text-[12px] font-extrabold text-slate-800">
-              {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
-            </span>
+            
+            <div className="flex items-center gap-1.5 font-sans z-20">
+              {/* Custom Month Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMonthSelect(!showMonthSelect);
+                    setShowYearSelect(false);
+                  }}
+                  className="px-2 py-1 bg-white hover:bg-slate-100 text-[11px] font-extrabold text-slate-800 rounded-lg border border-slate-200 flex items-center gap-0.5 transition-all outline-none cursor-pointer"
+                >
+                  <span>{MONTHS[viewDate.getMonth()]}</span>
+                  <span className="material-symbols-outlined text-[12px] text-slate-500 shrink-0">expand_more</span>
+                </button>
+                {showMonthSelect && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setShowMonthSelect(false)} />
+                    <div className="absolute left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-40 w-28 max-h-40 overflow-y-auto">
+                      {MONTHS.map((m, idx) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => {
+                            setViewDate(new Date(viewDate.getFullYear(), idx, 1));
+                            setShowMonthSelect(false);
+                          }}
+                          className={`w-full text-left px-2.5 py-1 text-[11px] font-medium hover:bg-slate-50 cursor-pointer ${viewDate.getMonth() === idx ? 'text-primary font-bold bg-primary/5' : 'text-slate-700'}`}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Custom Year Input/Dropdown */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={showYearSelect ? yearSearch : viewDate.getFullYear()}
+                  onFocus={() => {
+                    setYearSearch(String(viewDate.getFullYear()));
+                    setShowYearSelect(true);
+                    setShowMonthSelect(false);
+                  }}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setYearSearch(val);
+                    if (val.length === 4) {
+                      const parsed = parseInt(val, 10);
+                      const minYear = minDate ? minDate.getFullYear() : new Date().getFullYear();
+                      if (parsed >= minYear && parsed <= minYear + 30) {
+                        setViewDate(new Date(parsed, viewDate.getMonth(), 1));
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      const parsed = parseInt(yearSearch, 10);
+                      const minYear = minDate ? minDate.getFullYear() : new Date().getFullYear();
+                      if (!isNaN(parsed) && parsed >= minYear && parsed <= minYear + 30) {
+                        setViewDate(new Date(parsed, viewDate.getMonth(), 1));
+                      }
+                      setShowYearSelect(false);
+                    }, 200);
+                  }}
+                  className="w-14 bg-white hover:bg-slate-100 focus:bg-white text-[11px] font-extrabold text-slate-800 text-center rounded-lg border border-slate-200 outline-none px-1.5 py-1 focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                  placeholder="Year"
+                />
+                {showYearSelect && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setShowYearSelect(false)} />
+                    <div className="absolute right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-40 w-16 max-h-40 overflow-y-auto">
+                      {Array.from({ length: 15 }, (_, i) => {
+                        const minYear = minDate ? minDate.getFullYear() : new Date().getFullYear();
+                        return minYear + i;
+                      }).map(yr => (
+                        <button
+                          key={yr}
+                          type="button"
+                          onMouseDown={() => {
+                            setViewDate(new Date(yr, viewDate.getMonth(), 1));
+                            setShowYearSelect(false);
+                          }}
+                          className={`w-full text-center px-1.5 py-1 text-[11px] font-medium hover:bg-slate-50 cursor-pointer ${viewDate.getFullYear() === yr ? 'text-primary font-bold bg-primary/5' : 'text-slate-700'}`}
+                        >
+                          {yr}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
             <button type="button" onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1))}
-              className="p-1 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer">
+              className="p-1 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer shrink-0 z-10">
               <span className="material-symbols-outlined text-[18px] text-slate-600">chevron_right</span>
             </button>
           </div>

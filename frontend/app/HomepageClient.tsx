@@ -529,18 +529,56 @@ export default function HomepageClient() {
 
                 {(simState === 'dropped' || simState === 'processing') && (
                   <div className="w-full px-4 flex flex-col items-center justify-center animate-fade-in">
-                    {/* Circular Spinner Loader */}
-                    <div className="w-8 h-8 border-[3px] border-blue-100 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-                    <span className="text-xs font-bold text-slate-700 block mb-1 font-sans">
-                      {simProgress < 35 && "Reading Excel sheets..."}
-                      {simProgress >= 35 && simProgress < 65 && "Parsing employee records..."}
-                      {simProgress >= 65 && simProgress < 90 && "Mapping columns & managers..."}
-                      {simProgress >= 90 && "Seeding default HR roles..."}
-                    </span>
-                    <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
-                      <div className="bg-blue-600 h-2 rounded-full transition-all duration-100" style={{ width: `${simProgress}%` }}></div>
+                    {/* Mock Excel Sheet Animation */}
+                    <div className="w-full border border-slate-200 rounded-xl overflow-hidden text-[10px] font-sans bg-white shadow-sm max-w-[340px]">
+                      <div className="bg-slate-50 border-b border-slate-200 px-3 py-1.5 flex items-center justify-between font-bold text-slate-500">
+                        <div className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[14px] text-green-600">table_view</span>
+                          <span>employee_directory.xlsx</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase">Sheet1</span>
+                      </div>
+                      <table className="w-full border-collapse text-left">
+                        <thead>
+                          <tr className="bg-slate-50/50 border-b border-slate-150 text-[9px] font-bold text-slate-400">
+                            <th className="px-2.5 py-1 border-r border-slate-150">A (Name)</th>
+                            <th className="px-2.5 py-1 border-r border-slate-150">B (Email)</th>
+                            <th className="px-2.5 py-1">C (Designation)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
+                          <tr className={`${simProgress > 10 && simProgress < 40 ? 'bg-blue-50/60 text-primary' : ''} transition-colors duration-250`}>
+                            <td className="px-2.5 py-1.5 border-r border-slate-150 font-bold text-slate-800">Michael Scott</td>
+                            <td className="px-2.5 py-1.5 border-r border-slate-150">michael@dunder.com</td>
+                            <td className="px-2.5 py-1.5">Regional Manager</td>
+                          </tr>
+                          <tr className={`${simProgress >= 40 && simProgress < 75 ? 'bg-blue-50/60 text-primary' : ''} transition-colors duration-250`}>
+                            <td className="px-2.5 py-1.5 border-r border-slate-150 font-bold text-slate-800">Dwight Schrute</td>
+                            <td className="px-2.5 py-1.5 border-r border-slate-150">dwight@dunder.com</td>
+                            <td className="px-2.5 py-1.5">Sales Leader</td>
+                          </tr>
+                          <tr className={`${simProgress >= 75 ? 'bg-blue-50/60 text-primary' : ''} transition-colors duration-250`}>
+                            <td className="px-2.5 py-1.5 border-r border-slate-150 font-bold text-slate-800">Jim Halpert</td>
+                            <td className="px-2.5 py-1.5 border-r border-slate-150">jim@dunder.com</td>
+                            <td className="px-2.5 py-1.5">Sales Representative</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
-                    <span className="text-[9px] text-slate-400 font-mono mt-1.5">{simProgress}% completed</span>
+
+                    <div className="w-full max-w-[340px] mt-4 space-y-1">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                        <span>
+                          {simProgress < 35 && "Scanning spreadsheet..."}
+                          {simProgress >= 35 && simProgress < 70 && "Mapping columns & data fields..."}
+                          {simProgress >= 70 && "Seeding organizational structure..."}
+                        </span>
+                        <span className="font-mono">{simProgress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200">
+                        <div className="bg-green-500 h-full transition-all duration-100" style={{ width: `${simProgress}%` }}></div>
+                      </div>
+                    </div>
                   </div>
                 )}
 

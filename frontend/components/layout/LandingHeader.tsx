@@ -88,7 +88,7 @@ export function LandingHeader() {
           <Link
             id="nav-cta-btn"
             href="/contact"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-full px-6 py-2.5 transition-all border border-blue-600 active:scale-95 cursor-pointer inline-flex items-center justify-center"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-full px-6 py-2.5 transition-all border border-blue-600 active:scale-95 cursor-pointer inline-flex items-center justify-center shadow-none"
           >
             Request a demo
           </Link>
@@ -158,7 +158,7 @@ export function LandingHeader() {
               id="mobile-nav-cta-btn"
               href="/contact"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-full py-4 text-center block transition-all active:scale-95 cursor-pointer"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-full py-4 text-center block transition-all active:scale-95 cursor-pointer shadow-none"
             >
               Request a demo
             </Link>

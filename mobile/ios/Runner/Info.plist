@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>WorkforceOS needs GPS access to verify clock-in coordinates for office attendance geo-fencing.</string>
 </dict>
 </plist>

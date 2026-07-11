@@ -138,15 +138,8 @@ export function CookieConsent() {
                 <span className="text-xs font-bold text-slate-900 block">Strictly Essential</span>
                 <span className="text-[10px] text-slate-450 block mt-0.5 font-medium">Authentication & security. Required.</span>
               </div>
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  disabled
-                  checked
-                  className="sr-only peer"
-                />
-                <div className="w-8 h-4 bg-primary rounded-full opacity-60"></div>
-                <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full transition-all"></div>
+              <div className="relative inline-flex items-center opacity-65 select-none">
+                <div className="relative w-9 h-5 bg-primary/80 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[18px] after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm"></div>
               </div>
             </div>
 
@@ -156,14 +149,14 @@ export function CookieConsent() {
                 <span className="text-xs font-bold text-slate-900 block">Functional</span>
                 <span className="text-[10px] text-slate-450 block mt-0.5 font-medium">Saves user UI configurations & custom views.</span>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+              <label className="relative inline-flex items-center cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={prefs.functional}
                   onChange={(e) => setPrefs({ ...prefs, functional: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-8 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+                <div className="relative w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow-sm peer-checked:after:translate-x-4"></div>
               </label>
             </div>
 
@@ -173,14 +166,14 @@ export function CookieConsent() {
                 <span className="text-xs font-bold text-slate-900 block">Performance & Analytics</span>
                 <span className="text-[10px] text-slate-450 block mt-0.5 font-medium font-sans">Monitors app errors and performance metrics.</span>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+              <label className="relative inline-flex items-center cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={prefs.analytics}
                   onChange={(e) => setPrefs({ ...prefs, analytics: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-8 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+                <div className="relative w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow-sm peer-checked:after:translate-x-4"></div>
               </label>
             </div>
           </div>

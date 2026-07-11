@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { AuthProvider } from "../lib/auth/AuthProvider";
 import { ToastProvider } from "../lib/toast/ToastProvider";
 import { ConfirmProvider } from "../components/ui/ConfirmDialog";
+import { CookieConsent } from "../components/ui/CookieConsent";
 import "./globals.css";
+
 
 export const metadata: Metadata = {
   title: "WorkforceOS | Next-Gen Enterprise HRMS & Operations Platform",
@@ -73,6 +75,7 @@ export default function RootLayout({
           <ToastProvider>
             <ConfirmProvider>
               {children}
+              <CookieConsent />
             </ConfirmProvider>
           </ToastProvider>
         </AuthProvider>

@@ -148,6 +148,13 @@ export default function TopNavBar() {
 
         <div className="flex items-center gap-3">
           <Link href="/profile" className="flex items-center gap-3 hover:opacity-85 transition-opacity text-right">
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-outline-variant" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-blue-50 text-primary flex items-center justify-center font-bold text-xs border border-blue-200">
+                {user.firstName[0]}
+              </div>
+            )}
             <div className="hidden sm:block">
               <p className="text-label-md font-bold text-on-surface leading-tight">{user.firstName} {user.lastName}</p>
               <p className="text-[10px] text-outline font-semibold uppercase tracking-wider mt-0.5">{user.designation || 'Staff'}</p>

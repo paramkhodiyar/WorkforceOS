@@ -148,6 +148,17 @@ export default function SideNavBar() {
       </nav>
 
       <div className="pt-4 border-t border-outline-variant mt-auto space-y-1">
+        <Link 
+          href="/profile"
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
+            pathname === '/profile'
+              ? 'bg-primary-container text-on-primary-container font-semibold'
+              : 'text-on-surface-variant hover:bg-slate-50'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[20px]">account_circle</span>
+          <span className="text-label-md">My Profile</span>
+        </Link>
         {(isAdmin || isHR) && (
           <Link 
             href="/settings"

@@ -1013,82 +1013,137 @@ export default function SettingsPage() {
             </div>
           )}
           {activeTab === 'profile-requests' && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm space-y-6">
-              <div>
-                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-1">Profile Change Requests</h2>
-                <p className="text-body-sm text-outline">
-                  Review personal details update requests submitted by employees. Approving requests will immediately update their employee records.
-                </p>
+            <div className="space-y-6">
+              {/* Mobile View - Card List */}
+              <div className="block md:hidden space-y-4">
+                {profileRequests.length > 0 ? (
+                  profileRequests.map((req) => (
+                    <div key={req.id} className="p-4 bg-white border border-slate-200 rounded-2xl space-y-3 shadow-sm">
+                      <div className="flex items-center gap-2.5">
+                        {req.user.avatarUrl ? (
+                          <img src={req.user.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-blue-50 text-primary flex items-center justify-center font-bold text-xs">
+                            {req.user.firstName[0]}
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <span className="font-semibold text-slate-800 text-body-sm block">
+                            {req.user.firstName} {req.user.lastName}
+                          </span>
+                          <span className="text-[10px] text-slate-450 block">
+                            {req.user.employeeId || 'No ID'} • {req.user.designation || 'No Designation'}
+                          </span>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          req.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                          req.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-100' :
+                          'bg-red-50 text-red-700 border border-red-100'
+                        }`}>
+                          {req.status}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-[11px] text-slate-500 font-medium pt-2 border-t border-slate-100">
+                        <span>Submitted {new Date(req.createdAt).toLocaleDateString()}</span>
+                        <button
+                          onClick={() => {
+                            setSelectedRequest(req);
+                            setIsRequestModalOpen(true);
+                          }}
+                          className="px-3 py-1 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">visibility</span>
+                          <span>Review</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-12 text-center text-slate-400 font-medium bg-white border border-slate-200 rounded-2xl shadow-sm">
+                    No profile change requests found.
+                  </div>
+                )}
               </div>
 
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-250">
-                      <th className="px-4 py-3 text-[10px] uppercase font-bold tracking-wider text-slate-455">Employee</th>
-                      <th className="px-4 py-3 text-[10px] uppercase font-bold tracking-wider text-slate-455">Requested Date</th>
-                      <th className="px-4 py-3 text-[10px] uppercase font-bold tracking-wider text-slate-455">Status</th>
-                      <th className="px-4 py-3 text-right text-[10px] uppercase font-bold tracking-wider text-slate-455">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {profileRequests.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-4 py-8 text-center text-body-sm text-outline">
-                          No profile change requests found.
-                        </td>
+              {/* Desktop View - Standard Table */}
+              <div className="hidden md:block bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-4 md:p-6 border-b border-slate-100">
+                  <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-1">Profile Change Requests</h2>
+                  <p className="text-body-sm text-outline">
+                    Review personal details update requests submitted by employees. Approving requests will immediately update their employee records.
+                  </p>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Employee</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Requested Date</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700">Status</th>
+                        <th className="px-6 py-4 text-label-sm font-bold text-slate-700 text-right">Actions</th>
                       </tr>
-                    ) : (
-                      profileRequests.map((req) => (
-                        <tr key={req.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
-                              {req.user.avatarUrl ? (
-                                <img src={req.user.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
-                              ) : (
-                                <div className="w-8 h-8 rounded-full bg-blue-50 text-primary flex items-center justify-center font-bold text-xs">
-                                  {req.user.firstName[0]}
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-body-sm font-medium text-slate-800">
+                      {profileRequests.length > 0 ? (
+                        profileRequests.map((req) => (
+                          <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                {req.user.avatarUrl ? (
+                                  <img src={req.user.avatarUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-blue-50 text-primary flex items-center justify-center font-bold text-xs">
+                                    {req.user.firstName[0]}
+                                  </div>
+                                )}
+                                <div>
+                                  <span className="font-bold text-slate-900 block">
+                                    {req.user.firstName} {req.user.lastName}
+                                  </span>
+                                  <span className="text-[11px] text-slate-500 block">
+                                    {req.user.employeeId || 'No ID'} • {req.user.designation || 'No Designation'}
+                                  </span>
                                 </div>
-                              )}
-                              <div>
-                                <span className="font-semibold text-slate-800 text-body-sm block">
-                                  {req.user.firstName} {req.user.lastName}
-                                </span>
-                                <span className="text-[10px] text-slate-450 block">
-                                  {req.user.employeeId || 'No ID'} • {req.user.designation || 'No Designation'}
-                                </span>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-body-xs text-slate-650 font-medium">
-                            {new Date(req.createdAt).toLocaleDateString()} {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                              req.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                              req.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-100' :
-                              'bg-red-50 text-red-700 border border-red-100'
-                            }`}>
-                              {req.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <button
-                              onClick={() => {
-                                setSelectedRequest(req);
-                                setIsRequestModalOpen(true);
-                              }}
-                              className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                            >
-                              <span className="material-symbols-outlined text-[14px]">visibility</span>
-                              <span>Review</span>
-                            </button>
+                            </td>
+                            <td className="px-6 py-4 text-slate-600">
+                              {new Date(req.createdAt).toLocaleDateString()} {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                                req.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                req.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                'bg-red-50 text-red-700 border border-red-100'
+                              }`}>
+                                {req.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button
+                                onClick={() => {
+                                  setSelectedRequest(req);
+                                  setIsRequestModalOpen(true);
+                                }}
+                                className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">visibility</span>
+                                <span>Review</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-8 text-center text-slate-400 font-medium">
+                            No profile change requests found.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

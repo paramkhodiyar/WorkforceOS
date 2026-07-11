@@ -29,7 +29,7 @@ export default function AttendancePage() {
   const [currentPageHistory, setCurrentPageHistory] = useState(1);
   const [searchTeam, setSearchTeam] = useState('');
   const [currentPageTeam, setCurrentPageTeam] = useState(1);
-  
+
   // Adjustment modal state
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
   const [selectedRecordForAdjustment, setSelectedRecordForAdjustment] = useState<any>(null);
@@ -65,7 +65,7 @@ export default function AttendancePage() {
     try {
       const statusRes = await api.attendance.getCurrentStatus();
       setCurrentStatus(statusRes.data || null);
-      
+
       const historyRes = await api.attendance.history();
       setHistory(historyRes.data || []);
 
@@ -165,7 +165,7 @@ export default function AttendancePage() {
 
   function openAdjustmentModal(record: any) {
     setSelectedRecordForAdjustment(record);
-    
+
     const formatDateForInput = (dStr: string | null, defaultHour = 9) => {
       const d = dStr ? new Date(dStr) : new Date(record.date);
       if (!dStr) {
@@ -301,22 +301,20 @@ export default function AttendancePage() {
       <div className="flex border-b border-outline-variant gap-4">
         <button
           onClick={() => setActiveTab('my-attendance')}
-          className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
-            activeTab === 'my-attendance'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-outline hover:text-on-surface'
-          }`}
+          className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${activeTab === 'my-attendance'
+            ? 'border-primary text-primary'
+            : 'border-transparent text-outline hover:text-on-surface'
+            }`}
         >
           My Attendance
         </button>
         {showTeamAttendance && (
           <button
             onClick={() => setActiveTab('team-attendance')}
-            className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
-              activeTab === 'team-attendance'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-outline hover:text-on-surface'
-            }`}
+            className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${activeTab === 'team-attendance'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-outline hover:text-on-surface'
+              }`}
           >
             Team Attendance
           </button>
@@ -324,11 +322,10 @@ export default function AttendancePage() {
         {(isAdmin || isHR) && (
           <button
             onClick={() => setActiveTab('adjustments')}
-            className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
-              activeTab === 'adjustments'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-outline hover:text-on-surface'
-            }`}
+            className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${activeTab === 'adjustments'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-outline hover:text-on-surface'
+              }`}
           >
             Adjustments & Exceptions
           </button>
@@ -340,7 +337,7 @@ export default function AttendancePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm h-fit">
             <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Daily Actions</h2>
-            
+
             {currentStatus && !currentStatus.checkOut ? (
               <div className="space-y-4">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -377,7 +374,7 @@ export default function AttendancePage() {
                     className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm focus:ring-1 focus:ring-primary focus:border-primary"
                   >
                     <option value="WFO">Work From Office (WFO)</option>
-                    <option value="WFM">Work From Home (WFM)</option>
+                    <option value="WFH">Work From Home (WFH)</option>
                   </select>
                 </div>
 
@@ -419,7 +416,7 @@ export default function AttendancePage() {
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
               </div>
             </div>
-            
+
             {paginatedHistory.length === 0 ? (
               <p className="text-body-sm text-outline py-8 text-center">No attendance logs recorded yet.</p>
             ) : (
@@ -431,9 +428,8 @@ export default function AttendancePage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="text-label-sm font-bold text-slate-900">{new Date(log.date).toLocaleDateString()}</h4>
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold inline-block mt-1 ${
-                            log.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold inline-block mt-1 ${log.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                            }`}>
                             {log.workMode}
                           </span>
                         </div>
@@ -446,9 +442,8 @@ export default function AttendancePage() {
                       <div className="flex justify-between items-center text-[11px] pt-1 border-t border-slate-100">
                         <span className="text-slate-550 font-mono">IP: {log.ipAddress || '-'}</span>
                         {log.notes && (
-                          <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border ${
-                            log.notes.includes('Flagged') ? 'bg-red-50 text-red-750 border-red-150' : 'bg-slate-100 text-slate-655 border-slate-200'
-                          }`}>
+                          <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border ${log.notes.includes('Flagged') ? 'bg-red-50 text-red-750 border-red-150' : 'bg-slate-100 text-slate-655 border-slate-200'
+                            }`}>
                             {log.notes}
                           </span>
                         )}
@@ -503,9 +498,8 @@ export default function AttendancePage() {
                             {log.checkOut ? new Date(log.checkOut).toLocaleTimeString() : '-'}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              log.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
-                            }`}>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${log.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                              }`}>
                               {log.workMode}
                             </span>
                           </td>
@@ -587,7 +581,7 @@ export default function AttendancePage() {
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
             </div>
           </div>
-          
+
           {paginatedTeam.length === 0 ? (
             <p className="text-body-sm text-outline py-8 text-center">No team members assigned or records found.</p>
           ) : (
@@ -613,13 +607,12 @@ export default function AttendancePage() {
                             <p className="text-[10px] text-outline mt-0.5">{member.email}</p>
                           </div>
                         </div>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
-                          isCheckedIn
-                            ? 'bg-green-50 text-green-700 border-green-200'
-                            : hasCheckedOut
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${isCheckedIn
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : hasCheckedOut
                             ? 'bg-zinc-100 text-zinc-650 border-zinc-200'
                             : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}>
+                          }`}>
                           {isCheckedIn ? 'Checked In' : hasCheckedOut ? 'Completed' : 'Offline'}
                         </span>
                       </div>
@@ -640,10 +633,9 @@ export default function AttendancePage() {
                           </div>
                           <div>
                             <span className="text-[9px] uppercase tracking-wider text-outline block">Work Mode</span>
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                              todayRecord.workMode === 'WFO' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-purple-50 text-purple-700 border border-purple-100'
-                            }`}>
-                              {todayRecord.workMode === 'WFM' ? 'WFH' : todayRecord.workMode}
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold ${todayRecord.workMode === 'WFO' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-purple-50 text-purple-700 border border-purple-100'
+                              }`}>
+                              {todayRecord.workMode}
                             </span>
                           </div>
                           <div>
@@ -657,11 +649,10 @@ export default function AttendancePage() {
 
                       {todayRecord?.notes && (
                         <div className="pt-1.5">
-                          <span className={`text-[10px] inline-block ${
-                            todayRecord.notes.includes('Flagged')
-                              ? 'bg-red-50 text-red-700 border border-red-100 px-1.5 py-0.5 rounded-lg font-bold'
-                              : 'text-slate-550'
-                          }`}>
+                          <span className={`text-[10px] inline-block ${todayRecord.notes.includes('Flagged')
+                            ? 'bg-red-50 text-red-700 border border-red-100 px-1.5 py-0.5 rounded-lg font-bold'
+                            : 'text-slate-550'
+                            }`}>
                             {todayRecord.notes}
                           </span>
                         </div>
@@ -713,7 +704,7 @@ export default function AttendancePage() {
                     const todayRecord = member.attendances?.[0];
                     const isCheckedIn = todayRecord && !todayRecord.checkOut;
                     const hasCheckedOut = todayRecord && todayRecord.checkOut;
-                    
+
                     return (
                       <tr key={member.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3">
@@ -750,10 +741,9 @@ export default function AttendancePage() {
                         </td>
                         <td className="px-4 py-3">
                           {todayRecord?.workMode ? (
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              todayRecord.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
-                            }`}>
-                              {todayRecord.workMode === 'WFM' ? 'WFH' : todayRecord.workMode}
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${todayRecord.workMode === 'WFO' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                              }`}>
+                              {todayRecord?.workMode}
                             </span>
                           ) : '-'}
                         </td>
@@ -790,7 +780,7 @@ export default function AttendancePage() {
                   })}
                 </tbody>
               </table>
-              
+
               {totalPagesTeam > 1 && (
                 <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
                   <span className="text-[11px] text-outline">
@@ -916,7 +906,7 @@ export default function AttendancePage() {
                       {adjustmentRequests.filter(req => req.status === 'PENDING').map(req => {
                         const emp = req.attendance?.user;
                         const isOwnRequest = req.requestedBy === user?.id;
-                        
+
                         return (
                           <tr key={req.id} className="hover:bg-slate-50 transition-colors">
                             <td className="px-4 py-3">
@@ -992,13 +982,12 @@ export default function AttendancePage() {
                             Date: {new Date(exc.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </p>
                         </div>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
-                          exc.status === 'LATE'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : exc.status === 'ABSENT'
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${exc.status === 'LATE'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : exc.status === 'ABSENT'
                             ? 'bg-red-50 text-red-700 border-red-200'
                             : 'bg-blue-50 text-blue-700 border border-blue-200'
-                        }`}>
+                          }`}>
                           {exc.status}
                         </span>
                       </div>
@@ -1071,13 +1060,12 @@ export default function AttendancePage() {
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              exc.status === 'LATE'
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : exc.status === 'ABSENT'
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${exc.status === 'LATE'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : exc.status === 'ABSENT'
                                 ? 'bg-red-50 text-red-700 border border-red-200'
                                 : 'bg-blue-50 text-blue-700 border border-blue-200'
-                            }`}>
+                              }`}>
                               {exc.status}
                             </span>
                           </td>
@@ -1125,9 +1113,9 @@ export default function AttendancePage() {
                     </div>
                   </div>
                 )}
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
 
           {/* All Historical Adjustments Section */}
           <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
@@ -1153,11 +1141,10 @@ export default function AttendancePage() {
                               Date: {new Date(req.attendance?.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </p>
                           </div>
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
-                            req.status === 'APPROVED'
-                              ? 'bg-green-50 text-green-700 border-green-200'
-                              : 'bg-red-50 text-red-700 border-red-200'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${req.status === 'APPROVED'
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : 'bg-red-50 text-red-700 border-red-200'
+                            }`}>
                             {req.status}
                           </span>
                         </div>
@@ -1197,7 +1184,7 @@ export default function AttendancePage() {
                     <tbody className="divide-y divide-slate-100">
                       {adjustmentRequests.filter(req => req.status !== 'PENDING').map(req => {
                         const emp = req.attendance?.user;
-                        
+
                         return (
                           <tr key={req.id} className="hover:bg-slate-50 transition-colors">
                             <td className="px-4 py-3">
@@ -1208,9 +1195,8 @@ export default function AttendancePage() {
                               {new Date(req.attendance?.date).toLocaleDateString()}
                             </td>
                             <td className="px-4 py-3">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                req.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
-                              }`}>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${req.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                                }`}>
                                 {req.status}
                               </span>
                             </td>

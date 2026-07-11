@@ -872,17 +872,84 @@ async function main() {
   });
 
   console.log("Seeding role-wise tasks...");
+
+  // Helper to create due dates relative to today
+  const daysFromNow = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return d;
+  };
+
   const tasksList = [
-    { title: "Conduct Intern exit evaluation", desc: "Evaluate performance and finalize internship files.", assigneeId: hrUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS },
-    { title: "Audit Employee Handbook updates", desc: "Update sections on remote/hybrid work compliance.", assigneeId: hrUser.id, priority: TaskPriority.HIGH, status: TaskStatus.ASSIGNED },
-    { title: "Q2 expense receipt compliance audit", desc: "Verify ledger against scanned claims sheets.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS },
-    { title: "Optimize tax slab calculations", desc: "Update finance system config values for current year tax.", assigneeId: financeUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.ASSIGNED },
-    { title: "Renew Lackawanna county paper contract", desc: "Discuss contract renewals and prepare presentations.", assigneeId: employee1.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS },
-    { title: "Review team sales pipelines for Q3", desc: "Review sales targets for Scranton sales reps.", assigneeId: managerUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.ASSIGNED },
-    { title: "Optimize database index for AuditLog table", desc: "Run analysis and create compound index on audit queries.", assigneeId: employee2.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS },
-    { title: "Draft QA unit testing checklist", desc: "Draft a testing template for new features.", assigneeId: employee3.id, priority: TaskPriority.MEDIUM, status: TaskStatus.ASSIGNED },
-    { title: "Audit Scranton office paper supply", desc: "Count paper boxes and place re-orders if below 20.", assigneeId: employee4.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED },
-    { title: "Filing and scanning intern reports", desc: "Scan exit surveys and file in cabinets.", assigneeId: internUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED }
+    // ── Admin User ──────────────────────────────────────────────────────────
+    { title: "Renew office insurance policy", desc: "Coordinate with insurance broker and get updated certificates.", assigneeId: adminUser.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(10) },
+    { title: "Q3 budget planning presentation", desc: "Prepare slides and projections for Q3 leadership review.", assigneeId: adminUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(5) },
+    { title: "Update company org chart", desc: "Reflect latest department restructuring in the org chart tool.", assigneeId: adminUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
+    { title: "Vendor contract renewals - Q2", desc: "Review and sign off on all vendor SLA extensions.", assigneeId: adminUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-3) },
+    { title: "Office relocation feasibility report", desc: "Compile cost comparison for moving to the proposed downtown location.", assigneeId: adminUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-7) },
+
+    // ── HR User ─────────────────────────────────────────────────────────────
+    { title: "Post open Senior Developer listing", desc: "Draft JD and post to Naukri, LinkedIn, and internal portal.", assigneeId: hrUser.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(4) },
+    { title: "Schedule performance review cycle", desc: "Send calendar invites to all managers for mid-year reviews.", assigneeId: hrUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(6) },
+    { title: "Conduct intern exit evaluation", desc: "Evaluate performance, collect feedback, and finalize internship files.", assigneeId: hrUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(8) },
+    { title: "Audit Employee Handbook for hybrid policy", desc: "Update sections on remote/hybrid work compliance guidelines.", assigneeId: hrUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(12) },
+    { title: "Onboarding checklist for July joiners", desc: "Prepare system access, badge, and welcome kit for 3 new hires.", assigneeId: hrUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-5) },
+    { title: "Compile Q2 attrition report", desc: "Analyse exit interviews and summarise reasons for leadership.", assigneeId: hrUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-10) },
+
+    // ── Finance User ────────────────────────────────────────────────────────
+    { title: "Prepare July payroll run inputs", desc: "Collect variable pay and reimbursement data from all departments.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(3) },
+    { title: "Q2 expense receipt compliance audit", desc: "Verify ledger entries against scanned claim sheets for all employees.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(6) },
+    { title: "GST filing reconciliation", desc: "Reconcile input tax credit with filed returns for June quarter.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(9) },
+    { title: "Update tax slab config for FY 2026-27", desc: "Update finance system configuration values with new regime slabs.", assigneeId: financeUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(14) },
+    { title: "Audit petty cash disbursements - June", desc: "Verify petty cash register against receipts for June.", assigneeId: financeUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-4) },
+    { title: "Vendor payment reconciliation - Q1", desc: "Match all Q1 vendor invoices with payment acknowledgements.", assigneeId: financeUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-8) },
+
+    // ── Manager User ────────────────────────────────────────────────────────
+    { title: "Set Q3 OKRs for sales team", desc: "Define key results and cascade targets to the Scranton reps.", assigneeId: managerUser.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(5) },
+    { title: "Review team sales pipelines for Q3", desc: "Analyse CRM data and identify at-risk deals to accelerate.", assigneeId: managerUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
+    { title: "1-on-1 feedback sessions with reps", desc: "Conduct structured monthly 1-on-1s with all five direct reports.", assigneeId: managerUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(10) },
+    { title: "Submit client visit expense report", desc: "Upload receipts and submit reimbursement form for Lackawanna trip.", assigneeId: managerUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-2) },
+    { title: "Renew Lackawanna county paper contract", desc: "Negotiate terms and coordinate with the legal team for sign-off.", assigneeId: managerUser.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-6) },
+
+    // ── Employee 1 (Sales Rep) ───────────────────────────────────────────────
+    { title: "Follow up with Prestige Paper lead", desc: "Send customised proposal deck and schedule a follow-up call.", assigneeId: employee1.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(3) },
+    { title: "Update Salesforce pipeline for July", desc: "Mark deal stages and add meeting notes from last week.", assigneeId: employee1.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(5) },
+    { title: "Prepare product demo for Utica client", desc: "Customise demo environment and rehearse 30-min presentation.", assigneeId: employee1.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(8) },
+    { title: "Compile lost deals analysis - H1", desc: "List reasons for lost deals and propose corrective actions.", assigneeId: employee1.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-5) },
+
+    // ── Employee 2 (Senior Developer) ────────────────────────────────────────
+    { title: "Migrate auth module to JWT RS256", desc: "Replace HS256 signing with RSA keypair and update docs.", assigneeId: employee2.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(6) },
+    { title: "Optimize AuditLog table indexes", desc: "Run query analysis and create compound indexes to cut p95 latency.", assigneeId: employee2.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(4) },
+    { title: "Code review: leave module PRs", desc: "Review and merge 4 open PRs on the leave management feature.", assigneeId: employee2.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
+    { title: "Set up Redis caching for dashboard", desc: "Cache heavy dashboard queries with 5-min TTL using Redis.", assigneeId: employee2.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(11) },
+    { title: "Fix prod bug: timezone offset in payroll", desc: "Resolved the UTC offset issue causing incorrect pay period cuts.", assigneeId: employee2.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-3) },
+    { title: "Write API docs for v2 endpoints", desc: "Document all new REST endpoints in Swagger and internal wiki.", assigneeId: employee2.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-8) },
+
+    // ── Employee 3 (QA Engineer) ─────────────────────────────────────────────
+    { title: "Draft regression test plan for v2.4", desc: "Create test cases covering all new features in the upcoming release.", assigneeId: employee3.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(5) },
+    { title: "Draft QA unit testing checklist", desc: "Create a reusable testing template for all new feature PRs.", assigneeId: employee3.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
+    { title: "Automate leave module smoke tests", desc: "Write Playwright scripts for the critical leave approval flows.", assigneeId: employee3.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(10) },
+    { title: "Verify payroll calculation edge cases", desc: "Test salary computation for part-month joiners and leavers.", assigneeId: employee3.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-4) },
+    { title: "Bug bash: attendance module", desc: "Found and logged 7 issues in attendance; 5 confirmed and fixed.", assigneeId: employee3.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-9) },
+
+    // ── Employee 4 (Office Admin) ─────────────────────────────────────────────
+    { title: "Book meeting rooms for July all-hands", desc: "Reserve the main hall and arrange catering for 40 people.", assigneeId: employee4.id, priority: TaskPriority.MEDIUM, status: TaskStatus.TODO, due: daysFromNow(8) },
+    { title: "Audit paper supply - Scranton office", desc: "Count stock and place re-orders if below 20 boxes.", assigneeId: employee4.id, priority: TaskPriority.LOW, status: TaskStatus.IN_PROGRESS, due: daysFromNow(5) },
+    { title: "Coordinate laptop procurement for new hires", desc: "Raise PO for 3 MacBook Pros and track delivery status.", assigneeId: employee4.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
+    { title: "Update visitor access log system", desc: "Migrate visitor register from spreadsheet to the new SaaS tool.", assigneeId: employee4.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-6) },
+
+    // ── Employee 5 (Marketing Associate) ─────────────────────────────────────
+    { title: "Plan Dunder Mifflin social media calendar", desc: "Prepare a 4-week content calendar for LinkedIn and Instagram.", assigneeId: employee5.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(4) },
+    { title: "Design Q3 product brochure", desc: "Create updated product brochure reflecting new pricing tiers.", assigneeId: employee5.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(9) },
+    { title: "Write customer success case study", desc: "Interview Prestige Paper account and draft a 500-word case study.", assigneeId: employee5.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(12) },
+    { title: "Launch email campaign for summer promo", desc: "Set up drip sequence in Mailchimp targeting dormant accounts.", assigneeId: employee5.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-4) },
+    { title: "Compile brand asset library", desc: "Organised logos, fonts, and templates into Figma component library.", assigneeId: employee5.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-10) },
+
+    // ── Intern User ───────────────────────────────────────────────────────────
+    { title: "Research competitor HRMS features", desc: "List top 5 competitors and summarise key differentiating features.", assigneeId: internUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.TODO, due: daysFromNow(6) },
+    { title: "Filing and scanning intern reports", desc: "Scan exit surveys and file completed reports in cabinets.", assigneeId: internUser.id, priority: TaskPriority.LOW, status: TaskStatus.IN_PROGRESS, due: daysFromNow(4) },
+    { title: "Assist HR with onboarding docs", desc: "Help prepare welcome kits and system access request forms.", assigneeId: internUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
+    { title: "Shadow sales call with Utica client", desc: "Attend the demo and take structured notes for the team debrief.", assigneeId: internUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-3) },
   ];
 
   for (let i = 0; i < tasksList.length; i++) {
@@ -896,10 +963,11 @@ async function main() {
         assigneeId: t.assigneeId,
         priority: t.priority,
         status: t.status,
-        dueDate: new Date("2026-07-28")
+        dueDate: t.due
       }
     });
   }
+
 
   console.log("Seeding payroll history (Jan-June 2026)...");
   const salaryBandsMap: Record<string, number> = {

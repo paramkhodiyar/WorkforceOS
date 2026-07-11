@@ -48,7 +48,7 @@ export default function DashboardPage() {
     const performCheckIn = async (gpsLat?: number, gpsLng?: number) => {
       try {
         await api.attendance.checkIn({
-          workMode: workMode === 'WFO' ? 'WFO' : 'WFM',
+          workMode: workMode === 'WFO' ? 'WFO' : 'WFH',
           gpsLat,
           gpsLng
         });
@@ -321,7 +321,7 @@ export default function DashboardPage() {
             ) : !isShiftCompleted && isClockedIn ? (
               <div className="space-y-3">
                 <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center text-body-xs font-semibold text-slate-700">
-                  <span>Logged Mode: <strong className="text-slate-950 uppercase">{attendanceStatus.workMode === 'WFM' ? 'WFH' : attendanceStatus.workMode}</strong></span>
+                  <span>Logged Mode: <strong className="text-slate-950 uppercase">{attendanceStatus.workMode}</strong></span>
                   <span>In At: <strong className="text-slate-950">{new Date(attendanceStatus.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></span>
                 </div>
                 <button

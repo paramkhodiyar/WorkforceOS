@@ -72,7 +72,7 @@ enum AttendanceStatus {
 
 enum WorkMode {
   WFO
-  WFM
+  WFH
 }
 
 enum PayrollStatus {

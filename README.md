@@ -60,6 +60,10 @@ A three-layer permission matrix that restricts user access based on organization
 *   **Notifications**: Internal service to issue real-time and persisted database notifications triggered by workflow actions.
 *   **Audit Trail**: Automatically records all write operations, tracking the actor, module, action type, changes (previous and updated values), IP address, and user agent.
 
+### 12. Integrated Org Calendar
+*   **Cross-Module Aggregation**: Shared team calendar aggregating employee leaves, scheduled shift timings, task deadlines, and company events.
+*   **Real-Time Sync**: Keeps the whole organization synchronized in one place with direct updates from leave approvals, task schedules, and shift changes.
+
 ---
 
 ## Recent Updates & Enhancements

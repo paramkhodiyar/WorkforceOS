@@ -88,7 +88,7 @@ export function LandingHeader() {
           <Link
             id="nav-cta-btn"
             href="/contact"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-full px-6 py-2.5 transition-all border border-blue-600 active:scale-95 cursor-pointer inline-flex items-center justify-center shadow-none"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-full px-6 py-2.5 transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center shadow-none"
           >
             Request a demo
           </Link>

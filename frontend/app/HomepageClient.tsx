@@ -1388,27 +1388,27 @@ export default function HomepageClient() {
       </section>
 
       {/* SECTION 5.5: MOBILE APP READY BANNER */}
-      <section className="py-16 bg-blue-600 text-white border-y border-blue-700 relative overflow-hidden">
-        <div className="max-w-[1100px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-          <div className="flex-1 text-left">
-            <span className="inline-block px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-200 bg-blue-700/60 border border-blue-500 rounded-full mb-4">
+      <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50/20 text-slate-800 border-y border-slate-200 relative overflow-hidden">
+        <div className="max-w-[1100px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
+          <div className="flex-1 text-left space-y-4">
+            <span className="inline-block px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full">
               Android App Ready
             </span>
-            <h2 className="text-2xl md:text-[2.25rem] font-[800] tracking-[-0.02em] leading-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h2 className="text-2xl md:text-[2.25rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               WorkforceOS is fully optimized for mobile phones.
             </h2>
-            <p className="text-blue-100 text-sm md:text-base leading-relaxed max-w-[600px] font-sans">
+            <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-[600px] font-sans">
               Access your dashboard, check in/out with geolocation, submit tasks, request leaves, and review payroll records on the go. Our interface is fully mobile responsive and prepared for native app wrapping.
             </p>
           </div>
-          <div className="flex items-center gap-4 shrink-0 font-sans">
-            <div className="px-5 py-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 flex flex-col items-center">
-              <span className="text-[10px] font-semibold text-blue-100 uppercase tracking-wider mb-2">Android Compatibility</span>
-              <span className="text-base font-bold text-white">APK & WebView Ready</span>
+          <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 font-sans w-full md:w-auto">
+            <div className="w-full sm:w-auto px-6 py-5 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Android Compatibility</span>
+              <span className="text-sm font-extrabold text-slate-800">APK & WebView Ready</span>
             </div>
-            <div className="px-5 py-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 flex flex-col items-center">
-              <span className="text-[10px] font-semibold text-blue-100 uppercase tracking-wider mb-2">Responsiveness</span>
-              <span className="text-base font-bold text-white">100% Mobile Optimized</span>
+            <div className="w-full sm:w-auto px-6 py-5 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Responsiveness</span>
+              <span className="text-sm font-extrabold text-slate-800">100% Mobile Optimized</span>
             </div>
           </div>
         </div>

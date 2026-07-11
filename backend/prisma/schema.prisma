@@ -188,6 +188,7 @@ model Organization {
   shiftConfigs ShiftConfig[]
   holidays     Holiday[]
   calendarEvents CalendarEvent[]
+  profileUpdateRequests ProfileUpdateRequest[]
 }
 
 model Department {
@@ -291,6 +292,7 @@ model User {
   shift              ShiftConfig?     @relation(fields: [shiftId], references: [id])
   eventsCreated      CalendarEvent[]  @relation("EventCreator")
   eventAttendance    EventAttendee[]  @relation("EventAttendeeUser")
+  profileUpdateRequests ProfileUpdateRequest[] @relation("UserRequests")
 }
 
 model UserRole {
@@ -935,5 +937,27 @@ model RecurrenceException {
   event         CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, exceptionDate])
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ProfileUpdateRequest {
+  id             String        @id @default(cuid())
+  userId         String
+  organizationId String
+  requestedData  Json
+  status         RequestStatus @default(PENDING)
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  comment        String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user           User          @relation("UserRequests", fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 

@@ -262,20 +262,38 @@ function ProfileContent() {
         altPhone: emergencyAltPhone || undefined
       } : undefined;
 
-      await api.employees.update(profile.id, {
-        firstName,
-        lastName,
-        phone,
-        designation: canEdit && !isOwnProfile ? designation : undefined,
-        personalEmail: personalEmail || undefined,
-        personalPhone: personalPhone || undefined,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-        gender: gender || undefined,
-        bloodGroup: bloodGroup || undefined,
-        address,
-        bankDetail,
-        emergencyContact
-      });
+      if (isOwnProfile) {
+        await api.employees.createProfileRequest({
+          firstName,
+          lastName,
+          phone,
+          personalEmail: personalEmail || undefined,
+          personalPhone: personalPhone || undefined,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+          gender: gender || undefined,
+          bloodGroup: bloodGroup || undefined,
+          address,
+          bankDetail,
+          emergencyContact
+        });
+        toast.success('Your profile changes have been submitted to HR/Admin for approval.');
+      } else {
+        await api.employees.update(profile.id, {
+          firstName,
+          lastName,
+          phone,
+          designation,
+          personalEmail: personalEmail || undefined,
+          personalPhone: personalPhone || undefined,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+          gender: gender || undefined,
+          bloodGroup: bloodGroup || undefined,
+          address,
+          bankDetail,
+          emergencyContact
+        });
+        toast.success('Employee profile updated successfully.');
+      }
       setEditing(false);
       loadProfileData();
     } catch (err: any) {

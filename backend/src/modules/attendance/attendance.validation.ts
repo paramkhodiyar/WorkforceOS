@@ -5,7 +5,7 @@ export const checkInSchema = z.object({
   ipAddress: z.string().optional(),
   gpsLat: z.number().optional(),
   gpsLng: z.number().optional(),
-  workMode: z.enum(["WFO", "WFM"]).optional().default("WFO")
+  workMode: z.enum(["WFO", "WFH"]).optional().default("WFO")
 });
 
 export const adjustSchema = z.object({

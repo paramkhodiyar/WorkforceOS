@@ -201,6 +201,21 @@ export const api = {
         method: 'DELETE',
       }),
     directory: (): Promise<any> => request('/employees/directory'),
+    createProfileRequest: (data: any): Promise<any> =>
+      request('/employees/profile-requests', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    listProfileRequests: (): Promise<any> => request('/employees/profile-requests'),
+    approveProfileRequest: (id: string): Promise<any> =>
+      request(`/employees/profile-requests/${id}/approve`, {
+        method: 'POST',
+      }),
+    rejectProfileRequest: (id: string, comment?: string): Promise<any> =>
+      request(`/employees/profile-requests/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ comment }),
+      }),
   },
   attendance: {
     history: (): Promise<any> => request('/attendance/history'),

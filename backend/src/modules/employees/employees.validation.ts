@@ -118,3 +118,38 @@ export const updateEmployeeSchema = z.object({
     allocated: z.number().int().nonnegative()
   })).optional()
 });
+
+export const createProfileRequestSchema = z.object({
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  phone: z.string().optional(),
+  avatarUrl: z.string().url().optional(),
+  dateOfBirth: z.preprocess((val) => (val ? new Date(val as string) : undefined), z.date().optional()),
+  gender: z.string().optional(),
+  bloodGroup: z.string().optional(),
+  personalEmail: z.string().email().optional(),
+  personalPhone: z.string().optional(),
+  address: z.object({
+    line1: z.string().min(1),
+    line2: z.string().optional(),
+    city: z.string().min(1),
+    state: z.string().min(1),
+    pincode: z.string().min(1),
+    country: z.string().optional()
+  }).optional(),
+  bankDetail: z.object({
+    bankName: z.string().min(1).optional(),
+    accountNumber: z.string().min(1).optional(),
+    ifscCode: z.string().min(1).optional(),
+    accountHolderName: z.string().min(1).optional(),
+    panNumber: z.string().min(1).optional(),
+    aadhaarLast4: z.string().optional()
+  }).optional(),
+  emergencyContact: z.object({
+    name: z.string().min(1).optional(),
+    relation: z.string().min(1).optional(),
+    phone: z.string().min(1).optional(),
+    altPhone: z.string().optional()
+  }).optional()
+});
+

@@ -2,7 +2,7 @@ import { prisma } from "../../config/database";
 import { hashPassword, comparePassword } from "../../utils/hash.util";
 import { AuditService } from "../audit/audit.service";
 import { NotificationService } from "../notifications/notifications.service";
-import { AuditAction, UserStatus, NotificationType, SalaryBand, EmployeeType, TaxRegime, SystemRole } from "@prisma/client";
+import { AuditAction, UserStatus, NotificationType, SalaryBand, EmployeeType, TaxRegime, SystemRole, Prisma } from "@prisma/client";
 import { AppError } from "../../utils/errors.util";
 import { redis } from "../../config/redis";
 import { getPermissionScopes } from "../../utils/permission.util";
@@ -452,12 +452,30 @@ export class EmployeesService {
       throw AppError.notFound("Employee profile not found");
     }
 
-    await prisma.user.update({
-      where: { id },
-      data: {
-        isDeleted: true,
-        deletedAt: new Date()
-      }
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete associated sensitive tables
+      await tx.bankDetail.deleteMany({ where: { userId: id } });
+      await tx.emergencyContact.deleteMany({ where: { userId: id } });
+
+      // 2. Anonymize/Scrub personal details in the User model to conform to GDPR/DPDP erasure rules
+      await tx.user.update({
+        where: { id },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          email: `deleted-${id}@workforceos.com`, // Avoid unique constraint clashes while removing PII
+          firstName: "Deleted",
+          lastName: "Employee",
+          phone: null,
+          avatarUrl: null,
+          personalEmail: null,
+          personalPhone: null,
+          address: Prisma.DbNull,
+          dateOfBirth: null,
+          gender: null,
+          bloodGroup: null,
+        }
+      });
     });
 
     await redis.del(`user:session:${id}`).catch(() => {});
@@ -564,6 +582,172 @@ export class EmployeesService {
        req
      });
 
-     return updatedEmployee;
-   }
+      return updatedEmployee;
+    }
+
+    static async createProfileRequest(userId: string, orgId: string, requestedData: any, req?: any) {
+      const request = await prisma.profileUpdateRequest.create({
+        data: {
+          userId,
+          organizationId: orgId,
+          requestedData
+        }
+      });
+
+      // Find organization admins and HR to notify them
+      const adminsAndHr = await prisma.user.findMany({
+        where: {
+          organizationId: orgId,
+          systemRole: { in: [SystemRole.ORG_ADMIN, SystemRole.HR] },
+          isDeleted: false
+        },
+        select: { id: true }
+      });
+
+      const actorName = `${req.user?.firstName || "An employee"} ${req.user?.lastName || ""}`;
+      for (const adm of adminsAndHr) {
+        await NotificationService.notify(
+          adm.id,
+          NotificationType.SYSTEM,
+          "Profile Update Request",
+          `${actorName} has submitted a request to update their personal details.`
+        ).catch(console.error);
+      }
+
+      return request;
+    }
+
+    static async listProfileRequests(userId: string, orgId: string, systemRole: string) {
+      const isPriorityRole = ["SUPER_ADMIN", "ORG_ADMIN", "HR"].includes(systemRole);
+      const where: any = { organizationId: orgId };
+      if (!isPriorityRole) {
+        where.userId = userId;
+      }
+
+      return await prisma.profileUpdateRequest.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              employeeId: true,
+              designation: true,
+              avatarUrl: true
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+    }
+
+    static async approveProfileRequest(requestId: string, orgId: string, reviewerId: string, req?: any) {
+      const request = await prisma.profileUpdateRequest.findFirst({
+        where: { id: requestId, organizationId: orgId, status: "PENDING" }
+      });
+
+      if (!request) {
+        throw AppError.notFound("Pending profile update request not found");
+      }
+
+      const { bankDetail, emergencyContact, ...coreUserData } = request.requestedData as any;
+
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: request.userId },
+          data: coreUserData
+        });
+
+        if (bankDetail) {
+          const updateData = { ...bankDetail };
+          if (bankDetail.accountNumber && !bankDetail.accountNumber.includes('*')) {
+            updateData.accountNumber = encrypt(bankDetail.accountNumber);
+          } else {
+            delete updateData.accountNumber;
+          }
+          if (bankDetail.panNumber && !bankDetail.panNumber.includes('*')) {
+            updateData.panNumber = encrypt(bankDetail.panNumber);
+          } else {
+            delete updateData.panNumber;
+          }
+
+          await tx.bankDetail.upsert({
+            where: { userId: request.userId },
+            update: updateData,
+            create: {
+              userId: request.userId,
+              bankName: bankDetail.bankName || "",
+              accountNumber: bankDetail.accountNumber ? encrypt(bankDetail.accountNumber) : "",
+              ifscCode: bankDetail.ifscCode || "",
+              accountHolderName: bankDetail.accountHolderName || "",
+              panNumber: bankDetail.panNumber ? encrypt(bankDetail.panNumber) : "",
+              aadhaarLast4: bankDetail.aadhaarLast4 || null
+            }
+          });
+        }
+
+        if (emergencyContact) {
+          await tx.emergencyContact.upsert({
+            where: { userId: request.userId },
+            update: emergencyContact,
+            create: {
+              userId: request.userId,
+              name: emergencyContact.name || "",
+              relation: emergencyContact.relation || "",
+              phone: emergencyContact.phone || "",
+              altPhone: emergencyContact.altPhone || null
+            }
+          });
+        }
+
+        await tx.profileUpdateRequest.update({
+          where: { id: requestId },
+          data: {
+            status: "APPROVED",
+            reviewedBy: reviewerId,
+            reviewedAt: new Date()
+          }
+        });
+      });
+
+      await NotificationService.notify(
+        request.userId,
+        NotificationType.SYSTEM,
+        "Profile Update Approved",
+        "Your request to update personal details has been approved."
+      ).catch(console.error);
+
+      return { success: true };
+    }
+
+    static async rejectProfileRequest(requestId: string, orgId: string, reviewerId: string, comment?: string, req?: any) {
+      const request = await prisma.profileUpdateRequest.findFirst({
+        where: { id: requestId, organizationId: orgId, status: "PENDING" }
+      });
+
+      if (!request) {
+        throw AppError.notFound("Pending profile update request not found");
+      }
+
+      await prisma.profileUpdateRequest.update({
+        where: { id: requestId },
+        data: {
+          status: "REJECTED",
+          reviewedBy: reviewerId,
+          reviewedAt: new Date(),
+          comment
+        }
+      });
+
+      await NotificationService.notify(
+        request.userId,
+        NotificationType.SYSTEM,
+        "Profile Update Rejected",
+        `Your request to update personal details was declined. Reason: ${comment || "None provided"}`
+      ).catch(console.error);
+
+      return { success: true };
+    }
 }

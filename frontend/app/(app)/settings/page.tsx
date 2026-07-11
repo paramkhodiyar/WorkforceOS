@@ -11,7 +11,7 @@ import { TableSkeleton } from '../../../components/ui/Skeleton';
 export default function SettingsPage() {
   const { user, features, setFeatures } = useAuth();
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<'departments' | 'teams' | 'features' | 'location'>('departments');
+  const [activeTab, setActiveTab] = useState<'departments' | 'teams' | 'features' | 'location' | 'profile-requests'>('departments');
   const [departments, setDepartments] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -27,6 +27,11 @@ export default function SettingsPage() {
 
   const [addressQuery, setAddressQuery] = useState('');
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+
+  const [profileRequests, setProfileRequests] = useState<any[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [rejectComment, setRejectComment] = useState('');
 
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [deptForm, setDeptForm] = useState<{ id?: string; name: string; headId: string | null; employeeIds: string[] }>({
@@ -66,16 +71,18 @@ export default function SettingsPage() {
   async function loadData() {
     try {
       setLoading(true);
-      const [deptRes, teamRes, empRes, orgRes] = await Promise.all([
+      const [deptRes, teamRes, empRes, orgRes, reqRes] = await Promise.all([
         api.departments.list(),
         api.teams.list(),
         api.employees.list({ limit: 1000 }),
         api.organization.get(),
+        api.employees.listProfileRequests().catch(() => ({ data: [] })),
       ]);
 
       setDepartments(deptRes.data || []);
       setTeams(teamRes.data || []);
       setEmployees(empRes.data || []);
+      setProfileRequests(reqRes.data || []);
       if (orgRes?.data) {
         setOfficeLat(orgRes.data.officeLatitude !== null ? String(orgRes.data.officeLatitude) : '');
         setOfficeLng(orgRes.data.officeLongitude !== null ? String(orgRes.data.officeLongitude) : '');
@@ -88,6 +95,93 @@ export default function SettingsPage() {
       setLoading(false);
     }
   }
+
+  async function handleReviewRequest(id: string, action: 'approve' | 'reject') {
+    try {
+      setSubmitting(true);
+      if (action === 'approve') {
+        await api.employees.approveProfileRequest(id);
+        toast.success('Profile changes approved and applied.');
+      } else {
+        await api.employees.rejectProfileRequest(id, rejectComment);
+        toast.success('Profile request declined.');
+      }
+      const reqRes = await api.employees.listProfileRequests().catch(() => ({ data: [] }));
+      setProfileRequests(reqRes.data || []);
+      const empRes = await api.employees.list({ limit: 1000 });
+      setEmployees(empRes.data || []);
+      setIsRequestModalOpen(false);
+      setRejectComment('');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to process request.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const renderComparisonRows = (req: any) => {
+    const currentEmp = employees.find(e => e.id === req.userId) || {};
+    const requested = req.requestedData || {};
+    const rows: React.ReactNode[] = [];
+
+    const addRow = (label: string, curVal: any, reqVal: any) => {
+      const displayCur = typeof curVal === 'object' ? JSON.stringify(curVal) : String(curVal || '-');
+      const displayReq = typeof reqVal === 'object' ? JSON.stringify(reqVal) : String(reqVal || '-');
+      const isDifferent = displayCur !== displayReq;
+
+      if (!isDifferent && reqVal === undefined) return;
+
+      rows.push(
+        <tr key={label} className="border-b border-slate-100 font-medium">
+          <td className="px-3 py-2.5 font-bold text-slate-500">{label}</td>
+          <td className="px-3 py-2.5 text-slate-700">{displayCur}</td>
+          <td className="px-3 py-2.5 bg-blue-50/20 text-primary font-semibold">{displayReq}</td>
+        </tr>
+      );
+    };
+
+    const simpleFields = [
+      { key: 'firstName', label: 'First Name' },
+      { key: 'lastName', label: 'Last Name' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'personalEmail', label: 'Personal Email' },
+      { key: 'personalPhone', label: 'Personal Phone' },
+      { key: 'gender', label: 'Gender' },
+      { key: 'bloodGroup', label: 'Blood Group' },
+    ];
+
+    simpleFields.forEach(f => {
+      if (requested[f.key] !== undefined) {
+        addRow(f.label, currentEmp[f.key], requested[f.key]);
+      }
+    });
+
+    if (requested.dateOfBirth) {
+      const curDob = currentEmp.dateOfBirth ? new Date(currentEmp.dateOfBirth).toLocaleDateString() : '-';
+      const reqDob = new Date(requested.dateOfBirth).toLocaleDateString();
+      addRow('Date of Birth', curDob, reqDob);
+    }
+
+    if (requested.address) {
+      const curAddr = currentEmp.address ? `${currentEmp.address.line1 || ''}, ${currentEmp.address.city || ''}, ${currentEmp.address.state || ''}` : '-';
+      const reqAddr = `${requested.address.line1 || ''}, ${requested.address.city || ''}, ${requested.address.state || ''}`;
+      addRow('Address', curAddr, reqAddr);
+    }
+
+    if (requested.bankDetail) {
+      const curBank = currentEmp.bankDetail ? `${currentEmp.bankDetail.bankName || ''} (${currentEmp.bankDetail.accountNumber || ''})` : '-';
+      const reqBank = `${requested.bankDetail.bankName || ''} (${requested.bankDetail.accountNumber || ''})`;
+      addRow('Bank Details', curBank, reqBank);
+    }
+
+    if (requested.emergencyContact) {
+      const curEmer = currentEmp.emergencyContact ? `${currentEmp.emergencyContact.name || ''} (${currentEmp.emergencyContact.relation || ''}) - ${currentEmp.emergencyContact.phone || ''}` : '-';
+      const reqEmer = `${requested.emergencyContact.name || ''} (${requested.emergencyContact.relation || ''}) - ${requested.emergencyContact.phone || ''}`;
+      addRow('Emergency Contact', curEmer, reqEmer);
+    }
+
+    return rows;
+  };
 
   async function handleToggleFeature(featureName: string) {
     if (!user?.organizationId) return;
@@ -363,6 +457,16 @@ export default function SettingsPage() {
             }`}
           >
             Office Location
+          </button>
+        )}
+        {(isAdmin || isHR) && (
+          <button
+            onClick={() => setActiveTab('profile-requests')}
+            className={`flex-1 sm:flex-none px-4 py-2.5 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'profile-requests' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Profile Requests
           </button>
         )}
       </div>
@@ -908,7 +1012,172 @@ export default function SettingsPage() {
               </form>
             </div>
           )}
+          {activeTab === 'profile-requests' && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm space-y-6">
+              <div>
+                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-1">Profile Change Requests</h2>
+                <p className="text-body-sm text-outline">
+                  Review personal details update requests submitted by employees. Approving requests will immediately update their employee records.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-250">
+                      <th className="px-4 py-3 text-[10px] uppercase font-bold tracking-wider text-slate-455">Employee</th>
+                      <th className="px-4 py-3 text-[10px] uppercase font-bold tracking-wider text-slate-455">Requested Date</th>
+                      <th className="px-4 py-3 text-[10px] uppercase font-bold tracking-wider text-slate-455">Status</th>
+                      <th className="px-4 py-3 text-right text-[10px] uppercase font-bold tracking-wider text-slate-455">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {profileRequests.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-8 text-center text-body-sm text-outline">
+                          No profile change requests found.
+                        </td>
+                      </tr>
+                    ) : (
+                      profileRequests.map((req) => (
+                        <tr key={req.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2.5">
+                              {req.user.avatarUrl ? (
+                                <img src={req.user.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-blue-50 text-primary flex items-center justify-center font-bold text-xs">
+                                  {req.user.firstName[0]}
+                                </div>
+                              )}
+                              <div>
+                                <span className="font-semibold text-slate-800 text-body-sm block">
+                                  {req.user.firstName} {req.user.lastName}
+                                </span>
+                                <span className="text-[10px] text-slate-450 block">
+                                  {req.user.employeeId || 'No ID'} • {req.user.designation || 'No Designation'}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-body-xs text-slate-650 font-medium">
+                            {new Date(req.createdAt).toLocaleDateString()} {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                              req.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                              req.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-100' :
+                              'bg-red-50 text-red-700 border border-red-100'
+                            }`}>
+                              {req.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => {
+                                setSelectedRequest(req);
+                                setIsRequestModalOpen(true);
+                              }}
+                              className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">visibility</span>
+                              <span>Review</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
+      )}
+
+      {isRequestModalOpen && selectedRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-2xl w-full p-6 space-y-5 my-8">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider">
+                  Review Profile Request
+                </h3>
+                <p className="text-body-xs text-outline mt-0.5">
+                  Proposed changes from {selectedRequest.user.firstName} {selectedRequest.user.lastName}
+                </p>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsRequestModalOpen(false);
+                  setRejectComment('');
+                }}
+                className="text-slate-400 hover:text-slate-650 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[24px]">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500">
+                      <th className="px-3 py-2">Field</th>
+                      <th className="px-3 py-2">Current Value</th>
+                      <th className="px-3 py-2 bg-blue-50/50 text-primary">Proposed Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renderComparisonRows(selectedRequest)}
+                  </tbody>
+                </table>
+              </div>
+
+              {selectedRequest.status === 'PENDING' && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">
+                    Rejection Comment (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={rejectComment}
+                    onChange={(e) => setRejectComment(e.target.value)}
+                    placeholder="Provide a reason if declining this request..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-sm transition-all outline-none font-medium"
+                  />
+                </div>
+              )}
+
+              {selectedRequest.status !== 'PENDING' && (
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-700 space-y-1">
+                  <div>Status: <span className="capitalize font-bold">{selectedRequest.status.toLowerCase()}</span></div>
+                  {selectedRequest.comment && <div>Comment: <span className="font-normal text-slate-500">{selectedRequest.comment}</span></div>}
+                </div>
+              )}
+            </div>
+
+            {selectedRequest.status === 'PENDING' && (
+              <div className="flex gap-2.5 justify-end border-t border-slate-100 pt-4">
+                <button
+                  onClick={() => handleReviewRequest(selectedRequest.id, 'reject')}
+                  disabled={submitting}
+                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer uppercase tracking-wider"
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={() => handleReviewRequest(selectedRequest.id, 'approve')}
+                  disabled={submitting}
+                  className="px-5 py-2 bg-primary hover:bg-blue-700 disabled:bg-slate-200 text-white rounded-xl text-xs font-bold transition-all cursor-pointer uppercase tracking-wider flex items-center gap-1.5"
+                >
+                  {submitting && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0"></div>}
+                  <span>Approve & Apply</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {isDeptModalOpen && (

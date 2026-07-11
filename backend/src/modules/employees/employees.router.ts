@@ -13,9 +13,13 @@ import {
   listDocuments,
   deleteDocument,
   getDirectory,
-  resetPassword
+  resetPassword,
+  listProfileRequests,
+  createProfileRequest,
+  approveProfileRequest,
+  rejectProfileRequest
 } from "./employees.controller";
-import { createEmployeeSchema, updateEmployeeSchema } from "./employees.validation";
+import { createEmployeeSchema, updateEmployeeSchema, createProfileRequestSchema } from "./employees.validation";
 
 const router = Router();
 
@@ -33,6 +37,13 @@ router.get(
 );
 router.post("/", requirePermission("employee", "create"), validate(createEmployeeSchema), createEmployee);
 router.get("/directory", getDirectory);
+
+// Profile change request pipeline
+router.post("/profile-requests", validate(createProfileRequestSchema), createProfileRequest);
+router.get("/profile-requests", listProfileRequests);
+router.post("/profile-requests/:id/approve", requirePermission("employee", "update"), approveProfileRequest);
+router.post("/profile-requests/:id/reject", requirePermission("employee", "update"), rejectProfileRequest);
+
 router.get("/:id", requirePermission("employee", "read"), getEmployeeById);
 router.patch("/:id", requirePermission("employee", "update"), validate(updateEmployeeSchema), updateEmployee);
 router.patch("/:id/reset-password", requirePermission("employee", "update"), resetPassword);

@@ -122,4 +122,37 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
   return sendSuccess(res, null, "Employee password reset successfully");
 });
 
+export const createProfileRequest = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const orgId = req.org!.id;
+  const result = await EmployeesService.createProfileRequest(userId, orgId, req.body, req);
+  return sendSuccess(res, result, "Profile update request submitted successfully", 201);
+});
+
+export const listProfileRequests = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const orgId = req.org!.id;
+  const systemRole = req.user!.systemRole;
+  const list = await EmployeesService.listProfileRequests(userId, orgId, systemRole);
+  return sendSuccess(res, list);
+});
+
+export const approveProfileRequest = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const reviewerId = req.user!.id;
+  const requestId = req.params.id;
+  const result = await EmployeesService.approveProfileRequest(requestId, orgId, reviewerId, req);
+  return sendSuccess(res, result, "Profile update request approved successfully");
+});
+
+export const rejectProfileRequest = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const reviewerId = req.user!.id;
+  const requestId = req.params.id;
+  const { comment } = req.body;
+  const result = await EmployeesService.rejectProfileRequest(requestId, orgId, reviewerId, comment, req);
+  return sendSuccess(res, result, "Profile update request rejected successfully");
+});
+
+
 

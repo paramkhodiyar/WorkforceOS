@@ -46,6 +46,7 @@ async function main() {
   await prisma.department.deleteMany();
   await prisma.rolePermission.deleteMany();
   await prisma.role.deleteMany();
+  await prisma.auditLog.deleteMany();
   await prisma.user.deleteMany();
   await prisma.shiftConfig.deleteMany();
   await prisma.organization.deleteMany();
@@ -600,6 +601,75 @@ async function main() {
   });
 
   const allOrgUsers = [adminUser, hrUser, financeUser, managerUser, employee1, employee2, employee3, employee4, employee5, internUser];
+
+  console.log("Assigning department heads...");
+  await prisma.department.update({
+    where: { id: depts.Management.id },
+    data: { headId: adminUser.id }
+  });
+  await prisma.department.update({
+    where: { id: depts.HR.id },
+    data: { headId: hrUser.id }
+  });
+  await prisma.department.update({
+    where: { id: depts.Finance.id },
+    data: { headId: financeUser.id }
+  });
+  await prisma.department.update({
+    where: { id: depts.Sales.id },
+    data: { headId: managerUser.id }
+  });
+  await prisma.department.update({
+    where: { id: depts.Engineering.id },
+    data: { headId: employee2.id }
+  });
+  await prisma.department.update({
+    where: { id: depts.Operations.id },
+    data: { headId: employee4.id }
+  });
+
+  console.log("Seeding teams & assigning leads/members...");
+  await prisma.team.create({
+    data: {
+      name: "Scranton Sales Reps",
+      departmentId: depts.Sales.id,
+      leadId: managerUser.id,
+      members: {
+        connect: [
+          { id: managerUser.id },
+          { id: employee1.id }
+        ]
+      }
+    }
+  });
+
+  await prisma.team.create({
+    data: {
+      name: "Core Development",
+      departmentId: depts.Engineering.id,
+      leadId: employee2.id,
+      members: {
+        connect: [
+          { id: employee2.id },
+          { id: employee3.id }
+        ]
+      }
+    }
+  });
+
+  await prisma.team.create({
+    data: {
+      name: "Talent Acquisition",
+      departmentId: depts.HR.id,
+      leadId: hrUser.id,
+      members: {
+        connect: [
+          { id: hrUser.id },
+          { id: internUser.id }
+        ]
+      }
+    }
+  });
 
   console.log("Seeding emergency contacts & bank details...");
   for (let i = 0; i < allOrgUsers.length; i++) {

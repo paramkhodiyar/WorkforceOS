@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
+import { useToast } from '../../../lib/toast/ToastProvider';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function SettingsPage() {
   const { user, features, setFeatures } = useAuth();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<'departments' | 'teams' | 'features' | 'location'>('departments');
   const [departments, setDepartments] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
@@ -134,7 +136,7 @@ export default function SettingsPage() {
         setOfficeRadius(orgRes.data.officeRadius !== null ? String(orgRes.data.officeRadius) : '');
       }
 
-      alert('Office geofencing configuration updated successfully.');
+      toast.success('Office location & geofencing settings saved successfully.');
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to save location settings.');
     } finally {
@@ -882,10 +884,10 @@ export default function SettingsPage() {
                           setOfficeLng(pos.coords.longitude.toFixed(6));
                           setAddressQuery('Current GPS Location');
                         }, (err) => {
-                          alert("Unable to fetch current GPS coordinates. Please enter manually.");
+                          toast.error('Unable to fetch your GPS location. Please enter the coordinates manually.');
                         });
                       } else {
-                        alert("Geolocation is not supported by your browser.");
+                        toast.error('Geolocation is not supported by your browser. Please enter coordinates manually.');
                       }
                     }}
                     className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-650 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"

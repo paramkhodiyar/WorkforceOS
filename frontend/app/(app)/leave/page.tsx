@@ -242,6 +242,7 @@ export default function LeavePage() {
                   value={startDate}
                   onChange={setStartDate}
                   placeholder="Select start date"
+                  min={new Date().toISOString().split('T')[0]}
                 />
               </div>
 
@@ -252,6 +253,7 @@ export default function LeavePage() {
                   value={endDate}
                   onChange={setEndDate}
                   placeholder="Select end date"
+                  min={new Date().toISOString().split('T')[0]}
                 />
               </div>
 

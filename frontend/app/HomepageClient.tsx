@@ -1388,7 +1388,7 @@ export default function HomepageClient() {
       </section>
 
       {/* SECTION 5.5: MOBILE APP READY BANNER */}
-      <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50/20 text-slate-800 border-y border-slate-200 relative overflow-hidden">
+      <section className="py-20 bg-white text-slate-800 relative overflow-hidden">
         <div className="max-w-[1100px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
           <div className="flex-1 text-left space-y-4">
             <span className="inline-block px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full">
@@ -1402,11 +1402,11 @@ export default function HomepageClient() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 font-sans w-full md:w-auto">
-            <div className="w-full sm:w-auto px-6 py-5 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+            <div className="w-full sm:w-auto px-6 py-5 bg-slate-50 rounded-2xl border border-slate-200/50 flex flex-col items-center">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Android Compatibility</span>
               <span className="text-sm font-extrabold text-slate-800">APK & WebView Ready</span>
             </div>
-            <div className="w-full sm:w-auto px-6 py-5 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+            <div className="w-full sm:w-auto px-6 py-5 bg-slate-50 rounded-2xl border border-slate-200/50 flex flex-col items-center">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Responsiveness</span>
               <span className="text-sm font-extrabold text-slate-800">100% Mobile Optimized</span>
             </div>

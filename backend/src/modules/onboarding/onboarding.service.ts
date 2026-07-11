@@ -41,6 +41,7 @@ export class OnboardingService {
         data: {
           name: orgName,
           slug,
+          logoUrl: data.logoUrl || null,
           isActive: true,
           enabledFeatures: [
             "employees",

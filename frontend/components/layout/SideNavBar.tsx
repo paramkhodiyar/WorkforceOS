@@ -40,6 +40,7 @@ export default function SideNavBar() {
   if (!user) return null;
 
   const systemRole = user.systemRole;
+  const orgName = user?.organization?.name || 'WorkforceOS';
   const userRoles = user.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
   const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
@@ -147,11 +148,25 @@ export default function SideNavBar() {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface-container-lowest flex flex-col p-5 z-40 hidden md:flex">
-      <div className="mb-8 px-2 flex items-center gap-3">
-        <img src="/workforceoslogo.png" alt="Logo" className="h-8 w-8 object-contain rounded" />
-        <div>
-          <h1 className="text-label-md font-extrabold text-primary tracking-wider uppercase">WorkforceOS</h1>
-          <p className="text-[9px] text-outline uppercase tracking-wider font-semibold">{systemRole.replace('_', ' ')}</p>
+      <div className="mb-8 px-2 border-b border-slate-100 pb-5">
+        <div className="flex items-center gap-3">
+          <img 
+            src={user?.organization?.logoUrl || "/workforceoslogo.png"} 
+            alt={orgName} 
+            className="h-9 w-9 object-contain rounded-lg bg-white border border-slate-200/85 p-0.5" 
+          />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-label-md font-bold text-slate-800 tracking-tight truncate uppercase">
+              {orgName}
+            </h1>
+            <p className="text-[9px] text-outline uppercase tracking-wider font-semibold">
+              {systemRole.replace('_', ' ')}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-1.5 px-1 opacity-70">
+          <img src="/workforceoslogo.png" className="h-3 w-3 object-contain" alt="WorkforceOS" />
+          <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">WorkforceOS Portal</span>
         </div>
       </div>
 

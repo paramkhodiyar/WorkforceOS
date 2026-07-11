@@ -39,8 +39,20 @@ export default function OnboardingPage() {
   // Step 1: Firm Setup
   const [orgName, setOrgName] = useState('');
   const [orgSlug, setOrgSlug] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [defaultPassword, setDefaultPassword] = useState('Workforce123!');
   const [slugModified, setSlugModified] = useState(false);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Step 2: Excel Upload
   const [file, setFile] = useState<File | null>(null);
@@ -310,6 +322,7 @@ export default function OnboardingPage() {
     const payload = {
       organizationName: orgName,
       organizationSlug: orgSlug,
+      logoUrl,
       defaultPassword,
       employees: validatedRows.map((r) => r.data),
       orgAdminEmail,
@@ -452,6 +465,34 @@ export default function OnboardingPage() {
                         }}
                       />
                     </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Company Logo</label>
+                  <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 p-3 rounded-lg max-w-md">
+                    {logoUrl ? (
+                      <div className="relative w-12 h-12 border border-slate-200 rounded-lg overflow-hidden bg-white flex items-center justify-center shrink-0">
+                        <img src={logoUrl} alt="Preview" className="w-full h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => setLogoUrl('')}
+                          className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 text-[8px] flex items-center justify-center hover:bg-red-650 focus:outline-none"
+                        >
+                          <span className="material-symbols-outlined text-[10px]">close</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 border-2 border-dashed border-slate-350 rounded-lg flex items-center justify-center text-slate-400 bg-white shrink-0">
+                        <span className="material-symbols-outlined text-[20px]">add_photo_alternate</span>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[11px] file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                    />
                   </div>
                 </div>
 

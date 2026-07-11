@@ -23,6 +23,7 @@ export const onboardingSchema = z.object({
   defaultPassword: z.string().min(6, "Default password must be at least 6 characters"),
   employees: z.array(onboardingEmployeeSchema).min(1, "At least one employee is required"),
   orgAdminEmail: z.string().email("Invalid admin email"),
+  logoUrl: z.string().optional(),
   hrEmails: z.array(z.string().email()).optional().default([]),
   financeEmails: z.array(z.string().email()).optional().default([]),
 });

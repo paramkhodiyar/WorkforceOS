@@ -65,8 +65,15 @@ export default function TopNavBar() {
     <header className="fixed top-0 right-0 left-0 md:left-64 h-16 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between px-6 z-30">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 md:hidden">
-          <img src="/workforceoslogo.png" alt="Logo" className="h-6 w-6 object-contain rounded" />
-          <h2 className="text-label-md font-bold text-primary tracking-wider uppercase">WorkforceOS</h2>
+          <img 
+            src={user?.organization?.logoUrl || "/workforceoslogo.png"} 
+            alt={user?.organization?.name || "Logo"} 
+            className="h-6 w-6 object-contain rounded bg-white border border-slate-200/50" 
+          />
+          <h2 className="text-[11px] font-bold text-slate-800 tracking-tight uppercase truncate max-w-[120px]">
+            {user?.organization?.name || "WorkforceOS"}
+          </h2>
+          <span className="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">WOS</span>
         </div>
         <div className="relative hidden sm:block">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>

@@ -54,8 +54,9 @@ async function main() {
   console.log("Seeding organization...");
   const org = await prisma.organization.create({
     data: {
-      name: "WorkforceOS Demo Corp",
+      name: "Dunder Mifflin Paper",
       slug: "dunder-mifflin",
+      logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Dunder_Mifflin%2C_Inc.svg/320px-Dunder_Mifflin%2C_Inc.svg.png",
       isActive: true,
       enabledFeatures: ["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "calendar"]
     }

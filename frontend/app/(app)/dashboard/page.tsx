@@ -108,6 +108,13 @@ export default function DashboardPage() {
       const orgRes = await api.organization.get();
       setFeatures(orgRes.data.enabledFeatures || []);
 
+      try {
+        const attStatus = await api.attendance.getCurrentStatus();
+        setAttendanceStatus(attStatus.data);
+      } catch (e) {
+        console.error(e);
+      }
+
       if (isAdmin || isHR || isManager) {
         let employeesCount = 0;
         let pendingLeavesCount = 0;

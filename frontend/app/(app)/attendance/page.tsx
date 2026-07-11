@@ -338,7 +338,27 @@ export default function AttendancePage() {
           <div className="md:col-span-1 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm h-fit">
             <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Daily Actions</h2>
 
-            {currentStatus && !currentStatus.checkOut ? (
+            {currentStatus && currentStatus.checkIn && currentStatus.checkOut ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex flex-col items-center text-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-green-150 flex items-center justify-center text-green-700">
+                    <span className="material-symbols-outlined text-[24px]">verified_user</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-green-800 font-extrabold uppercase block tracking-wider">Current Shift Status</span>
+                    <p className="text-label-sm font-bold text-green-900 mt-1">Shift Completed</p>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      {new Date(currentStatus.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {' → '}
+                      {new Date(currentStatus.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-400 border-t border-slate-200 w-full pt-2 leading-relaxed">
+                    Only one check-in/out cycle is allowed per day. See you tomorrow! 👋
+                  </p>
+                </div>
+              </div>
+            ) : currentStatus && currentStatus.checkIn && !currentStatus.checkOut ? (
               <div className="space-y-4">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                   <span className="text-[10px] text-green-800 font-bold uppercase block">Current Shift Status</span>

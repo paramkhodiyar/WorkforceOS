@@ -24,8 +24,16 @@ export default function HomepageClient() {
   ]);
 
   // HR Showcase Mockup State
-  const [onboardStep, setOnboardStep] = useState(5);
+  const [onboardStep, setOnboardStep] = useState(1);
   const [onboardSuccess, setOnboardSuccess] = useState(false);
+  const onboardStepNames = [
+    'Firm Setup',
+    'Excel Upload',
+    'Column Mapping',
+    'Verification & Editing',
+    'Key Personnel',
+    'Complete Setup'
+  ];
 
   // Employee Showcase Mockup State
   const [empClockedIn, setEmpClockedIn] = useState(false);
@@ -792,45 +800,89 @@ export default function HomepageClient() {
                     <span className="text-[10px] font-bold text-slate-700">HR Workspace / Onboarding Wizard</span>
                     <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Interactive mockup</span>
                   </div>
-                  <div className="flex-1 flex flex-col gap-3 justify-center">
+                  <div className="flex-1 flex flex-col gap-3 justify-center text-left">
                     {onboardSuccess ? (
                       <div className="bg-white border border-green-200 p-4 rounded-lg text-center space-y-2">
                         <span className="material-symbols-outlined text-green-600 text-[24px]">verified</span>
-                        <h4 className="text-xs font-bold text-slate-900">Onboarding Step Cleared!</h4>
-                        <p className="text-[9px] text-slate-400">Employee data written and bank PAN details encrypted at-rest.</p>
+                        <h4 className="text-xs font-bold text-slate-900">Onboarding Setup Completed!</h4>
+                        <p className="text-[9px] text-slate-400">Employee database populated. Secure onboarding files processed successfully.</p>
                         <button
-                          onClick={() => { setOnboardSuccess(false); setOnboardStep(5); }}
-                          className="px-3 py-1 bg-slate-100 hover:bg-slate-250 text-slate-600 border border-slate-200 text-[8px] rounded font-bold cursor-pointer"
+                          onClick={() => { setOnboardSuccess(false); setOnboardStep(1); }}
+                          className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-650 border border-slate-200 text-[8px] rounded font-bold cursor-pointer"
                         >
                           Reset Wizard
                         </button>
                       </div>
                     ) : (
-                      <div className="bg-white border border-slate-200 p-3 rounded-lg flex flex-col justify-between gap-3">
-                        <div>
-                          <span className="text-[9px] text-slate-400 block font-bold uppercase mb-1">Onboarding Progress</span>
-                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div className="bg-white border border-slate-200 p-3 rounded-lg flex flex-col justify-between gap-3 min-h-[140px]">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[9px] text-slate-400 font-bold uppercase">
+                              Wizard: {onboardStepNames[onboardStep - 1]}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-bold">
+                              {Math.round((onboardStep / 6) * 100)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                             <div
                               className="bg-blue-600 h-full transition-all duration-500"
-                              style={{ width: `${(onboardStep / 7) * 100}%` }}
+                              style={{ width: `${(onboardStep / 6) * 100}%` }}
                             ></div>
                           </div>
-                          <div className="flex justify-between text-[8px] text-slate-500 mt-1">
-                            <span>Step {onboardStep} of 7: Compensation Details</span>
-                            <span>{Math.round((onboardStep / 7) * 100)}% Complete</span>
-                          </div>
+
+                          {/* Dynamic step detail layout */}
+                          {onboardStep === 1 && (
+                            <div className="text-[9px] space-y-1 py-1">
+                              <div className="flex justify-between border-b border-slate-50 pb-0.5"><span className="text-slate-400">Firm Name:</span> <span className="font-bold text-slate-800">Dunder Mifflin Inc</span></div>
+                              <div className="flex justify-between"><span className="text-slate-400">Workspace URL:</span> <span className="font-mono text-blue-600">dunder-mifflin</span></div>
+                            </div>
+                          )}
+                          {onboardStep === 2 && (
+                            <div className="text-[9px] flex items-center gap-2 py-1 bg-slate-50 border border-slate-100 rounded p-1.5">
+                              <span className="material-symbols-outlined text-[16px] text-green-600">table_view</span>
+                              <div>
+                                <span className="font-bold text-slate-800 block">employee_directory.xlsx</span>
+                                <span className="text-[8px] text-slate-400">14 records found</span>
+                              </div>
+                            </div>
+                          )}
+                          {onboardStep === 3 && (
+                            <div className="text-[8.5px] space-y-1 py-1">
+                              <div className="flex justify-between"><span className="text-slate-400">FirstName Column:</span> <span className="font-mono font-bold text-slate-700">A (First Name)</span></div>
+                              <div className="flex justify-between"><span className="text-slate-400">Email Column:</span> <span className="font-mono font-bold text-slate-700">C (Email)</span></div>
+                            </div>
+                          )}
+                          {onboardStep === 4 && (
+                            <div className="text-[8px] space-y-0.5 py-1">
+                              <div className="flex justify-between items-center text-green-700 font-bold bg-green-50 px-1.5 py-0.5 rounded"><span>Michael Scott</span> <span>✓ Valid</span></div>
+                              <div className="flex justify-between items-center text-green-700 font-bold bg-green-50 px-1.5 py-0.5 rounded"><span>Dwight Schrute</span> <span>✓ Valid</span></div>
+                            </div>
+                          )}
+                          {onboardStep === 5 && (
+                            <div className="text-[9px] space-y-1 py-1">
+                              <div className="flex justify-between"><span className="text-slate-400">Admin Account:</span> <span className="font-bold text-slate-700">michael@dunder-mifflin.com</span></div>
+                              <div className="flex justify-between"><span className="text-slate-400">HR Manager:</span> <span className="font-bold text-slate-700">toby@dunder-mifflin.com</span></div>
+                            </div>
+                          )}
+                          {onboardStep === 6 && (
+                            <div className="text-[9px] py-1 text-center font-bold text-blue-600 animate-pulse">
+                              Configuration verified! Ready to compile.
+                            </div>
+                          )}
                         </div>
-                        <div className="flex justify-end gap-2 border-t border-slate-100 pt-2">
+
+                        <div className="flex justify-end gap-2 border-t border-slate-100 pt-2 shrink-0">
                           <button
                             disabled={onboardStep === 1}
                             onClick={() => setOnboardStep(prev => prev - 1)}
-                            className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded text-[9px] font-bold cursor-pointer disabled:opacity-40"
+                            className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-650 border border-slate-200 rounded text-[9px] font-bold cursor-pointer disabled:opacity-40"
                           >
                             Prev Step
                           </button>
                           <button
                             onClick={() => {
-                              if (onboardStep === 7) {
+                              if (onboardStep === 6) {
                                 setOnboardSuccess(true);
                               } else {
                                 setOnboardStep(prev => prev + 1);
@@ -838,7 +890,7 @@ export default function HomepageClient() {
                             }}
                             className="px-2.5 py-1 bg-blue-600 hover:bg-blue-750 text-white rounded text-[9px] font-bold cursor-pointer"
                           >
-                            {onboardStep === 7 ? 'Complete' : 'Next Step'}
+                            {onboardStep === 6 ? 'Complete Setup' : 'Next Step'}
                           </button>
                         </div>
                       </div>
@@ -1194,7 +1246,7 @@ export default function HomepageClient() {
               className="text-2xl md:text-[2.25rem] font-[700] text-slate-900 leading-[1.2] tracking-[-0.02em]"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
-              11 modules. Every one production-ready.
+              12 modules. Every one production-ready.
             </h2>
           </div>
 
@@ -1277,6 +1329,13 @@ export default function HomepageClient() {
                 stat: 'Immutable, org-wide, always on',
                 color: 'bg-stone-100 text-stone-700 border-stone-200',
                 icon: 'history'
+              },
+              {
+                title: 'Org Calendar',
+                body: 'Integrated shared team calendar showing employee leaves, scheduled shift timings, task deadlines, and company events. Keeps the whole office synchronized in one place.',
+                stat: 'Real-time, cross-module calendar sync',
+                color: 'bg-rose-50 text-rose-600 border-rose-150',
+                icon: 'calendar_today'
               }
             ].map((module) => (
               <div

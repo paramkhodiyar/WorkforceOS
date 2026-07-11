@@ -1,4 +1,4 @@
-import { PrismaClient, UserStatus, SystemRole, LeaveType, RoleScope, TaskStatus, TaskPriority, PayrollStatus, LeaveStatus, AttendanceStatus, WorkMode } from "@prisma/client";
+import { PrismaClient, UserStatus, SystemRole, LeaveType, RoleScope, TaskStatus, TaskPriority, PayrollStatus, LeaveStatus, AttendanceStatus, WorkMode, EmployeeType, TaxRegime } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -47,6 +47,7 @@ async function main() {
   await prisma.rolePermission.deleteMany();
   await prisma.role.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.shiftConfig.deleteMany();
   await prisma.organization.deleteMany();
 
   console.log("Seeding organization...");
@@ -192,7 +193,27 @@ async function main() {
       employeeId: "EMP-2026-0001",
       designation: "General Manager",
       salaryBand: "BAND_A",
-      joinDate: new Date("2020-01-01")
+      joinDate: new Date("2020-01-01"),
+      phone: "+91 90000 00001",
+      personalEmail: "admin.personal@workforceos.com",
+      personalPhone: "+91 91000 00001",
+      dateOfBirth: new Date("1985-04-12"),
+      gender: "Male",
+      bloodGroup: "A+",
+      address: {
+        line1: "101 Slough Ave",
+        line2: "Penthouse Suite",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.FULL_TIME,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 150000,
+      ctcAnnual: 2160000,
+      pfApplicable: true,
+      taxRegime: TaxRegime.NEW
     }
   });
   await prisma.userRole.create({
@@ -214,7 +235,27 @@ async function main() {
       employeeId: "EMP-2026-0002",
       designation: "HR Director",
       salaryBand: "BAND_B",
-      joinDate: new Date("2021-06-15")
+      joinDate: new Date("2021-06-15"),
+      phone: "+91 90000 00002",
+      personalEmail: "hr.personal@workforceos.com",
+      personalPhone: "+91 91000 00002",
+      dateOfBirth: new Date("1990-08-24"),
+      gender: "Female",
+      bloodGroup: "B+",
+      address: {
+        line1: "204 Slough Ave",
+        line2: "Apt 20",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.FULL_TIME,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 100000,
+      ctcAnnual: 1440000,
+      pfApplicable: true,
+      taxRegime: TaxRegime.NEW
     }
   });
   await prisma.userRole.create({
@@ -236,7 +277,27 @@ async function main() {
       employeeId: "EMP-2026-0003",
       designation: "Finance Controller",
       salaryBand: "BAND_A",
-      joinDate: new Date("2021-03-10")
+      joinDate: new Date("2021-03-10"),
+      phone: "+91 90000 00003",
+      personalEmail: "finance.personal@workforceos.com",
+      personalPhone: "+91 91000 00003",
+      dateOfBirth: new Date("1988-11-15"),
+      gender: "Male",
+      bloodGroup: "O+",
+      address: {
+        line1: "309 Slough Ave",
+        line2: "Suite A",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.FULL_TIME,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 100000,
+      ctcAnnual: 1440000,
+      pfApplicable: true,
+      taxRegime: TaxRegime.NEW
     }
   });
   await prisma.userRole.create({
@@ -258,7 +319,27 @@ async function main() {
       employeeId: "EMP-2026-0004",
       designation: "Sales Manager",
       salaryBand: "BAND_B",
-      joinDate: new Date("2022-02-01")
+      joinDate: new Date("2022-02-01"),
+      phone: "+91 90000 00004",
+      personalEmail: "manager.personal@workforceos.com",
+      personalPhone: "+91 91000 00004",
+      dateOfBirth: new Date("1986-07-02"),
+      gender: "Male",
+      bloodGroup: "AB+",
+      address: {
+        line1: "412 Slough Ave",
+        line2: "Floor 2",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.FULL_TIME,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 80000,
+      ctcAnnual: 1152000,
+      pfApplicable: true,
+      taxRegime: TaxRegime.NEW
     }
   });
   await prisma.userRole.create({
@@ -280,7 +361,27 @@ async function main() {
       employeeId: "EMP-2026-0005",
       designation: "Sales Specialist",
       salaryBand: "BAND_C",
-      joinDate: new Date("2023-04-10")
+      joinDate: new Date("2023-04-10"),
+      phone: "+91 90000 00005",
+      personalEmail: "sales.personal@workforceos.com",
+      personalPhone: "+91 91000 00005",
+      dateOfBirth: new Date("1993-12-05"),
+      gender: "Female",
+      bloodGroup: "A-",
+      address: {
+        line1: "505 Slough Ave",
+        line2: "Apt 5",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.FULL_TIME,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 50050,
+      ctcAnnual: 720000,
+      pfApplicable: true,
+      taxRegime: TaxRegime.NEW
     }
   });
   await prisma.userRole.create({
@@ -302,7 +403,27 @@ async function main() {
       employeeId: "EMP-2026-0006",
       designation: "Senior Engineer",
       salaryBand: "BAND_A",
-      joinDate: new Date("2022-08-01")
+      joinDate: new Date("2022-08-01"),
+      phone: "+91 90000 00006",
+      personalEmail: "eng.personal@workforceos.com",
+      personalPhone: "+91 91000 00006",
+      dateOfBirth: new Date("1991-03-30"),
+      gender: "Male",
+      bloodGroup: "O-",
+      address: {
+        line1: "606 Slough Ave",
+        line2: "Apt 2B",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.FULL_TIME,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 110000,
+      ctcAnnual: 1584000,
+      pfApplicable: true,
+      taxRegime: TaxRegime.NEW
     }
   });
   await prisma.userRole.create({
@@ -324,7 +445,27 @@ async function main() {
       employeeId: "EMP-2026-0007",
       designation: "Quality Assurance Lead",
       salaryBand: "BAND_C",
-      joinDate: new Date("2023-01-15")
+      joinDate: new Date("2023-01-15"),
+      phone: "+91 90000 00007",
+      personalEmail: "qa.personal@workforceos.com",
+      personalPhone: "+91 91000 00007",
+      dateOfBirth: new Date("1994-09-18"),
+      gender: "Female",
+      bloodGroup: "B-",
+      address: {
+        line1: "707 Slough Ave",
+        line2: "Suite 7",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.FULL_TIME,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 60000,
+      ctcAnnual: 864000,
+      pfApplicable: true,
+      taxRegime: TaxRegime.NEW
     }
   });
   await prisma.userRole.create({
@@ -346,7 +487,27 @@ async function main() {
       employeeId: "EMP-2026-0008",
       designation: "Operations Associate",
       salaryBand: "BAND_C",
-      joinDate: new Date("2024-05-20")
+      joinDate: new Date("2024-05-20"),
+      phone: "+91 90000 00008",
+      personalEmail: "ops.personal@workforceos.com",
+      personalPhone: "+91 91000 00008",
+      dateOfBirth: new Date("1995-10-22"),
+      gender: "Male",
+      bloodGroup: "AB-",
+      address: {
+        line1: "808 Slough Ave",
+        line2: "Warehouse B",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.FULL_TIME,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 55000,
+      ctcAnnual: 792000,
+      pfApplicable: true,
+      taxRegime: TaxRegime.NEW
     }
   });
   await prisma.userRole.create({
@@ -368,7 +529,27 @@ async function main() {
       employeeId: "EMP-2026-0009",
       designation: "Accounts Executive",
       salaryBand: "BAND_C",
-      joinDate: new Date("2023-11-01")
+      joinDate: new Date("2023-11-01"),
+      phone: "+91 90000 00009",
+      personalEmail: "acc.personal@workforceos.com",
+      personalPhone: "+91 91000 00009",
+      dateOfBirth: new Date("1992-06-11"),
+      gender: "Female",
+      bloodGroup: "O+",
+      address: {
+        line1: "909 Slough Ave",
+        line2: "Apt 9",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.FULL_TIME,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 65000,
+      ctcAnnual: 936000,
+      pfApplicable: true,
+      taxRegime: TaxRegime.NEW
     }
   });
   await prisma.userRole.create({
@@ -390,7 +571,28 @@ async function main() {
       employeeId: "EMP-2026-0010",
       designation: "HR Trainee",
       salaryBand: "BAND_E",
-      joinDate: new Date("2026-05-01")
+      joinDate: new Date("2026-05-01"),
+      phone: "+91 90000 00010",
+      personalEmail: "intern.personal@workforceos.com",
+      personalPhone: "+91 91000 00010",
+      dateOfBirth: new Date("2003-02-14"),
+      gender: "Male",
+      bloodGroup: "A+",
+      address: {
+        line1: "1010 Slough Ave",
+        line2: "Dorm 40",
+        city: "Scranton",
+        state: "Pennsylvania",
+        zip: "18503",
+        country: "USA"
+      },
+      employeeType: EmployeeType.INTERN,
+      workLocation: "Scranton Headquarters",
+      basicSalary: 25000,
+      ctcAnnual: 300000,
+      pfApplicable: false,
+      taxRegime: TaxRegime.NEW,
+      probationEndDate: new Date("2026-11-01")
     }
   });
   await prisma.userRole.create({
@@ -444,15 +646,47 @@ async function main() {
 
   for (const u of allOrgUsers) {
     for (const policy of leavePolicies) {
+      let used = 0;
+      let pending = 0;
+
+      // Generate realistic used and pending leave counts
+      if (policy.leaveType === LeaveType.SICK) {
+        used = Math.floor(Math.random() * 4) + 1; // 1 to 4 days used
+      } else if (policy.leaveType === LeaveType.CASUAL) {
+        used = Math.floor(Math.random() * 5) + 2; // 2 to 6 days used
+        if (Math.random() > 0.6) pending = 1;
+      } else if (policy.leaveType === LeaveType.EARNED) {
+        used = Math.floor(Math.random() * 6) + 3; // 3 to 8 days used
+      } else if (policy.leaveType === LeaveType.WFH) {
+        used = Math.floor(Math.random() * 11) + 5; // 5 to 15 days used
+        if (Math.random() > 0.5) pending = Math.floor(Math.random() * 3) + 1;
+      } else if (policy.leaveType === LeaveType.HALF_DAY) {
+        used = Math.floor(Math.random() * 3) + 1; // 1 to 3 days used
+      }
+
+      // Synchronize with seeded requests
+      if (u.id === employee1.id && policy.leaveType === LeaveType.CASUAL) {
+        pending = 3; // matches the 3-day pending casual leave
+      }
+      if (u.id === employee2.id && policy.leaveType === LeaveType.EARNED) {
+        if (used < 2) used = 2; // matches the 2-day approved earned leave
+      }
+
+      if (used + pending > policy.daysAllowed) {
+        used = policy.daysAllowed - pending;
+      }
+
+      const remaining = policy.daysAllowed - used;
+
       await prisma.leaveBalance.create({
         data: {
           userId: u.id,
           leaveType: policy.leaveType,
           year: 2026,
           allocated: policy.daysAllowed,
-          used: 0,
-          pending: 0,
-          remaining: policy.daysAllowed
+          used,
+          pending,
+          remaining
         }
       });
     }

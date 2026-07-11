@@ -6,8 +6,8 @@ import { updateFeaturesSchema, updateLocationSchema } from "./organization.valid
 
 const router = Router();
 
-router.get("/slug/:slug", getOrgBySlug);
 router.get("/me", authenticate, getOrgMetadata);
+router.get("/slug/:slug", getOrgBySlug);
 router.patch("/:orgId/features", authenticate, validate(updateFeaturesSchema), updateOrgFeatures);
 router.patch("/:orgId/location", authenticate, validate(updateLocationSchema), updateOrgLocation);
 

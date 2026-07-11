@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
@@ -19,6 +19,10 @@ function ProfileContent() {
   const [editing, setEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('personal');
   const [attendanceStatus, setAttendanceStatus] = useState<'ACTIVE' | 'OFFLINE' | 'COMPLETED'>('OFFLINE');
+
+  const [showLeftScroll, setShowLeftScroll] = useState(false);
+  const [showRightScroll, setShowRightScroll] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Password Reset / Security states
   const [oldPassword, setOldPassword] = useState('');
@@ -150,6 +154,27 @@ function ProfileContent() {
   useEffect(() => {
     loadProfileData();
   }, [profileId, user]);
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowLeftScroll(scrollLeft > 5);
+      setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      el.addEventListener('scroll', handleScroll);
+      handleScroll();
+      window.addEventListener('resize', handleScroll);
+    }
+    return () => {
+      if (el) el.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [profile]);
 
   useEffect(() => {
     if (profile) {
@@ -379,26 +404,44 @@ function ProfileContent() {
         </div>
 
         <div className="md:col-span-2 bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
-          <div 
-            className="flex border-b border-slate-100 bg-slate-50/50 px-4 overflow-x-auto whitespace-nowrap scrollbar-none"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id as any);
-                  setEditing(false);
-                }}
-                className={`px-4 py-3.5 text-label-sm font-bold border-b-2 transition-all cursor-pointer shrink-0 ${
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-outline hover:text-on-surface'
-                }`}
-              >
-                {tab.name}
-              </button>
-            ))}
+          <div className="relative flex items-center border-b border-slate-100 bg-slate-50/50">
+            {/* Left Scroll Gradient Shadow & Chevron */}
+            {showLeftScroll && (
+              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-slate-100 to-transparent pointer-events-none md:hidden z-10 flex items-center justify-start pl-1 text-slate-400">
+                <span className="material-symbols-outlined text-[14px]">chevron_left</span>
+              </div>
+            )}
+
+            {/* Scrollable Tabs Wrapper */}
+            <div 
+              ref={scrollRef}
+              className="flex px-4 overflow-x-auto whitespace-nowrap scrollbar-none flex-grow"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id as any);
+                    setEditing(false);
+                  }}
+                  className={`px-4 py-3.5 text-label-sm font-bold border-b-2 transition-all cursor-pointer shrink-0 ${
+                    activeTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-outline hover:text-on-surface'
+                  }`}
+                >
+                  {tab.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Right Scroll Gradient Shadow & Chevron */}
+            {showRightScroll && (
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-100 to-transparent pointer-events-none md:hidden z-10 flex items-center justify-end pr-1 text-slate-400">
+                <span className="material-symbols-outlined text-[14px] animate-pulse">chevron_right</span>
+              </div>
+            )}
           </div>
 
           <div className="p-6">

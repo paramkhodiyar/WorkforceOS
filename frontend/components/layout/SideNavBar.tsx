@@ -1,28 +1,48 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/AuthProvider';
+import { api } from '../../lib/api/client';
 
 export default function SideNavBar() {
   const pathname = usePathname();
   const { user, features } = useAuth();
+  const [hasPendingRequests, setHasPendingRequests] = useState(false);
 
-  if (!user) return null;
-
-  const systemRole = user.systemRole;
-  const userRoles = user.roles || [];
+  const systemRole = user?.systemRole;
+  const userRoles = user?.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
   const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
   const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
-  const isLeaderOrHead = (user.departmentHead && user.departmentHead.length > 0) || (user.teamLead && user.teamLead.length > 0);
+  const isLeaderOrHead = (user?.departmentHead && user.departmentHead.length > 0) || (user?.teamLead && user.teamLead.length > 0);
   const isActualManager = isManager || isLeaderOrHead;
   const hasTeamsOrDepts =
     isLeaderOrHead ||
-    (user.teams && user.teams.length > 0) ||
-    user.departmentId !== null;
+    (user?.teams && user.teams.length > 0) ||
+    user?.departmentId !== null;
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+
+  useEffect(() => {
+    function checkPending() {
+      if (isAdmin || isHR) {
+        api.employees.listProfileRequests()
+          .then(res => {
+            const pending = res.data?.some((r: any) => r.status === 'PENDING');
+            setHasPendingRequests(!!pending);
+          })
+          .catch(console.error);
+      }
+    }
+
+    checkPending();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('profile-requests-updated', checkPending);
+      return () => window.removeEventListener('profile-requests-updated', checkPending);
+    }
+  }, [isAdmin, isHR]);
 
   const menuItems = [
     {
@@ -117,6 +137,8 @@ export default function SideNavBar() {
     }
   ];
 
+  if (!user || !systemRole) return null;
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface-container-lowest flex flex-col p-5 z-40 hidden md:flex">
       <div className="mb-8 px-2 flex items-center gap-3">
@@ -168,7 +190,12 @@ export default function SideNavBar() {
                 : 'text-on-surface-variant hover:bg-slate-50'
             }`}
           >
-            <span className="material-symbols-outlined text-[20px]">settings</span>
+            <span className="material-symbols-outlined text-[20px] relative">
+              settings
+              {hasPendingRequests && (
+                <span className="absolute top-0.5 right-0.5 block h-1.5 w-1.5 rounded-full bg-red-500 ring-[1px] ring-white"></span>
+              )}
+            </span>
             <span className="text-label-md">Settings</span>
           </Link>
         )}

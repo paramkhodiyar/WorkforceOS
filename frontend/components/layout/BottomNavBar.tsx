@@ -1,14 +1,41 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/AuthProvider';
+import { api } from '../../lib/api/client';
 
 export default function BottomNavBar() {
   const pathname = usePathname();
   const { user, features, logout } = useAuth();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [hasPendingRequests, setHasPendingRequests] = useState(false);
+
+  useEffect(() => {
+    function checkPending() {
+      const systemRole = user?.systemRole;
+      const userRoles = user?.roles || [];
+      const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
+      const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+
+      if (isAdmin || isHR) {
+        api.employees.listProfileRequests()
+          .then(res => {
+            const pending = res.data?.some((r: any) => r.status === 'PENDING');
+            setHasPendingRequests(!!pending);
+          })
+          .catch(console.error);
+      }
+    }
+
+    checkPending();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('profile-requests-updated', checkPending);
+      return () => window.removeEventListener('profile-requests-updated', checkPending);
+    }
+  }, [user]);
 
   if (!user) return null;
 
@@ -69,7 +96,12 @@ export default function BottomNavBar() {
             showMoreMenu ? 'text-primary' : 'text-on-surface-variant'
           }`}
         >
-          <span className="material-symbols-outlined">menu</span>
+          <span className="material-symbols-outlined relative">
+            menu
+            {hasPendingRequests && (
+              <span className="absolute top-0.5 right-0.5 block h-1.5 w-1.5 rounded-full bg-red-500 ring-[1px] ring-white"></span>
+            )}
+          </span>
           <span className="text-[10px] font-medium">More</span>
         </button>
       </nav>
@@ -96,9 +128,14 @@ export default function BottomNavBar() {
                   key={tab.href}
                   href={tab.href}
                   onClick={() => setShowMoreMenu(false)}
-                  className="flex flex-col items-center gap-2 p-3 bg-surface-container-low border border-outline-variant rounded-lg hover:bg-surface-container transition-colors text-center"
+                  className="flex flex-col items-center gap-2 p-3 bg-surface-container-low border border-outline-variant rounded-lg hover:bg-surface-container transition-colors text-center relative"
                 >
-                  <span className="material-symbols-outlined text-primary">{tab.icon}</span>
+                  <span className="material-symbols-outlined text-primary relative">
+                    {tab.icon}
+                    {tab.label === 'Settings' && hasPendingRequests && (
+                      <span className="absolute top-0.5 right-0.5 block h-1.5 w-1.5 rounded-full bg-red-500 ring-[1px] ring-white"></span>
+                    )}
+                  </span>
                   <span className="text-[11px] font-medium text-on-surface">{tab.label}</span>
                 </Link>
               ))}

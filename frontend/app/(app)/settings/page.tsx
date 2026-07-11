@@ -61,6 +61,7 @@ export default function SettingsPage() {
   const userRoles = user?.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+  const hasPendingRequests = profileRequests.some((r: any) => r.status === 'PENDING');
 
   useEffect(() => {
     if (isAdmin || isHR) {
@@ -83,6 +84,9 @@ export default function SettingsPage() {
       setTeams(teamRes.data || []);
       setEmployees(empRes.data || []);
       setProfileRequests(reqRes.data || []);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('profile-requests-updated'));
+      }
       if (orgRes?.data) {
         setOfficeLat(orgRes.data.officeLatitude !== null ? String(orgRes.data.officeLatitude) : '');
         setOfficeLng(orgRes.data.officeLongitude !== null ? String(orgRes.data.officeLongitude) : '');
@@ -108,6 +112,9 @@ export default function SettingsPage() {
       }
       const reqRes = await api.employees.listProfileRequests().catch(() => ({ data: [] }));
       setProfileRequests(reqRes.data || []);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('profile-requests-updated'));
+      }
       const empRes = await api.employees.list({ limit: 1000 });
       setEmployees(empRes.data || []);
       setIsRequestModalOpen(false);
@@ -462,11 +469,14 @@ export default function SettingsPage() {
         {(isAdmin || isHR) && (
           <button
             onClick={() => setActiveTab('profile-requests')}
-            className={`flex-1 sm:flex-none px-4 py-2.5 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex-1 sm:flex-none px-4 py-2.5 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-1.5 ${
               activeTab === 'profile-requests' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Profile Requests
+            <span>Profile Requests</span>
+            {hasPendingRequests && (
+              <span className="h-2 w-2 rounded-full bg-red-500 block"></span>
+            )}
           </button>
         )}
       </div>

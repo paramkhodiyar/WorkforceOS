@@ -477,7 +477,7 @@ export default function LeavePage() {
                                 {
                                   label: 'Cancel Request',
                                   icon: 'close',
-                                  className: 'text-error hover:bg-error/5',
+                                  iconClassName: 'text-error',
                                   onClick: () => handleCancel(req.id)
                                 }
                               ]}

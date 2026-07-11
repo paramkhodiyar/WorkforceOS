@@ -5,6 +5,7 @@ export interface ActionMenuItem {
   label: string;
   onClick: () => void;
   icon?: string;
+  iconClassName?: string;
   className?: string;
 }
 
@@ -80,7 +81,7 @@ export function ThreeDotMenu({ actions, align = 'right' }: ThreeDotMenuProps) {
             top: `${coords.top}px`,
             left: `${coords.left}px`,
           }}
-          className="z-50 w-36 rounded-lg bg-surface-container-lowest border border-outline-variant shadow-lg py-1 focus:outline-none"
+          className="z-50 w-44 rounded-lg bg-surface-container-lowest border border-outline-variant shadow-lg py-1 focus:outline-none"
           onClick={(e) => e.stopPropagation()}
         >
           {actions.map((action, idx) => (
@@ -91,14 +92,14 @@ export function ThreeDotMenu({ actions, align = 'right' }: ThreeDotMenuProps) {
                 setIsOpen(false);
                 action.onClick();
               }}
-              className={`w-full text-left px-4 py-2 text-body-sm font-semibold flex items-center gap-2 hover:bg-surface-container transition-colors cursor-pointer ${
-                action.className || 'text-on-surface'
+              className={`w-full text-left px-4 py-2 text-body-sm font-semibold flex items-center gap-2 hover:bg-surface-container transition-colors cursor-pointer text-on-surface ${
+                action.className || ''
               }`}
             >
               {action.icon && (
-                <span className="material-symbols-outlined text-[16px] text-outline shrink-0">{action.icon}</span>
+                <span className={`material-symbols-outlined text-[16px] shrink-0 ${action.iconClassName || 'text-outline'}`}>{action.icon}</span>
               )}
-              <span>{action.label}</span>
+              <span className="whitespace-nowrap">{action.label}</span>
             </button>
           ))}
         </div>,

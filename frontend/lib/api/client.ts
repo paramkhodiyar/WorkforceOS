@@ -25,6 +25,28 @@ function onRefreshed(token: string) {
   refreshSubscribers = [];
 }
 
+function getErrorMessage(status: number, errorData: any, defaultPrefix = "Request failed"): string {
+  const backendMessage = errorData?.error?.message || errorData?.message;
+  if (backendMessage) return backendMessage;
+
+  switch (status) {
+    case 400:
+      return "The request could not be processed. Please check the entered data.";
+    case 401:
+      return "Your session has expired. Please log in again.";
+    case 403:
+      return "Access Denied: You do not have permission to perform this action.";
+    case 404:
+      return "The requested page or resource could not be found.";
+    case 422:
+      return "Validation failed. Please verify your input data.";
+    case 500:
+      return "A server error occurred. Please try again in a few moments.";
+    default:
+      return `${defaultPrefix} (Status code: ${status}).`;
+  }
+}
+
 async function request(path: string, options: RequestInit = {}): Promise<any> {
   const token = getAuthToken();
   const headers: Record<string, string> = {
@@ -84,7 +106,7 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
                 window.location.href = '/login';
               }
               const errorData = await refreshRes.json().catch(() => ({}));
-              throw new Error(errorData.message || `Refresh failed with status ${refreshRes.status}`);
+              throw new Error(getErrorMessage(refreshRes.status, errorData, "Refresh failed"));
             }
           } catch (refreshErr) {
             isRefreshing = false;
@@ -108,7 +130,7 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
               }).then((res) => {
                 if (!res.ok) {
                   return res.json().catch(() => ({})).then((errorData) => {
-                    throw new Error(errorData.message || `Retry request failed with status ${res.status}`);
+                    throw new Error(getErrorMessage(res.status, errorData, "Retry request failed"));
                   });
                 }
                 return res.json();
@@ -132,7 +154,7 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
     }
 
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `Request failed with status ${response.status}`);
+    throw new Error(getErrorMessage(response.status, errorData));
   }
 
   return response.json();

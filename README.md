@@ -59,3 +59,30 @@ A three-layer permission matrix that restricts user access based on organization
 ### 11. Notifications and Audit Logs
 *   **Notifications**: Internal service to issue real-time and persisted database notifications triggered by workflow actions.
 *   **Audit Trail**: Automatically records all write operations, tracking the actor, module, action type, changes (previous and updated values), IP address, and user agent.
+
+---
+
+## Recent Updates & Enhancements
+
+The platform has been updated with the following features:
+
+### 💼 HR-Approved Profile Change Request Pipeline (Compliance & Security)
+- **Controlled Personal Edits**: Non-admin employees can edit only personal/contact fields. They are blocked from editing job-related fields (salary, designation, role).
+- **Approval Pipeline**: Edits submit a change request showing side-by-side comparisons of requested changes in the database. Changes are only committed once an HR Manager or Admin approves them.
+- **Data Privacy & Erasure (DPDP/GDPR Compliance)**: Implemented PII scrubbing upon employee deletion. Bank details and emergency rows are fully deleted, and personal email, phone, and address are nullified. The unique email key is safely replaced with a masked key (`deleted-${id}@workforceos.com`) to preserve database audit records.
+- **Production Encryption Key Safeguard**: Enforced zod validation that blocks backend server startup if the default development secret is used in a production environment.
+
+### 🔔 Reactive Red Dot Indicators & Layout Refactoring
+- **Real-Time Indicators**: Added reactive red dot indicators to the **Settings** sidebar and mobile navigation tiles that light up when unread profile requests exist. These automatically disappear globally once the requests are approved or rejected.
+- **Sidebar Code Cleanup**: Refactored the `SideNavBar` components to group hooks at the top and cleanly enforce early exit guards.
+- **Enhanced Profile Discoverability**: Added a permanent **My Profile** button in the sidebar and user avatar header links for intuitive profile editing.
+
+### 🌐 Mobile WebView Geolocation & Android Build Optimizations
+- **WebView Geolocation Bridge**: Configured the Android WebView (`AndroidWebViewController`) platform callbacks using `setGeolocationPermissionsPromptCallbacks` with `onShowPrompt`. Geolocation calls are now seamlessly bridged to the native Android OS permission dialogs.
+- **iOS Plist Permissions**: Declared `NSLocationWhenInUseUsageDescription` in iOS `Info.plist` to prevent Apple devices from blocking GPS coordinates and avoid runtime crashes.
+- **Gradle Warning Suppressions**: Suppressed obsolete Java version compiler warnings caused by legacy third-party plugins in the mobile Gradle build.
+- **Mobile UI Layout Fixes**: Optimized error banner alert containers to enforce vertical text wrapping and separate the "Dismiss" trigger to prevent overlaps on mobile screens.
+
+### 🏢 Onboarding Logo Upload & Organization Customization
+- **Logo Upload Support**: Added a logo image uploader in Step 1 of the onboarding wizard, generating a base64 Data URL to dynamically display and save client organization logos.
+- **Multi-Brand Badging**: Rebuilt the desktop sidebar and mobile headers to dynamically display the current organization's logo and name, while retaining the WorkforceOS product identity via a small sub-badge.

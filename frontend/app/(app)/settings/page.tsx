@@ -23,6 +23,9 @@ export default function SettingsPage() {
   const [officeRadius, setOfficeRadius] = useState<string>('');
   const [savingLocation, setSavingLocation] = useState(false);
 
+  const [addressQuery, setAddressQuery] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [deptForm, setDeptForm] = useState<{ id?: string; name: string; headId: string | null; employeeIds: string[] }>({
     name: '',
@@ -136,6 +139,22 @@ export default function SettingsPage() {
       setErrorMessage(err.message || 'Failed to save location settings.');
     } finally {
       setSavingLocation(false);
+    }
+  }
+
+  async function handleAddressSearch(query: string) {
+    setAddressQuery(query);
+    if (query.trim().length < 3) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+      const data = await res.json();
+      setAddressSuggestions(data || []);
+    } catch (err) {
+      console.error('Address search error:', err);
     }
   }
 
@@ -756,6 +775,44 @@ export default function SettingsPage() {
               </div>
 
               <form onSubmit={handleSaveLocation} className="space-y-4">
+                {/* Address Search */}
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                    Search Office Address
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Type address, e.g. Dunder Mifflin Scranton..."
+                      value={addressQuery}
+                      onChange={(e) => handleAddressSearch(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
+                    />
+                    {addressSuggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50 max-h-48 overflow-y-auto">
+                        {addressSuggestions.map((s: any) => (
+                          <button
+                            key={s.place_id}
+                            type="button"
+                            onClick={() => {
+                              setOfficeLat(parseFloat(s.lat).toFixed(6));
+                              setOfficeLng(parseFloat(s.lon).toFixed(6));
+                              setAddressQuery(s.display_name);
+                              setAddressSuggestions([]);
+                            }}
+                            className="w-full text-left px-3 py-2 text-[11px] hover:bg-slate-50 text-slate-700 font-medium truncate block border-b border-slate-100 last:border-0 cursor-pointer"
+                          >
+                            {s.display_name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    Search your company office name or street address to automatically retrieve coordinates.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5 text-left">
                     <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
@@ -766,7 +823,7 @@ export default function SettingsPage() {
                       placeholder="e.g. 12.9716"
                       value={officeLat}
                       onChange={(e) => setOfficeLat(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold"
+                      className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
@@ -778,7 +835,7 @@ export default function SettingsPage() {
                       placeholder="e.g. 77.5946"
                       value={officeLng}
                       onChange={(e) => setOfficeLng(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold"
+                      className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
                     />
                   </div>
                 </div>
@@ -792,12 +849,28 @@ export default function SettingsPage() {
                     placeholder="e.g. 200"
                     value={officeRadius}
                     onChange={(e) => setOfficeRadius(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
                   />
                   <p className="text-[10px] text-slate-450">
                     Minimum: 10m. Reverts to default 200m if empty.
                   </p>
                 </div>
+
+                {/* Embedded Map Preview */}
+                {officeLat && officeLng && !isNaN(parseFloat(officeLat)) && !isNaN(parseFloat(officeLng)) && (
+                  <div className="w-full h-48 rounded-xl overflow-hidden border border-slate-200 shadow-inner mt-4">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={`https://maps.google.com/maps?q=${parseFloat(officeLat)},${parseFloat(officeLng)}&z=15&output=embed`}
+                      frameBorder="0"
+                      scrolling="no"
+                      marginHeight={0}
+                      marginWidth={0}
+                      className="border-0"
+                    />
+                  </div>
+                )}
 
                 <div className="pt-2 flex justify-between items-center">
                   <button
@@ -807,6 +880,7 @@ export default function SettingsPage() {
                         navigator.geolocation.getCurrentPosition((pos) => {
                           setOfficeLat(pos.coords.latitude.toFixed(6));
                           setOfficeLng(pos.coords.longitude.toFixed(6));
+                          setAddressQuery('Current GPS Location');
                         }, (err) => {
                           alert("Unable to fetch current GPS coordinates. Please enter manually.");
                         });

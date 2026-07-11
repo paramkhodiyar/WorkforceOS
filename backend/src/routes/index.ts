@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authRouter } from "../modules/auth/auth.router";
+import { onboardingRouter } from "../modules/onboarding/onboarding.router";
 import { organizationRouter } from "../modules/organization/organization.router";
 import { employeesRouter } from "../modules/employees/employees.router";
 import { attendanceRouter } from "../modules/attendance/attendance.router";
@@ -20,6 +21,7 @@ import { rateLimitByUser } from "../middleware/rateLimit.middleware";
 const router = Router();
 
 router.use("/auth", authRouter);
+router.use("/onboarding", onboardingRouter);
 
 // Apply user-scoped rate limiting to all authenticated api endpoints
 router.use(rateLimitByUser(200, 60));

@@ -206,12 +206,21 @@ export default function FeaturesPage() {
       <section className="relative overflow-hidden pt-28 pb-12 md:pt-36 md:pb-16 bg-slate-50 border-b border-slate-200">
         <AmbientGrid />
         <div className="max-w-[760px] mx-auto text-center px-6 relative z-10">
-          <span
-            className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-4"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            PRODUCT MODULES
-          </span>
+          <div className="flex justify-center items-center gap-2 mb-4 flex-wrap">
+            <span
+              className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              PRODUCT MODULES
+            </span>
+            <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-extrabold rounded-full border border-green-200 flex items-center gap-1.5 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              Android App Ready
+            </span>
+            <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-extrabold rounded-full border border-blue-200 flex items-center gap-1.5 shadow-sm">
+              Mobile Optimized
+            </span>
+          </div>
           <h1
             className="text-3xl md:text-[3rem] font-[800] text-slate-900 leading-tight tracking-[-0.02em] mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -219,7 +228,7 @@ export default function FeaturesPage() {
             Every feature, documented.
           </h1>
           <p className="text-slate-550 text-base md:text-lg mb-8 max-w-xl mx-auto font-normal">
-            11 modules. Built for Indian companies. Designed for every role in your organisation.
+            11 modules. Built for Indian companies. Designed for every role in your organisation. Fully optimized for Android and mobile phones.
           </p>
           <Link
             id="features-hero-cta"

@@ -467,4 +467,11 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
+  onboarding: {
+    onboard: (data: any): Promise<any> =>
+      request('/onboarding', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
 };

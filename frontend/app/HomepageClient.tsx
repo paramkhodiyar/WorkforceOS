@@ -61,6 +61,66 @@ export default function HomepageClient() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
+  // Onboarding Animation Simulator State
+  const [simState, setSimState] = useState<'idle' | 'dragging' | 'dropped' | 'processing' | 'success'>('idle');
+  const [simProgress, setSimProgress] = useState(0);
+
+  useEffect(() => {
+    let timer1: NodeJS.Timeout;
+    let timer2: NodeJS.Timeout;
+    let timer3: NodeJS.Timeout;
+    let timer4: NodeJS.Timeout;
+    let progressInterval: NodeJS.Timeout;
+
+    const runCycle = () => {
+      setSimState('idle');
+      setSimProgress(0);
+
+      // Start dragging after 2 seconds
+      timer1 = setTimeout(() => {
+        setSimState('dragging');
+
+        // Drop the file in the dropzone after 2.5 seconds of dragging
+        timer2 = setTimeout(() => {
+          setSimState('dropped');
+
+          // Start processing 0.5 seconds after dropping
+          timer3 = setTimeout(() => {
+            setSimState('processing');
+            let progressVal = 0;
+            
+            progressInterval = setInterval(() => {
+              progressVal += 5;
+              setSimProgress(progressVal);
+              if (progressVal >= 100) {
+                clearInterval(progressInterval);
+                setSimState('success');
+                
+                // Show success screen for 4.5 seconds, then repeat the loop
+                timer4 = setTimeout(() => {
+                  runCycle();
+                }, 4500);
+              }
+            }, 70); // 70ms * 20 steps = 1.4s total processing time
+
+          }, 500);
+
+        }, 2500);
+
+      }, 2000);
+    };
+
+    runCycle();
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
+      clearInterval(progressInterval);
+    };
+  }, []);
+
   // Handle cross-fade transition for tabs
   const handleTabChange = (tab: typeof activeTab) => {
     setFade(false);
@@ -348,6 +408,163 @@ export default function HomepageClient() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* SECTION 2.5: DRAG AND DROP ONBOARDING SIMULATOR */}
+      <section className="py-20 md:py-24 bg-slate-50 border-b border-slate-200">
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes scaleUp {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.1); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        ` }} />
+        <div className="max-w-[1000px] mx-auto px-6 text-center">
+          <span
+            className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-6"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            Instant Excel Import Simulator
+          </span>
+          <h2
+            className="text-3xl md:text-[2.5rem] font-[800] text-slate-900 leading-tight tracking-[-0.02em] mb-4"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            Onboarding that actually takes seconds.
+          </h2>
+          <p className="text-slate-600 text-base md:text-lg mb-12 max-w-xl mx-auto font-normal">
+            Have your company directory in an Excel spreadsheet? Just drag, drop, and onboard your entire team instantly. Try the simulator below.
+          </p>
+
+          {/* Interactive Workspace Simulator Container */}
+          <div className="w-full max-w-[850px] mx-auto bg-white border border-slate-300 rounded-[24px] p-6 shadow-sm flex flex-col md:flex-row gap-6 relative overflow-hidden select-none">
+            
+            {/* Left Column: Local Folder (Excel Source) */}
+            <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-left flex flex-col justify-between h-[280px] relative">
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-3">Local Files</span>
+                <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg shadow-sm">
+                  <span className="text-xl">📁</span>
+                  <div>
+                    <span className="text-xs font-bold text-slate-700 block">Desktop</span>
+                    <span className="text-[10px] text-slate-400">2 files found</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Animated Excel File */}
+              <div className="relative flex-1 flex items-center justify-center">
+                <div
+                  className={`px-4 py-3 bg-green-50 border border-green-200 rounded-lg shadow-md flex items-center gap-3 transition-all duration-[2000ms] ease-in-out z-20 cursor-grab active:cursor-grabbing ${
+                    simState === 'idle' ? 'opacity-100 translate-x-0 translate-y-0 scale-100' : ''
+                  } ${
+                    simState === 'dragging' ? 'opacity-100 translate-x-[110%] translate-y-[-10px] md:translate-x-[120%] md:translate-y-[0px] scale-95 shadow-lg rotate-3' : ''
+                  } ${
+                    simState === 'dropped' ? 'opacity-0 scale-50 translate-x-[120%] translate-y-[0px]' : ''
+                  } ${
+                    simState === 'processing' || simState === 'success' ? 'opacity-40 scale-75 cursor-not-allowed' : ''
+                  }`}
+                  style={{
+                    transformOrigin: 'center'
+                  }}
+                >
+                  <span className="text-2xl">📊</span>
+                  <div className="text-left">
+                    <span className="text-xs font-bold text-green-800 block font-sans">employee_directory.xlsx</span>
+                    <span className="text-[9px] text-green-600 block font-sans">14 employees • 2 sheets</span>
+                  </div>
+                </div>
+
+                {/* Hand/Cursor Drag Indicator */}
+                {simState === 'idle' && (
+                  <div className="absolute top-[65%] left-[55%] animate-bounce-short z-30 pointer-events-none flex flex-col items-center">
+                    <span className="text-2xl">👆</span>
+                    <span className="text-[9px] bg-slate-900 text-white font-bold px-1.5 py-0.5 rounded shadow">Drag Me</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="h-6"></div>
+            </div>
+
+            {/* Middle Indicator */}
+            <div className="hidden md:flex items-center justify-center">
+              <span className="text-slate-300 text-2xl font-bold">→</span>
+            </div>
+
+            {/* Right Column: WorkforceOS Destination */}
+            <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-left flex flex-col justify-between h-[280px] relative overflow-hidden">
+              
+              <div className="flex justify-between items-center shrink-0">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">WorkforceOS Portal</span>
+                <span className="text-[8px] font-bold px-2 py-0.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600">Enterprise Setup</span>
+              </div>
+
+              {/* Dynamic UI Content */}
+              <div className="flex-1 flex flex-col items-center justify-center py-4 w-full">
+                
+                {(simState === 'idle' || simState === 'dragging') && (
+                  <div className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 ${
+                    simState === 'dragging' ? 'border-blue-500 bg-blue-55/40 text-blue-600' : 'border-slate-350 text-slate-400'
+                  }`}>
+                    <span className="text-2xl mb-2">📥</span>
+                    <span className="text-xs font-bold text-center block font-sans">Drop Excel sheet here</span>
+                    <span className="text-[9.5px] text-slate-400 mt-1 text-center font-sans">Supports xlsx, csv, multi-sheets</span>
+                  </div>
+                )}
+
+                {(simState === 'dropped' || simState === 'processing') && (
+                  <div className="w-full px-4 flex flex-col items-center justify-center animate-fade-in">
+                    <span className="text-xl animate-spin mb-3">⚙️</span>
+                    <span className="text-xs font-bold text-slate-700 block mb-1 font-sans">
+                      {simProgress < 35 && "Reading Excel sheets..."}
+                      {simProgress >= 35 && simProgress < 65 && "Parsing employee records..."}
+                      {simProgress >= 65 && simProgress < 90 && "Mapping columns & managers..."}
+                      {simProgress >= 90 && "Seeding default HR roles..."}
+                    </span>
+                    <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
+                      <div className="bg-blue-600 h-2 rounded-full transition-all duration-100" style={{ width: `${simProgress}%` }}></div>
+                    </div>
+                    <span className="text-[9px] text-slate-400 font-mono mt-1.5">{simProgress}% completed</span>
+                  </div>
+                )}
+
+                {simState === 'success' && (
+                  <div className="w-full text-center flex flex-col items-center justify-center px-4" style={{ animation: "fade-in 0.4s ease-out forwards" }}>
+                    <div className="w-14 h-14 bg-green-550 rounded-full flex items-center justify-center text-white text-3xl shadow-md border-4 border-white mb-3" style={{ animation: "scaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards" }}>
+                      ✓
+                    </div>
+                    <span className="text-xs font-extrabold text-green-700 uppercase tracking-widest block mb-1 font-sans">Onboarding Successful</span>
+                    <span className="text-sm font-bold text-slate-800 block font-sans">Dunder Mifflin Inc. Setup Completed</span>
+                    
+                    <div className="flex gap-1.5 justify-center mt-3 flex-wrap">
+                      <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">14 Employees</span>
+                      <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">3 Departments</span>
+                      <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">Default Passwords Set</span>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              <div className="h-6"></div>
+            </div>
+
+          </div>
+
+          <div className="mt-10 flex flex-col items-center">
+            <Link
+              href="/onboarding"
+              className="px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-sm uppercase tracking-wider active:scale-95 transition-all border border-blue-600 cursor-pointer shadow-md shadow-blue-600/10 flex items-center gap-2 hover:gap-3"
+            >
+              <span>Onboard Your Company Now</span>
+              <span className="text-xs font-bold font-mono">→</span>
+            </Link>
+            <span className="text-[11px] text-slate-400 mt-2.5 font-medium font-sans">Free import • Takes under 2 minutes • Supports multi-sheet spreadsheets</span>
+          </div>
+
         </div>
       </section>
 
@@ -1053,6 +1270,33 @@ export default function HomepageClient() {
             >
               Explore all features &rarr;
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5.5: MOBILE APP READY BANNER */}
+      <section className="py-16 bg-blue-600 text-white border-y border-blue-700 relative overflow-hidden">
+        <div className="max-w-[1100px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+          <div className="flex-1 text-left">
+            <span className="inline-block px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-200 bg-blue-700/60 border border-blue-500 rounded-full mb-4">
+              Android App Ready
+            </span>
+            <h2 className="text-2xl md:text-[2.25rem] font-[800] tracking-[-0.02em] leading-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              WorkforceOS is fully optimized for mobile phones.
+            </h2>
+            <p className="text-blue-100 text-sm md:text-base leading-relaxed max-w-[600px] font-sans">
+              Access your dashboard, check in/out with geolocation, submit tasks, request leaves, and review payroll records on the go. Our interface is fully mobile responsive and prepared for native app wrapping.
+            </p>
+          </div>
+          <div className="flex items-center gap-4 shrink-0 font-sans">
+            <div className="px-5 py-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 flex flex-col items-center">
+              <span className="text-[10px] font-semibold text-blue-100 uppercase tracking-wider mb-2">Android Compatibility</span>
+              <span className="text-base font-bold text-white">APK & WebView Ready</span>
+            </div>
+            <div className="px-5 py-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 flex flex-col items-center">
+              <span className="text-[10px] font-semibold text-blue-100 uppercase tracking-wider mb-2">Responsiveness</span>
+              <span className="text-base font-bold text-white">100% Mobile Optimized</span>
+            </div>
           </div>
         </div>
       </section>

@@ -535,4 +535,16 @@ export const api = {
     getOperationsStats: (): Promise<any> => request('/stats'),
     getEmployeeStats: (userId: string): Promise<any> => request(`/stats/employee/${userId}`),
   },
+  chatbot: {
+    public: (message: string): Promise<any> =>
+      request('/chatbot/public', {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      }),
+    internal: (message: string): Promise<any> =>
+      request('/chatbot/internal', {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      }),
+  },
 };

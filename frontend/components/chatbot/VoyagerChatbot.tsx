@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { api } from '../../lib/api/client';
 
 export default function VoyagerChatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,12 +46,7 @@ export default function VoyagerChatbot() {
     setShowPopup(false);
 
     try {
-      const res = await fetch('/api/chatbot/public', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg }),
-      });
-      const data = await res.json();
+      const data = await api.chatbot.public(userMsg);
       
       let botResponse = '';
       if (data?.success && data?.data?.response) {

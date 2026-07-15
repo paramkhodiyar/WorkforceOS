@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { api } from '../../lib/api/client';
 
 export default function NexusChatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,16 +38,7 @@ export default function NexusChatbot() {
     setLoading(true);
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const res = await fetch('/api/chatbot/internal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ message: userMsg }),
-      });
-      const data = await res.json();
+      const data = await api.chatbot.internal(userMsg);
       
       let botResponse = '';
       if (data?.success && data?.data?.response) {

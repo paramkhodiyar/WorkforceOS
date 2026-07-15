@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { api } from '../../lib/api/client';
 
 export default function NexusChatbot() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'bot'; text: string }>>([
     { sender: 'bot', text: 'Hi! I am **Nexus**, your smart operations assistant. I can show you your active tasks, leave balances, attendance logs, and more!' }
@@ -64,8 +66,10 @@ export default function NexusChatbot() {
     }
   };
 
+  const isDashboard = pathname === '/dashboard';
+
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-6 z-50 font-sans">
+    <div className={`fixed bottom-20 md:bottom-6 right-6 z-50 font-sans ${isDashboard ? 'block' : 'hidden md:block'}`}>
       {/* Floating Bubble */}
       {!isOpen && (
         <button

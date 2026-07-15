@@ -72,7 +72,11 @@ export default function AttendancePage() {
       if (showTeamAttendance) {
         try {
           const teamRes = await api.attendance.team();
-          setTeamAttendance(teamRes.data || []);
+          if (teamRes.data && Array.isArray(teamRes.data.records)) {
+            setTeamAttendance(teamRes.data.records);
+          } else {
+            setTeamAttendance(Array.isArray(teamRes.data) ? teamRes.data : []);
+          }
         } catch (err) {
           console.error(err);
         }

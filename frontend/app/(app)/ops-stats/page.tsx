@@ -76,7 +76,69 @@ export default function OpsStatsPage() {
     );
   }
 
-  const { overview, departments, lateEmployees, leaveFrequencyEmployees } = stats || {};
+  const { overview, departments, lateEmployees, leaveFrequencyEmployees, dailyAttendanceCounts, taskStatusCounts } = stats || {};
+
+  // 1. Check-In Trend Chart Calculations
+  const dailyAttendance = dailyAttendanceCounts || [];
+  const maxAttendanceCount = Math.max(...dailyAttendance.map((d: any) => d.count), 5);
+  const chartPoints = dailyAttendance.map((d: any, index: number) => {
+    const x = 50 + (index * (400 / Math.max(dailyAttendance.length - 1, 1)));
+    const y = 160 - (d.count * 120 / maxAttendanceCount);
+    let label = d.date;
+    try {
+      const dateObj = new Date(d.date);
+      label = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+    } catch {}
+    return { x, y, label, count: d.count };
+  });
+
+  const linePath = chartPoints.map((p: any, i: number) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaPath = chartPoints.length > 0
+    ? `${linePath} L ${chartPoints[chartPoints.length - 1].x} 170 L ${chartPoints[0].x} 170 Z`
+    : '';
+
+  // 2. Task Status Donut Calculations
+  const taskStatus = taskStatusCounts || [];
+  const totalTasksCount = taskStatus.reduce((acc: number, curr: any) => acc + curr.count, 0);
+
+  const statusColors: any = {
+    TODO: '#94a3b8',
+    IN_PROGRESS: '#f59e0b',
+    IN_REVIEW: '#8b5cf6',
+    COMPLETED: '#10b981',
+    CLOSED: '#10b981',
+    APPROVED: '#10b981',
+    BLOCKED: '#ef4444'
+  };
+
+  const statusLabels: any = {
+    TODO: 'To Do',
+    IN_PROGRESS: 'In Progress',
+    IN_REVIEW: 'In Review',
+    COMPLETED: 'Completed',
+    CLOSED: 'Closed',
+    APPROVED: 'Approved',
+    BLOCKED: 'Blocked'
+  };
+
+  const donutRadius = 38;
+  const donutCircumference = 2 * Math.PI * donutRadius;
+  let currentOffset = 0;
+
+  const donutSegments = taskStatus.map((item: any) => {
+    const percentage = totalTasksCount > 0 ? (item.count / totalTasksCount) * 100 : 0;
+    const strokeDash = `${(percentage * donutCircumference) / 100} ${donutCircumference}`;
+    const strokeOffset = donutCircumference - currentOffset;
+    currentOffset += (percentage * donutCircumference) / 100;
+    return {
+      ...item,
+      label: statusLabels[item.status] || item.status,
+      percentage,
+      strokeDash,
+      strokeOffset,
+      color: statusColors[item.status] || '#cbd5e1'
+    };
+  });
 
   return (
     <div className="space-y-8 font-sans pb-12">
@@ -148,7 +210,128 @@ export default function OpsStatsPage() {
           </div>
         </div>
       </div>
+      {/* Analytics Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Check-in Activity Trend (2/3 width) */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 lg:col-span-2 flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-title-sm font-bold text-slate-800">Check-in Activity Trend</h2>
+              <p className="text-[10px] text-slate-500 font-medium">Daily attendance check-in volumes for the past week</p>
+            </div>
+            <span className="text-[10px] font-bold text-primary bg-blue-50 px-2.5 py-1 rounded-full flex items-center gap-1">
+              <span className="material-symbols-outlined text-[12px]">calendar_today</span> Last 7 Days
+            </span>
+          </div>
 
+          <div className="relative flex-1 min-h-[200px] flex items-end">
+            {chartPoints.length > 0 ? (
+              <div className="w-full">
+                <svg viewBox="0 0 500 200" className="w-full h-48 overflow-visible">
+                  <defs>
+                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2"/>
+                      <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0"/>
+                    </linearGradient>
+                  </defs>
+
+                  {/* Grid Lines */}
+                  <line x1="40" y1="40" x2="480" y2="40" stroke="#f8fafc" strokeWidth="1" />
+                  <line x1="40" y1="100" x2="480" y2="100" stroke="#f1f5f9" strokeWidth="1" />
+                  <line x1="40" y1="160" x2="480" y2="160" stroke="#e2e8f0" strokeWidth="1" />
+
+                  {/* Area Fill */}
+                  <path d={areaPath} fill="url(#areaGradient)" />
+
+                  {/* Stroke Line */}
+                  <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                  {/* Interactive Points */}
+                  {chartPoints.map((p: any, idx: number) => (
+                    <g key={idx} className="group/pt cursor-pointer">
+                      <circle cx={p.x} cy={p.y} r="4.5" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.5" className="transition-all duration-150 group-hover/pt:r-[6px]" />
+                      <circle cx={p.x} cy={p.y} r="9" fill="#3b82f6" className="opacity-0 group-hover/pt:opacity-15 transition-opacity duration-150" />
+                      
+                      {/* Floating tooltip count */}
+                      <g className="opacity-0 group-hover/pt:opacity-100 pointer-events-none transition-opacity duration-150">
+                        <rect x={p.x - 18} y={p.y - 30} width="36" height="20" rx="6" fill="#1e293b" />
+                        <text x={p.x} y={p.y - 17} textAnchor="middle" fill="#ffffff" className="text-[10px] font-bold font-sans">
+                          {p.count}
+                        </text>
+                      </g>
+
+                      {/* X-axis labels */}
+                      <text x={p.x} y="182" textAnchor="middle" className="text-[9px] font-bold fill-slate-450 uppercase tracking-wider">
+                        {p.label}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-center py-12">
+                <span className="material-symbols-outlined text-[32px] text-slate-300">show_chart</span>
+                <p className="text-body-xs text-slate-450 mt-1 font-semibold">Insufficient check-in trend data</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Task Status Allocation (1/3 width) */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col justify-between space-y-4">
+          <div>
+            <h2 className="text-title-sm font-bold text-slate-800">Task Allocation</h2>
+            <p className="text-[10px] text-slate-500 font-medium">Breakdown of current task statuses</p>
+          </div>
+
+          {totalTasksCount > 0 ? (
+            <div className="flex flex-col items-center space-y-6">
+              {/* Donut Circle */}
+              <div className="relative w-32 h-32 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" strokeWidth="9" />
+                  {donutSegments.map((seg: any, idx: number) => (
+                    <circle
+                      key={idx}
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      fill="none"
+                      stroke={seg.color}
+                      strokeWidth="9"
+                      strokeDasharray={seg.strokeDash}
+                      strokeDashoffset={seg.strokeOffset}
+                      strokeLinecap="round"
+                    />
+                  ))}
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-title-lg font-black text-slate-900 leading-none">{totalTasksCount}</span>
+                  <span className="text-[9px] font-bold text-slate-450 uppercase tracking-wider mt-0.5">Tasks</span>
+                </div>
+              </div>
+
+              {/* Status List Legend */}
+              <div className="w-full grid grid-cols-2 gap-2 text-left">
+                {donutSegments.map((seg: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg transition-colors">
+                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold text-slate-750 block truncate leading-none">{seg.label}</span>
+                      <span className="text-[9px] font-semibold text-slate-400 mt-0.5">{seg.count} ({seg.percentage.toFixed(0)}%)</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
+              <span className="material-symbols-outlined text-[32px] text-slate-300">pie_chart</span>
+              <p className="text-body-xs text-slate-450 mt-1 font-semibold">No tasks currently tracked</p>
+            </div>
+          )}
+        </div>
+      </div>
       {/* Main Stats Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Attendance - Late Frequency */}

@@ -3,14 +3,17 @@ import { prisma } from "../../config/database";
 export class StatsService {
   static async getOperationsStats(orgId: string) {
     const now = new Date();
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(now.getDate() - 30);
+    const todayStr = now.toISOString().split("T")[0];
+    const today = new Date(todayStr);
 
-    const ninetyDaysAgo = new Date(now);
-    ninetyDaysAgo.setDate(now.getDate() - 90);
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const ninetyDaysAgo = new Date(today);
+    ninetyDaysAgo.setDate(today.getDate() - 90);
+
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
 
     const [
       totalEmployees,
@@ -25,7 +28,9 @@ export class StatsService {
       todayAttendance,
       overdueTasksCount,
       blockedTasksCount,
-      totalTasks
+      totalTasks,
+      dailyAttendanceCounts,
+      taskStatusCounts
     ] = await Promise.all([
       prisma.user.count({ where: { organizationId: orgId, isDeleted: false } }),
       prisma.user.count({ where: { organizationId: orgId, isDeleted: false, status: "ACTIVE" } }),
@@ -78,7 +83,28 @@ export class StatsService {
         }
       }),
       prisma.task.count({ where: { orgId, isBlocked: true, status: { notIn: ["CLOSED"] } } }),
-      prisma.task.count({ where: { orgId } })
+      prisma.task.count({ where: { orgId } }),
+      prisma.attendance.groupBy({
+        by: ["date"],
+        where: {
+          user: { organizationId: orgId },
+          date: { gte: sevenDaysAgo },
+          checkIn: { not: null }
+        },
+        _count: {
+          userId: true
+        },
+        orderBy: {
+          date: "asc"
+        }
+      }),
+      prisma.task.groupBy({
+        by: ["status"],
+        where: { orgId },
+        _count: {
+          id: true
+        }
+      })
     ]);
 
     // Compute today's average check-in time
@@ -186,7 +212,15 @@ export class StatsService {
         memberCount: deptMemberCounts.find(c => c.departmentId === d.id)?._count?.departmentId || 0
       })),
       lateEmployees: lateEmployeeDetails,
-      leaveFrequencyEmployees: leaveFrequencyDetails
+      leaveFrequencyEmployees: leaveFrequencyDetails,
+      dailyAttendanceCounts: dailyAttendanceCounts.map(d => ({
+        date: d.date.toISOString().split("T")[0],
+        count: d._count.userId
+      })),
+      taskStatusCounts: taskStatusCounts.map(t => ({
+        status: t.status,
+        count: t._count.id
+      }))
     };
   }
 

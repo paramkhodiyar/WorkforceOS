@@ -276,7 +276,7 @@ export default function DashboardPage() {
         {/* Quick Actions Panel */}
         <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
           <h3 className="text-label-sm font-bold text-slate-900 uppercase tracking-wider">Quick Actions</h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className={`grid ${isAdmin || isHR ? 'grid-cols-4' : 'grid-cols-3'} gap-3`}>
             <Link 
               href="/tasks" 
               className="flex flex-col items-center justify-center p-3 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-2xl transition-all text-center group cursor-pointer"
@@ -306,6 +306,18 @@ export default function DashboardPage() {
               </div>
               <span className="text-[10px] font-extrabold text-slate-700 group-hover:text-green-700 mt-2">Attendance</span>
             </Link>
+
+            {(isAdmin || isHR) && (
+              <Link 
+                href="/ops-stats" 
+                className="flex flex-col items-center justify-center p-3 bg-slate-50 hover:bg-violet-50 border border-slate-200 hover:border-violet-200 rounded-2xl transition-all text-center group cursor-pointer"
+              >
+                <div className="h-10 w-10 rounded-full bg-violet-50 text-violet-600 border border-violet-150 flex items-center justify-center group-hover:bg-violet-100 group-hover:scale-105 transition-all">
+                  <span className="material-symbols-outlined text-[20px]">analytics</span>
+                </div>
+                <span className="text-[10px] font-extrabold text-slate-700 group-hover:text-violet-700 mt-2">Ops Stats</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -588,7 +600,7 @@ export default function DashboardPage() {
         {/* Quick Actions Panel */}
         <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-3">
           <h2 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Quick Actions</h2>
-          <div className="grid grid-cols-3 gap-6">
+          <div className={`grid ${isAdmin || isHR ? 'grid-cols-3 lg:grid-cols-4' : 'grid-cols-3'} gap-6`}>
             <Link 
               href="/tasks" 
               className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-2xl transition-all group cursor-pointer"
@@ -627,6 +639,21 @@ export default function DashboardPage() {
                 <p className="text-[10px] text-slate-500 font-semibold mt-0.5">View detailed shifts & history</p>
               </div>
             </Link>
+
+            {(isAdmin || isHR) && (
+              <Link 
+                href="/ops-stats" 
+                className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-violet-50 border border-slate-200 hover:border-violet-200 rounded-2xl transition-all group cursor-pointer"
+              >
+                <div className="h-12 w-12 rounded-xl bg-violet-50 text-violet-600 border border-violet-150 flex items-center justify-center group-hover:bg-violet-100 group-hover:scale-105 transition-all">
+                  <span className="material-symbols-outlined text-[24px]">analytics</span>
+                </div>
+                <div>
+                  <p className="text-body-sm font-bold text-slate-900 group-hover:text-violet-700">Operations Stats</p>
+                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5">View organization analytics</p>
+                </div>
+              </Link>
+            )}
           </div>
         </div>
 

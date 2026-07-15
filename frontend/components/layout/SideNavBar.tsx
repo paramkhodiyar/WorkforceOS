@@ -61,6 +61,12 @@ export default function SideNavBar() {
       show: true
     },
     {
+      label: 'Ops Stats',
+      icon: 'analytics',
+      href: '/ops-stats',
+      show: isAdmin || isHR
+    },
+    {
       label: 'My Team',
       icon: 'groups',
       href: '/my-team',
@@ -77,12 +83,6 @@ export default function SideNavBar() {
       icon: 'wifi',
       href: '/statuses',
       show: (isAdmin || isHR || isActualManager) && features.includes('attendance')
-    },
-    {
-      label: 'Ops Stats',
-      icon: 'analytics',
-      href: '/ops-stats',
-      show: isAdmin || isHR
     },
     {
       label: 'Attendance',

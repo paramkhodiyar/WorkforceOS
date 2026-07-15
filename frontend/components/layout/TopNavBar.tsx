@@ -75,55 +75,20 @@ export default function TopNavBar() {
           </h2>
           <span className="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">WOS</span>
         </div>
-        <div className="relative hidden sm:flex items-center gap-2 select-none">
+        <div className="relative hidden sm:flex items-center select-none">
           <style>{`
-            @keyframes wave {
-              0% { transform: rotate( 0.0deg) }
-              10% { transform: rotate(14.0deg) }
-              20% { transform: rotate(-8.0deg) }
-              30% { transform: rotate(14.0deg) }
-              40% { transform: rotate(-4.0deg) }
-              50% { transform: rotate(10.0deg) }
-              60% { transform: rotate( 0.0deg) }
-             100% { transform: rotate( 0.0deg) }
+            @keyframes elasticSlide {
+              0% { transform: scale(0.9) translateX(-15px); opacity: 0; }
+              70% { transform: scale(1.05) translateX(3px); opacity: 0.9; }
+              100% { transform: scale(1) translateX(0); opacity: 1; }
             }
-            @keyframes fadeInUp {
-              0% { opacity: 0; transform: translateY(6px); filter: blur(2px); }
-              100% { opacity: 1; transform: translateY(0); filter: blur(0); }
-            }
-            .animate-wave {
-              animation: wave 2.2s infinite;
-              transform-origin: 70% 70%;
-              display: inline-block;
-            }
-            .animate-fade-in-up {
-              animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            }
-            .gradient-greeting {
-              background: linear-gradient(135deg, #0f172a 0%, #2563eb 100%);
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
+            .animate-elastic {
+              animation: elasticSlide 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             }
           `}</style>
-          <span className="animate-wave text-title-md">👋</span>
-          <span className="text-body-sm font-black text-slate-800 tracking-tight animate-fade-in-up">
-            <span className="gradient-greeting">
-              {(() => {
-                const hr = new Date().getHours();
-                if (hr < 12) return 'Good morning';
-                if (hr < 17) return 'Good afternoon';
-                return 'Good evening';
-              })()}
-              , {user?.firstName || 'User'}
-            </span>
-            <span className="ml-1.5 text-body-md">
-              {(() => {
-                const hr = new Date().getHours();
-                if (hr < 12) return '☕';
-                if (hr < 17) return '☀️';
-                return '🌆';
-              })()}
-            </span>
+          <span className="text-[15px] font-black text-slate-900 tracking-tight animate-elastic">
+            Welcome back, <span className="text-primary">{user?.firstName || 'User'}</span>
+            <span className="text-primary font-black">.</span>
           </span>
         </div>
       </div>

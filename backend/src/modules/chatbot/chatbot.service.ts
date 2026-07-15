@@ -30,13 +30,12 @@ export class ChatbotService {
 
         if (!response.ok) {
           const errText = await response.text();
-          console.error("Gemini API error response:", errText);
-          throw new Error(`Gemini API returned status ${response.status}`);
+          console.warn(`Gemini API returned status ${response.status}: ${errText}. Trying fallback if available.`);
+        } else {
+          const data = await response.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return text;
         }
-
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text;
       } catch (err) {
         console.error("Failed to fetch from Gemini:", err);
       }

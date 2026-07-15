@@ -75,13 +75,56 @@ export default function TopNavBar() {
           </h2>
           <span className="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">WOS</span>
         </div>
-        <div className="relative hidden sm:block">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>
-          <input
-            className="pl-10 pr-4 py-1.5 bg-surface-container-low border-none rounded-lg text-body-sm focus:ring-1 focus:ring-primary w-64"
-            placeholder="Search records..."
-            type="text"
-          />
+        <div className="relative hidden sm:flex items-center gap-2 select-none">
+          <style>{`
+            @keyframes wave {
+              0% { transform: rotate( 0.0deg) }
+              10% { transform: rotate(14.0deg) }
+              20% { transform: rotate(-8.0deg) }
+              30% { transform: rotate(14.0deg) }
+              40% { transform: rotate(-4.0deg) }
+              50% { transform: rotate(10.0deg) }
+              60% { transform: rotate( 0.0deg) }
+             100% { transform: rotate( 0.0deg) }
+            }
+            @keyframes fadeInUp {
+              0% { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+              100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+            }
+            .animate-wave {
+              animation: wave 2.2s infinite;
+              transform-origin: 70% 70%;
+              display: inline-block;
+            }
+            .animate-fade-in-up {
+              animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            .gradient-greeting {
+              background: linear-gradient(135deg, #0f172a 0%, #2563eb 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+            }
+          `}</style>
+          <span className="animate-wave text-title-md">👋</span>
+          <span className="text-body-sm font-black text-slate-800 tracking-tight animate-fade-in-up">
+            <span className="gradient-greeting">
+              {(() => {
+                const hr = new Date().getHours();
+                if (hr < 12) return 'Good morning';
+                if (hr < 17) return 'Good afternoon';
+                return 'Good evening';
+              })()}
+              , {user?.firstName || 'User'}
+            </span>
+            <span className="ml-1.5 text-body-md">
+              {(() => {
+                const hr = new Date().getHours();
+                if (hr < 12) return '☕';
+                if (hr < 17) return '☀️';
+                return '🌆';
+              })()}
+            </span>
+          </span>
         </div>
       </div>
 

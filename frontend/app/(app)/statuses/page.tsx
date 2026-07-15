@@ -13,12 +13,22 @@ export default function StatusesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [scopeLabel, setScopeLabel] = useState<string>('');
+  const [isScoped, setIsScoped] = useState(false);
   const itemsPerPage = 10;
 
   async function loadStatuses() {
     try {
       const res = await api.attendance.team();
-      setData(res.data || []);
+      // New API returns { records, scopeLabel, isScoped }
+      if (res.data && Array.isArray(res.data.records)) {
+        setData(res.data.records);
+        setScopeLabel(res.data.scopeLabel || '');
+        setIsScoped(res.data.isScoped || false);
+      } else {
+        // Fallback for flat array
+        setData(Array.isArray(res.data) ? res.data : []);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -90,6 +100,19 @@ export default function StatusesPage() {
         <h1 className="text-headline-md font-bold text-on-surface">Employee Status Board</h1>
         <p className="text-body-sm text-outline">Monitor daily check-ins, shift modes, and activity locations</p>
       </div>
+
+      {/* Scope banner for team managers / dept heads */}
+      {isScoped && (
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-2xl px-5 py-4">
+          <span className="material-symbols-outlined text-blue-600 text-[20px] shrink-0 mt-0.5">info</span>
+          <div>
+            <p className="text-body-xs font-bold">Scoped View</p>
+            <p className="text-body-xs font-medium mt-0.5">
+              You are seeing attendance records for employees within <strong>{scopeLabel}</strong> only. Admins and HR can see all employees.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-center justify-between">

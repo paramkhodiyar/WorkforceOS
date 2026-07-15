@@ -60,8 +60,63 @@ export const getHistory = asyncHandler(async (req: Request, res: Response) => {
 
 export const getTeam = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
-  const list = await AttendanceService.getAllAttendance(orgId);
-  return sendSuccess(res, list);
+  const user = req.user!;
+
+  // Admins and HR see all attendance
+  if (["SUPER_ADMIN", "ORG_ADMIN", "HR"].includes(user.systemRole)) {
+    const list = await AttendanceService.getAllAttendance(orgId);
+    return sendSuccess(res, { records: list, scopeLabel: "All Employees", isScoped: false });
+  }
+
+  // Team leads / dept heads see only their scoped members
+  const [orgScopes, teamScopes] = await Promise.all([
+    getPermissionScopes(user, orgId, "attendance", "read:org"),
+    getPermissionScopes(user, orgId, "attendance", "read_team")
+  ]);
+
+  if (orgScopes.isGlobal || teamScopes.isGlobal) {
+    const list = await AttendanceService.getAllAttendance(orgId);
+    return sendSuccess(res, { records: list, scopeLabel: "All Employees", isScoped: false });
+  }
+
+  const departmentIds = Array.from(new Set([...orgScopes.departmentIds, ...teamScopes.departmentIds]));
+  const teamIds = Array.from(new Set([...orgScopes.teamIds, ...teamScopes.teamIds]));
+
+  // Build scopeLabel for frontend info banner
+  let scopeLabel = "Your Team & Department";
+  const scopedUserIds = new Set<string>();
+
+  if (departmentIds.length > 0) {
+    const deptMembers = await prisma.user.findMany({
+      where: { departmentId: { in: departmentIds }, organizationId: orgId, isDeleted: false },
+      select: { id: true }
+    });
+    deptMembers.forEach(m => scopedUserIds.add(m.id));
+  }
+
+  if (teamIds.length > 0) {
+    const teamMembers = await prisma.team.findMany({
+      where: { id: { in: teamIds }, isDeleted: false },
+      include: { members: { select: { id: true } } }
+    });
+    teamMembers.forEach(t => t.members.forEach(m => scopedUserIds.add(m.id)));
+  }
+
+  // Also include direct reports
+  const directReports = await prisma.user.findMany({
+    where: { managerId: user.id, organizationId: orgId, isDeleted: false },
+    select: { id: true }
+  });
+  directReports.forEach(r => scopedUserIds.add(r.id));
+
+  if (scopedUserIds.size === 0) {
+    return sendSuccess(res, { records: [], scopeLabel: "Your Team & Department", isScoped: true });
+  }
+
+  const allAttendance = await AttendanceService.getAllAttendance(orgId);
+  const filtered = allAttendance.filter((r: any) => scopedUserIds.has(r.userId));
+
+  return sendSuccess(res, { records: filtered, scopeLabel, isScoped: true });
 });
 
 export const getExceptions = asyncHandler(async (req: Request, res: Response) => {

@@ -90,7 +90,12 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     departmentHead: user.departmentHead,
     teamLead: user.teamLead,
     teams: user.teams,
-    forcePasswordChange: user.forcePasswordChange
+    forcePasswordChange: user.forcePasswordChange,
+    address: user.address,
+    homeLatitude: user.homeLatitude,
+    homeLongitude: user.homeLongitude,
+    homeRadius: user.homeRadius,
+    homeAddressLocked: user.homeAddressLocked
   };
 
   return sendSuccess(res, userProfile);

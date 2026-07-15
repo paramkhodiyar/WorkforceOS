@@ -216,6 +216,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ comment }),
       }),
+    setHomeAddress: (data: { lat: number; lng: number; radius: number; addressLabel: string }): Promise<any> =>
+      request('/employees/home-address', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
   attendance: {
     history: (): Promise<any> => request('/attendance/history'),
@@ -525,5 +530,9 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+  },
+  stats: {
+    getOperationsStats: (): Promise<any> => request('/stats'),
+    getEmployeeStats: (userId: string): Promise<any> => request(`/stats/employee/${userId}`),
   },
 };

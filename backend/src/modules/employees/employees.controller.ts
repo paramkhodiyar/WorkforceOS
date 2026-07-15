@@ -154,5 +154,18 @@ export const rejectProfileRequest = asyncHandler(async (req: Request, res: Respo
   return sendSuccess(res, result, "Profile update request rejected successfully");
 });
 
+export const setHomeAddress = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const orgId = req.org!.id;
+  const { lat, lng, radius, addressLabel } = req.body;
+
+  if (lat === undefined || lng === undefined) {
+    throw AppError.badRequest("lat and lng are required");
+  }
+
+  const result = await EmployeesService.setHomeAddress(userId, orgId, parseFloat(lat), parseFloat(lng), parseInt(radius) || 200, addressLabel || "", req);
+  return sendSuccess(res, result, "Home address set successfully");
+});
+
 
 

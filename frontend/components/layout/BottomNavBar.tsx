@@ -62,6 +62,7 @@ export default function BottomNavBar() {
     { label: 'My Team', icon: 'groups', href: '/my-team', show: isAdmin || isHR || isActualManager || hasTeamsOrDepts },
     { label: 'Leave Request', icon: 'event_busy', href: '/leave', show: features.includes('leave') },
     { label: 'Statuses Board', icon: 'wifi', href: '/statuses', show: (isAdmin || isHR || isActualManager) && features.includes('attendance') },
+    { label: 'Ops Stats', icon: 'analytics', href: '/ops-stats', show: isAdmin || isHR },
     { label: 'Employee List', icon: 'badge', href: '/employees', show: (isAdmin || isHR || isActualManager) && features.includes('employees') },
     { label: 'Compensation', icon: 'payments', href: '/payroll', show: features.includes('payroll') },
     { label: 'Expenses Claims', icon: 'receipt_long', href: '/expenses', show: features.includes('expenses') },

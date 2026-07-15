@@ -187,6 +187,19 @@ export default function SettingsPage() {
       addRow('Emergency Contact', curEmer, reqEmer);
     }
 
+    if (requested.homeLatitude !== undefined) {
+      addRow('Home Latitude', currentEmp.homeLatitude, requested.homeLatitude);
+    }
+    if (requested.homeLongitude !== undefined) {
+      addRow('Home Longitude', currentEmp.homeLongitude, requested.homeLongitude);
+    }
+    if (requested.homeRadius !== undefined) {
+      addRow('Home Geofence Radius', currentEmp.homeRadius ? `${currentEmp.homeRadius}m` : '-', `${requested.homeRadius}m`);
+    }
+    if (requested.address?.homeLabel !== undefined) {
+      addRow('Home Address Label', currentEmp.address?.homeLabel || '-', requested.address?.homeLabel);
+    }
+
     return rows;
   };
 
@@ -1201,6 +1214,13 @@ export default function SettingsPage() {
                   </tbody>
                 </table>
               </div>
+
+              {selectedRequest.requestedData?.changeReason && (
+                <div className="p-3.5 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-900 space-y-1 animate-fade-in">
+                  <div className="font-bold text-[10px] uppercase tracking-wider text-blue-700">Reason for Request</div>
+                  <div className="font-medium leading-relaxed">{selectedRequest.requestedData.changeReason}</div>
+                </div>
+              )}
 
               {selectedRequest.status === 'PENDING' && (
                 <div className="space-y-1.5">

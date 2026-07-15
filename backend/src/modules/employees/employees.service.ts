@@ -612,6 +612,39 @@ export class EmployeesService {
       return updatedEmployee;
     }
 
+    static async setHomeAddress(userId: string, orgId: string, lat: number, lng: number, radius: number, addressLabel: string, req?: any) {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) throw AppError.notFound("User not found");
+
+      if (user.homeAddressLocked) {
+        throw AppError.forbidden("Home address is locked. Submit a change request through HR.");
+      }
+
+      const updated = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          homeLatitude: lat,
+          homeLongitude: lng,
+          homeRadius: radius,
+          homeAddressLocked: true,
+          address: { ...(user.address as any || {}), homeLabel: addressLabel }
+        }
+      });
+
+      await AuditService.log({
+        organizationId: orgId,
+        actorId: userId,
+        action: AuditAction.UPDATED,
+        module: "employees",
+        targetId: userId,
+        targetType: "User",
+        newValue: { homeLatitude: lat, homeLongitude: lng, homeRadius: radius, homeAddressLocked: true },
+        req
+      });
+
+      return updated;
+    }
+
     static async createProfileRequest(userId: string, orgId: string, requestedData: any, req?: any) {
       const request = await prisma.profileUpdateRequest.create({
         data: {
@@ -679,12 +712,12 @@ export class EmployeesService {
         throw AppError.notFound("Pending profile update request not found");
       }
 
-      const { bankDetail, emergencyContact, ...coreUserData } = request.requestedData as any;
+      const { bankDetail, emergencyContact, changeReason: _changeReason, ...coreUserData } = request.requestedData as any;
 
       await prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: request.userId },
-          data: coreUserData
+          data: { ...coreUserData, homeAddressLocked: coreUserData.homeLatitude !== undefined ? true : undefined }
         });
 
         if (bankDetail) {

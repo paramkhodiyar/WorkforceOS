@@ -1,4 +1,4 @@
-import { PrismaClient, UserStatus, SystemRole, LeaveType, RoleScope, TaskStatus, TaskPriority, PayrollStatus, LeaveStatus, AttendanceStatus, WorkMode, EmployeeType, TaxRegime } from "@prisma/client";
+import { PrismaClient, UserStatus, SystemRole, LeaveType, RoleScope, TaskStatus, TaskPriority, TaskScope, PayrollStatus, LeaveStatus, AttendanceStatus, WorkMode, EmployeeType, TaxRegime } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -644,7 +644,7 @@ async function main() {
     }
   });
 
-  await prisma.team.create({
+  const coreDevTeam = await prisma.team.create({
     data: {
       name: "Core Development",
       departmentId: depts.Engineering.id,
@@ -883,79 +883,188 @@ async function main() {
 
   const tasksList = [
     // ── Admin User ──────────────────────────────────────────────────────────
-    { title: "Renew office insurance policy", desc: "Coordinate with insurance broker and get updated certificates.", assigneeId: adminUser.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(10) },
-    { title: "Q3 budget planning presentation", desc: "Prepare slides and projections for Q3 leadership review.", assigneeId: adminUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(5) },
-    { title: "Update company org chart", desc: "Reflect latest department restructuring in the org chart tool.", assigneeId: adminUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
-    { title: "Vendor contract renewals - Q2", desc: "Review and sign off on all vendor SLA extensions.", assigneeId: adminUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-3) },
-    { title: "Office relocation feasibility report", desc: "Compile cost comparison for moving to the proposed downtown location.", assigneeId: adminUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-7) },
+    { title: "Renew office insurance policy", desc: "Coordinate with insurance broker and get updated certificates.", assigneeId: adminUser.id, priority: TaskPriority.HIGH, status: TaskStatus.ASSIGNED, due: daysFromNow(10), scope: TaskScope.PERSONAL },
+    { title: "Q3 budget planning presentation", desc: "Prepare slides and projections for Q3 leadership review.", assigneeId: adminUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(5), scope: TaskScope.PERSONAL },
+    { title: "Update company org chart", desc: "Reflect latest department restructuring in the org chart tool.", assigneeId: adminUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7), scope: TaskScope.PERSONAL },
+    { title: "Vendor contract renewals - Q2", desc: "Review and sign off on all vendor SLA extensions.", assigneeId: adminUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-3), scope: TaskScope.PERSONAL },
+    { title: "Office relocation feasibility report", desc: "Compile cost comparison for moving to the proposed downtown location.", assigneeId: adminUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-7), scope: TaskScope.PERSONAL },
 
     // ── HR User ─────────────────────────────────────────────────────────────
-    { title: "Post open Senior Developer listing", desc: "Draft JD and post to Naukri, LinkedIn, and internal portal.", assigneeId: hrUser.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(4) },
-    { title: "Schedule performance review cycle", desc: "Send calendar invites to all managers for mid-year reviews.", assigneeId: hrUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(6) },
-    { title: "Conduct intern exit evaluation", desc: "Evaluate performance, collect feedback, and finalize internship files.", assigneeId: hrUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(8) },
-    { title: "Audit Employee Handbook for hybrid policy", desc: "Update sections on remote/hybrid work compliance guidelines.", assigneeId: hrUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(12) },
-    { title: "Onboarding checklist for July joiners", desc: "Prepare system access, badge, and welcome kit for 3 new hires.", assigneeId: hrUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-5) },
-    { title: "Compile Q2 attrition report", desc: "Analyse exit interviews and summarise reasons for leadership.", assigneeId: hrUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-10) },
+    { title: "Post open Senior Developer listing", desc: "Draft JD and post to Naukri, LinkedIn, and internal portal.", assigneeId: hrUser.id, priority: TaskPriority.HIGH, status: TaskStatus.ASSIGNED, due: daysFromNow(4), scope: TaskScope.PERSONAL },
+    { title: "Schedule performance review cycle", desc: "Send calendar invites to all managers for mid-year reviews.", assigneeId: hrUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(6), scope: TaskScope.PERSONAL },
+    { title: "Conduct intern exit evaluation", desc: "Evaluate performance, collect feedback, and finalize internship files.", assigneeId: hrUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(8), scope: TaskScope.PERSONAL },
+    { title: "Audit Employee Handbook for hybrid policy", desc: "Update sections on remote/hybrid work compliance guidelines.", assigneeId: hrUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(12), scope: TaskScope.PERSONAL },
+    { title: "Onboarding checklist for July joiners", desc: "Prepare system access, badge, and welcome kit for 3 new hires.", assigneeId: hrUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-5), scope: TaskScope.PERSONAL },
+    { title: "Compile Q2 attrition report", desc: "Analyse exit interviews and summarise reasons for leadership.", assigneeId: hrUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-10), scope: TaskScope.PERSONAL },
 
     // ── Finance User ────────────────────────────────────────────────────────
-    { title: "Prepare July payroll run inputs", desc: "Collect variable pay and reimbursement data from all departments.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(3) },
-    { title: "Q2 expense receipt compliance audit", desc: "Verify ledger entries against scanned claim sheets for all employees.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(6) },
-    { title: "GST filing reconciliation", desc: "Reconcile input tax credit with filed returns for June quarter.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(9) },
-    { title: "Update tax slab config for FY 2026-27", desc: "Update finance system configuration values with new regime slabs.", assigneeId: financeUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(14) },
-    { title: "Audit petty cash disbursements - June", desc: "Verify petty cash register against receipts for June.", assigneeId: financeUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-4) },
-    { title: "Vendor payment reconciliation - Q1", desc: "Match all Q1 vendor invoices with payment acknowledgements.", assigneeId: financeUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-8) },
+    { title: "Prepare July payroll run inputs", desc: "Collect variable pay and reimbursement data from all departments.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.ASSIGNED, due: daysFromNow(3), scope: TaskScope.PERSONAL },
+    { title: "Q2 expense receipt compliance audit", desc: "Verify ledger entries against scanned claim sheets for all employees.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(6), scope: TaskScope.PERSONAL },
+    { title: "GST filing reconciliation", desc: "Reconcile input tax credit with filed returns for June quarter.", assigneeId: financeUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(9), scope: TaskScope.PERSONAL },
+    { title: "Update tax slab config for FY 2026-27", desc: "Update finance system configuration values with new regime slabs.", assigneeId: financeUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(14), scope: TaskScope.PERSONAL },
+    { title: "Audit petty cash disbursements - June", desc: "Verify petty cash register against receipts for June.", assigneeId: financeUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-4), scope: TaskScope.PERSONAL },
+    { title: "Vendor payment reconciliation - Q1", desc: "Match all Q1 vendor invoices with payment acknowledgements.", assigneeId: financeUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-8), scope: TaskScope.PERSONAL },
 
     // ── Manager User ────────────────────────────────────────────────────────
-    { title: "Set Q3 OKRs for sales team", desc: "Define key results and cascade targets to the Scranton reps.", assigneeId: managerUser.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(5) },
-    { title: "Review team sales pipelines for Q3", desc: "Analyse CRM data and identify at-risk deals to accelerate.", assigneeId: managerUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
-    { title: "1-on-1 feedback sessions with reps", desc: "Conduct structured monthly 1-on-1s with all five direct reports.", assigneeId: managerUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(10) },
-    { title: "Submit client visit expense report", desc: "Upload receipts and submit reimbursement form for Lackawanna trip.", assigneeId: managerUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-2) },
-    { title: "Renew Lackawanna county paper contract", desc: "Negotiate terms and coordinate with the legal team for sign-off.", assigneeId: managerUser.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-6) },
+    { title: "Set Q3 OKRs for sales team", desc: "Define key results and cascade targets to the Scranton reps.", assigneeId: managerUser.id, priority: TaskPriority.HIGH, status: TaskStatus.ASSIGNED, due: daysFromNow(5), scope: TaskScope.PERSONAL },
+    { title: "Review team sales pipelines for Q3", desc: "Analyse CRM data and identify at-risk deals to accelerate.", assigneeId: managerUser.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7), scope: TaskScope.PERSONAL },
+    { title: "1-on-1 feedback sessions with reps", desc: "Conduct structured monthly 1-on-1s with all five direct reports.", assigneeId: managerUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(10), scope: TaskScope.PERSONAL },
+    { title: "Submit client visit expense report", desc: "Upload receipts and submit reimbursement form for Lackawanna trip.", assigneeId: managerUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-2), scope: TaskScope.PERSONAL },
+    { title: "Renew Lackawanna county paper contract", desc: "Negotiate terms and coordinate with the legal team for sign-off.", assigneeId: managerUser.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-6), scope: TaskScope.PERSONAL },
 
     // ── Employee 1 (Sales Rep) ───────────────────────────────────────────────
-    { title: "Follow up with Prestige Paper lead", desc: "Send customised proposal deck and schedule a follow-up call.", assigneeId: employee1.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(3) },
-    { title: "Update Salesforce pipeline for July", desc: "Mark deal stages and add meeting notes from last week.", assigneeId: employee1.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(5) },
-    { title: "Prepare product demo for Utica client", desc: "Customise demo environment and rehearse 30-min presentation.", assigneeId: employee1.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(8) },
-    { title: "Compile lost deals analysis - H1", desc: "List reasons for lost deals and propose corrective actions.", assigneeId: employee1.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-5) },
+    { title: "Follow up with Prestige Paper lead", desc: "Send customised proposal deck and schedule a follow-up call.", assigneeId: employee1.id, priority: TaskPriority.HIGH, status: TaskStatus.ASSIGNED, due: daysFromNow(3), scope: TaskScope.PERSONAL },
+    { title: "Update Salesforce pipeline for July", desc: "Mark deal stages and add meeting notes from last week.", assigneeId: employee1.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(5), scope: TaskScope.PERSONAL },
+    { title: "Prepare product demo for Utica client", desc: "Customise demo environment and rehearse 30-min presentation.", assigneeId: employee1.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(8), scope: TaskScope.PERSONAL },
+    { title: "Compile lost deals analysis - H1", desc: "List reasons for lost deals and propose corrective actions.", assigneeId: employee1.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-5), scope: TaskScope.PERSONAL },
 
-    // ── Employee 2 (Senior Developer) ────────────────────────────────────────
-    { title: "Migrate auth module to JWT RS256", desc: "Replace HS256 signing with RSA keypair and update docs.", assigneeId: employee2.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(6) },
-    { title: "Optimize AuditLog table indexes", desc: "Run query analysis and create compound indexes to cut p95 latency.", assigneeId: employee2.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(4) },
-    { title: "Code review: leave module PRs", desc: "Review and merge 4 open PRs on the leave management feature.", assigneeId: employee2.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
-    { title: "Set up Redis caching for dashboard", desc: "Cache heavy dashboard queries with 5-min TTL using Redis.", assigneeId: employee2.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(11) },
-    { title: "Fix prod bug: timezone offset in payroll", desc: "Resolved the UTC offset issue causing incorrect pay period cuts.", assigneeId: employee2.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-3) },
-    { title: "Write API docs for v2 endpoints", desc: "Document all new REST endpoints in Swagger and internal wiki.", assigneeId: employee2.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-8) },
+    // ── Employee 2 (Senior Developer / Engineering Manager) ──────────────────
+    {
+      title: "Optimize AuditLog table indexes",
+      desc: "Run query analysis and create compound indexes to cut p95 latency.",
+      assigneeId: employee2.id,
+      priority: TaskPriority.HIGH,
+      status: TaskStatus.IN_PROGRESS,
+      due: daysFromNow(4),
+      scope: TaskScope.DEPARTMENT,
+      departmentId: depts.Engineering.id,
+      comments: [
+        { userId: employee3.id, body: "I ran a baseline index analysis, sending spreadsheet over." },
+        { userId: employee2.id, body: "Thanks, please make sure we avoid duplicate indexes." }
+      ]
+    },
+    {
+      title: "Set up Redis caching for dashboard",
+      desc: "Cache heavy dashboard queries with 5-min TTL using Redis.",
+      assigneeId: employee2.id,
+      priority: TaskPriority.MEDIUM,
+      status: TaskStatus.IN_REVIEW,
+      due: daysFromNow(11),
+      scope: TaskScope.TEAM,
+      teamId: coreDevTeam.id,
+      reviewerIds: [adminUser.id],
+      comments: [
+        { userId: employee2.id, body: "Implemented and verified cache hits locally." }
+      ]
+    },
+    {
+      title: "Fix prod bug: timezone offset in payroll",
+      desc: "Resolved the UTC offset issue causing incorrect pay period cuts.",
+      assigneeId: employee2.id,
+      priority: TaskPriority.HIGH,
+      status: TaskStatus.CLOSED,
+      due: daysFromNow(-3),
+      scope: TaskScope.PERSONAL
+    },
+    {
+      title: "Migrate auth module to JWT RS256",
+      desc: "Replace HS256 signing with RSA keypair and update docs.",
+      assigneeId: employee2.id,
+      priority: TaskPriority.HIGH,
+      status: TaskStatus.ASSIGNED,
+      due: daysFromNow(-2), // OVERDUE task!
+      scope: TaskScope.PERSONAL
+    },
+    {
+      title: "Code review: leave module PRs",
+      desc: "Review and merge 4 open PRs on the leave management feature.",
+      assigneeId: employee2.id,
+      priority: TaskPriority.MEDIUM,
+      status: TaskStatus.CHANGES_REQUESTED,
+      due: daysFromNow(7),
+      scope: TaskScope.DEPARTMENT,
+      departmentId: depts.Engineering.id,
+      isBlocked: true,
+      blockerNote: "Waiting for QA Lead to run Playwright smoke tests.",
+      comments: [
+        { userId: employee3.id, body: "Blocked because Playwright test run is failing in CI." }
+      ]
+    },
+    {
+      title: "Write API docs for v2 endpoints",
+      desc: "Document all new REST endpoints in Swagger and internal wiki.",
+      assigneeId: employee2.id,
+      priority: TaskPriority.LOW,
+      status: TaskStatus.CLOSED,
+      due: daysFromNow(-8),
+      scope: TaskScope.PERSONAL
+    },
 
-    // ── Employee 3 (QA Engineer) ─────────────────────────────────────────────
-    { title: "Draft regression test plan for v2.4", desc: "Create test cases covering all new features in the upcoming release.", assigneeId: employee3.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(5) },
-    { title: "Draft QA unit testing checklist", desc: "Create a reusable testing template for all new feature PRs.", assigneeId: employee3.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
-    { title: "Automate leave module smoke tests", desc: "Write Playwright scripts for the critical leave approval flows.", assigneeId: employee3.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(10) },
-    { title: "Verify payroll calculation edge cases", desc: "Test salary computation for part-month joiners and leavers.", assigneeId: employee3.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-4) },
-    { title: "Bug bash: attendance module", desc: "Found and logged 7 issues in attendance; 5 confirmed and fixed.", assigneeId: employee3.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-9) },
+    // ── Employee 3 (QA Engineer / Normal employee) ───────────────────────────
+    {
+      title: "Draft regression test plan for v2.4",
+      desc: "Create test cases covering all new features in the upcoming release.",
+      assigneeId: employee3.id,
+      priority: TaskPriority.HIGH,
+      status: TaskStatus.IN_PROGRESS,
+      due: daysFromNow(5),
+      scope: TaskScope.TEAM,
+      teamId: coreDevTeam.id,
+      comments: [
+        { userId: employee3.id, body: "Starting drafting the test cases for auth module." }
+      ]
+    },
+    {
+      title: "Draft QA unit testing checklist",
+      desc: "Create a reusable testing template for all new feature PRs.",
+      assigneeId: employee3.id,
+      priority: TaskPriority.MEDIUM,
+      status: TaskStatus.SUBMITTED, // Submitted task
+      due: daysFromNow(7),
+      scope: TaskScope.PERSONAL
+    },
+    {
+      title: "Automate leave module smoke tests",
+      desc: "Write Playwright scripts for the critical leave approval flows.",
+      assigneeId: employee3.id,
+      priority: TaskPriority.MEDIUM,
+      status: TaskStatus.ASSIGNED,
+      due: daysFromNow(-1), // OVERDUE task!
+      scope: TaskScope.DEPARTMENT,
+      departmentId: depts.Engineering.id
+    },
+    {
+      title: "Verify payroll calculation edge cases",
+      desc: "Test salary computation for part-month joiners and leavers.",
+      assigneeId: employee3.id,
+      priority: TaskPriority.HIGH,
+      status: TaskStatus.CLOSED,
+      due: daysFromNow(-4),
+      scope: TaskScope.PERSONAL
+    },
+    {
+      title: "Bug bash: attendance module",
+      desc: "Found and logged 7 issues in attendance; 5 confirmed and fixed.",
+      assigneeId: employee3.id,
+      priority: TaskPriority.MEDIUM,
+      status: TaskStatus.CLOSED,
+      due: daysFromNow(-9),
+      scope: TaskScope.PERSONAL
+    },
 
     // ── Employee 4 (Office Admin) ─────────────────────────────────────────────
-    { title: "Book meeting rooms for July all-hands", desc: "Reserve the main hall and arrange catering for 40 people.", assigneeId: employee4.id, priority: TaskPriority.MEDIUM, status: TaskStatus.TODO, due: daysFromNow(8) },
-    { title: "Audit paper supply - Scranton office", desc: "Count stock and place re-orders if below 20 boxes.", assigneeId: employee4.id, priority: TaskPriority.LOW, status: TaskStatus.IN_PROGRESS, due: daysFromNow(5) },
-    { title: "Coordinate laptop procurement for new hires", desc: "Raise PO for 3 MacBook Pros and track delivery status.", assigneeId: employee4.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
-    { title: "Update visitor access log system", desc: "Migrate visitor register from spreadsheet to the new SaaS tool.", assigneeId: employee4.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-6) },
+    { title: "Book meeting rooms for July all-hands", desc: "Reserve the main hall and arrange catering for 40 people.", assigneeId: employee4.id, priority: TaskPriority.MEDIUM, status: TaskStatus.ASSIGNED, due: daysFromNow(8), scope: TaskScope.PERSONAL },
+    { title: "Audit paper supply - Scranton office", desc: "Count stock and place re-orders if below 20 boxes.", assigneeId: employee4.id, priority: TaskPriority.LOW, status: TaskStatus.IN_PROGRESS, due: daysFromNow(5), scope: TaskScope.PERSONAL },
+    { title: "Coordinate laptop procurement for new hires", desc: "Raise PO for 3 MacBook Pros and track delivery status.", assigneeId: employee4.id, priority: TaskPriority.HIGH, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7), scope: TaskScope.PERSONAL },
+    { title: "Update visitor access log system", desc: "Migrate visitor register from spreadsheet to the new SaaS tool.", assigneeId: employee4.id, priority: TaskPriority.MEDIUM, status: TaskStatus.CLOSED, due: daysFromNow(-6), scope: TaskScope.PERSONAL },
 
     // ── Employee 5 (Marketing Associate) ─────────────────────────────────────
-    { title: "Plan Dunder Mifflin social media calendar", desc: "Prepare a 4-week content calendar for LinkedIn and Instagram.", assigneeId: employee5.id, priority: TaskPriority.HIGH, status: TaskStatus.TODO, due: daysFromNow(4) },
-    { title: "Design Q3 product brochure", desc: "Create updated product brochure reflecting new pricing tiers.", assigneeId: employee5.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(9) },
-    { title: "Write customer success case study", desc: "Interview Prestige Paper account and draft a 500-word case study.", assigneeId: employee5.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(12) },
-    { title: "Launch email campaign for summer promo", desc: "Set up drip sequence in Mailchimp targeting dormant accounts.", assigneeId: employee5.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-4) },
-    { title: "Compile brand asset library", desc: "Organised logos, fonts, and templates into Figma component library.", assigneeId: employee5.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-10) },
+    { title: "Plan Dunder Mifflin social media calendar", desc: "Prepare a 4-week content calendar for LinkedIn and Instagram.", assigneeId: employee5.id, priority: TaskPriority.HIGH, status: TaskStatus.ASSIGNED, due: daysFromNow(4), scope: TaskScope.PERSONAL },
+    { title: "Design Q3 product brochure", desc: "Create updated product brochure reflecting new pricing tiers.", assigneeId: employee5.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(9), scope: TaskScope.PERSONAL },
+    { title: "Write customer success case study", desc: "Interview Prestige Paper account and draft a 500-word case study.", assigneeId: employee5.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(12), scope: TaskScope.PERSONAL },
+    { title: "Launch email campaign for summer promo", desc: "Set up drip sequence in Mailchimp targeting dormant accounts.", assigneeId: employee5.id, priority: TaskPriority.HIGH, status: TaskStatus.CLOSED, due: daysFromNow(-4), scope: TaskScope.PERSONAL },
+    { title: "Compile brand asset library", desc: "Organised logos, fonts, and templates into Figma component library.", assigneeId: employee5.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-10), scope: TaskScope.PERSONAL },
 
     // ── Intern User ───────────────────────────────────────────────────────────
-    { title: "Research competitor HRMS features", desc: "List top 5 competitors and summarise key differentiating features.", assigneeId: internUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.TODO, due: daysFromNow(6) },
-    { title: "Filing and scanning intern reports", desc: "Scan exit surveys and file completed reports in cabinets.", assigneeId: internUser.id, priority: TaskPriority.LOW, status: TaskStatus.IN_PROGRESS, due: daysFromNow(4) },
-    { title: "Assist HR with onboarding docs", desc: "Help prepare welcome kits and system access request forms.", assigneeId: internUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7) },
-    { title: "Shadow sales call with Utica client", desc: "Attend the demo and take structured notes for the team debrief.", assigneeId: internUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-3) },
+    { title: "Research competitor HRMS features", desc: "List top 5 competitors and summarise key differentiating features.", assigneeId: internUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.ASSIGNED, due: daysFromNow(6), scope: TaskScope.PERSONAL },
+    { title: "Filing and scanning intern reports", desc: "Scan exit surveys and file completed reports in cabinets.", assigneeId: internUser.id, priority: TaskPriority.LOW, status: TaskStatus.IN_PROGRESS, due: daysFromNow(4), scope: TaskScope.PERSONAL },
+    { title: "Assist HR with onboarding docs", desc: "Help prepare welcome kits and system access request forms.", assigneeId: internUser.id, priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS, due: daysFromNow(7), scope: TaskScope.PERSONAL },
+    { title: "Shadow sales call with Utica client", desc: "Attend the demo and take structured notes for the team debrief.", assigneeId: internUser.id, priority: TaskPriority.LOW, status: TaskStatus.CLOSED, due: daysFromNow(-3), scope: TaskScope.PERSONAL }
   ];
 
   for (let i = 0; i < tasksList.length; i++) {
-    const t = tasksList[i];
-    await prisma.task.create({
+    const t = tasksList[i] as any;
+    const taskRecord = await prisma.task.create({
       data: {
         taskId: `TASK-${String(i + 1).padStart(4, "0")}`,
         title: t.title,
@@ -964,9 +1073,28 @@ async function main() {
         assigneeId: t.assigneeId,
         priority: t.priority,
         status: t.status,
-        dueDate: t.due
+        dueDate: t.due,
+        scope: t.scope || TaskScope.PERSONAL,
+        orgId: org.id,
+        teamId: t.teamId || null,
+        departmentId: t.departmentId || null,
+        isBlocked: t.isBlocked || false,
+        blockerNote: t.blockerNote || null,
+        reviewerIds: t.reviewerIds || []
       }
     });
+
+    if (t.comments && t.comments.length > 0) {
+      for (const c of t.comments) {
+        await prisma.taskComment.create({
+          data: {
+            taskId: taskRecord.id,
+            userId: c.userId,
+            body: c.body
+          }
+        });
+      }
+    }
   }
 
 

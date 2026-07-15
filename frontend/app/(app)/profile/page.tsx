@@ -13,11 +13,12 @@ function ProfileContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const profileId = searchParams.get('id');
+  const tabParam = searchParams.get('tab');
   
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('personal');
+  const [activeTab, setActiveTab] = useState<string>(tabParam || 'personal');
   const [attendanceStatus, setAttendanceStatus] = useState<'ACTIVE' | 'OFFLINE' | 'COMPLETED'>('OFFLINE');
 
   const [showLeftScroll, setShowLeftScroll] = useState(false);
@@ -66,6 +67,16 @@ function ProfileContent() {
   const [emergencyRelation, setEmergencyRelation] = useState('');
   const [emergencyPhone, setEmergencyPhone] = useState('');
   const [emergencyAltPhone, setEmergencyAltPhone] = useState('');
+
+  // Home Address states
+  const [homeSearchQuery, setHomeSearchQuery] = useState('');
+  const [homeSearchResults, setHomeSearchResults] = useState<any[]>([]);
+  const [homeSearchLoading, setHomeSearchLoading] = useState(false);
+  const [selectedHomeLocation, setSelectedHomeLocation] = useState<{ lat: number; lng: number; label: string } | null>(null);
+  const [homeRadius, setHomeRadius] = useState(200);
+  const [homeAddressSubmitting, setHomeAddressSubmitting] = useState(false);
+  const [showHomeChangeRequest, setShowHomeChangeRequest] = useState(false);
+  const [homeChangeReason, setHomeChangeReason] = useState('');
 
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
@@ -375,7 +386,8 @@ function ProfileContent() {
     { id: 'job', name: 'Job Details' },
     ...(canViewCompensation ? [{ id: 'compensation', name: 'Compensation' }] : []),
     { id: 'leave', name: 'Leave Balances' },
-    ...(isOwnProfile ? [{ id: 'security', name: 'Security' }] : [])
+    ...(isOwnProfile ? [{ id: 'security', name: 'Security' }] : []),
+    ...(isOwnProfile ? [{ id: 'home-address', name: 'Home Address' }] : [])
   ];
 
   return (
@@ -1139,6 +1151,207 @@ function ProfileContent() {
                 )}
               </div>
             )}
+
+            {/* ── Home Address Tab ──────────────────────────────────────────────── */}
+            {activeTab === 'home-address' && isOwnProfile && (() => {
+              const isLocked = user?.homeAddressLocked || profile?.homeAddressLocked;
+              const hasHome = (user?.homeLatitude !== null && user?.homeLatitude !== undefined) || (profile?.homeLatitude !== null && profile?.homeLatitude !== undefined);
+              const homeLat = user?.homeLatitude ?? profile?.homeLatitude;
+              const homeLng = user?.homeLongitude ?? profile?.homeLongitude;
+              const homeRadiusVal = user?.homeRadius ?? profile?.homeRadius ?? 200;
+              const homeLabel = (user?.address as any)?.homeLabel || (profile?.address as any)?.homeLabel || '';
+
+              const searchHome = async (q: string) => {
+                if (!q || q.length < 3) { setHomeSearchResults([]); return; }
+                setHomeSearchLoading(true);
+                try {
+                  const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+                  const json = await res.json();
+                  setHomeSearchResults(json || []);
+                } catch { setHomeSearchResults([]); }
+                finally { setHomeSearchLoading(false); }
+              };
+
+              const handleSetHome = async () => {
+                if (!selectedHomeLocation) return;
+                setHomeAddressSubmitting(true);
+                try {
+                  await api.employees.setHomeAddress({
+                    lat: selectedHomeLocation.lat,
+                    lng: selectedHomeLocation.lng,
+                    radius: homeRadius,
+                    addressLabel: selectedHomeLocation.label
+                  });
+                  toast.success('Home address set and locked successfully!');
+                  window.location.reload();
+                } catch (e: any) {
+                  toast.error(e?.response?.data?.message || 'Failed to set home address');
+                } finally { setHomeAddressSubmitting(false); }
+              };
+
+              const handleChangeRequest = async () => {
+                if (!selectedHomeLocation || !homeChangeReason.trim()) return;
+                setHomeAddressSubmitting(true);
+                try {
+                  await api.employees.createProfileRequest({
+                    homeLatitude: selectedHomeLocation.lat,
+                    homeLongitude: selectedHomeLocation.lng,
+                    homeRadius,
+                    address: { homeLabel: selectedHomeLocation.label },
+                    changeReason: homeChangeReason
+                  });
+                  toast.success('Home address change request submitted for HR approval!');
+                  setShowHomeChangeRequest(false);
+                  setHomeChangeReason('');
+                  setSelectedHomeLocation(null);
+                } catch (e: any) {
+                  toast.error(e?.response?.data?.message || 'Failed to submit change request');
+                } finally { setHomeAddressSubmitting(false); }
+              };
+
+              return (
+                <div className="space-y-6">
+                  {!hasHome && (
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl px-5 py-4">
+                      <span className="material-symbols-outlined text-amber-600 text-[20px] shrink-0 mt-0.5">warning</span>
+                      <div>
+                        <p className="text-body-xs font-bold">Home Address Required</p>
+                        <p className="text-body-xs font-medium mt-0.5">Your home address is mandatory for WFH attendance validation. Please set it below. Once set, it will be locked and can only be changed with HR/Admin approval.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {hasHome && (
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-body-sm font-bold text-slate-800">Current Home Address</p>
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">
+                          <span className="material-symbols-outlined text-[12px]">lock</span> Locked
+                        </span>
+                      </div>
+                      <p className="text-body-xs text-slate-600 font-medium">{homeLabel || `${homeLat?.toFixed(5)}, ${homeLng?.toFixed(5)}`}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-slate-400 text-[16px]">radar</span>
+                        <p className="text-body-xs text-slate-500">Radius: <strong>{homeRadiusVal}m</strong></p>
+                      </div>
+                      <a
+                        href={`https://maps.google.com/?q=${homeLat},${homeLng}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-700 hover:text-blue-900"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">map</span> View on Google Maps
+                      </a>
+                      {!showHomeChangeRequest && (
+                        <button
+                          onClick={() => setShowHomeChangeRequest(true)}
+                          className="w-full mt-2 py-2 border border-slate-300 rounded-xl text-body-xs font-bold text-slate-700 hover:bg-slate-50 transition-all"
+                        >
+                          Request Address Change
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Address Search */}
+                  {(!isLocked || showHomeChangeRequest) && (
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+                      <p className="text-body-sm font-bold text-slate-800">
+                        {showHomeChangeRequest ? 'New Home Address (Change Request)' : 'Set Home Address'}
+                      </p>
+
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={homeSearchQuery}
+                          onChange={e => { setHomeSearchQuery(e.target.value); searchHome(e.target.value); }}
+                          placeholder="Search your home address..."
+                          className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-body-xs bg-slate-50 focus:bg-white focus:border-primary outline-none transition-all"
+                        />
+                        {homeSearchLoading && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          </div>
+                        )}
+                        {homeSearchResults.length > 0 && (
+                          <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                            {homeSearchResults.map((r: any, i: number) => (
+                              <button
+                                key={i}
+                                onClick={() => {
+                                  setSelectedHomeLocation({ lat: parseFloat(r.lat), lng: parseFloat(r.lon), label: r.display_name });
+                                  setHomeSearchQuery(r.display_name);
+                                  setHomeSearchResults([]);
+                                }}
+                                className="w-full text-left px-4 py-3 text-body-xs text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors"
+                              >
+                                {r.display_name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {selectedHomeLocation && (
+                        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                          <p className="text-[11px] font-bold text-green-800">Selected Location</p>
+                          <p className="text-[11px] text-green-700 mt-0.5">{selectedHomeLocation.label}</p>
+                          <p className="text-[10px] text-green-600 mt-0.5">{selectedHomeLocation.lat.toFixed(5)}, {selectedHomeLocation.lng.toFixed(5)}</p>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">Geofencing Radius</label>
+                        <div className="relative">
+                          <select
+                            value={homeRadius}
+                            onChange={e => setHomeRadius(parseInt(e.target.value))}
+                            className="w-full appearance-none px-4 py-2.5 border border-slate-200 rounded-xl text-body-xs bg-slate-50 focus:bg-white focus:border-primary outline-none cursor-pointer"
+                          >
+                            <option value={50}>50 meters (Very Precise)</option>
+                            <option value={100}>100 meters</option>
+                            <option value={200}>200 meters (Recommended)</option>
+                            <option value={500}>500 meters</option>
+                            <option value={1000}>1 kilometer</option>
+                          </select>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[16px] pointer-events-none">expand_more</span>
+                        </div>
+                      </div>
+
+                      {showHomeChangeRequest && (
+                        <div>
+                          <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">Reason for Change <span className="text-red-500">*</span></label>
+                          <textarea
+                            value={homeChangeReason}
+                            onChange={e => setHomeChangeReason(e.target.value)}
+                            rows={3}
+                            placeholder="Explain why you need to update your home address (e.g., relocation, moved to new home)..."
+                            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-body-xs bg-slate-50 focus:bg-white focus:border-primary outline-none resize-none transition-all"
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex gap-3">
+                        {showHomeChangeRequest && (
+                          <button
+                            onClick={() => { setShowHomeChangeRequest(false); setSelectedHomeLocation(null); setHomeSearchQuery(''); }}
+                            className="flex-1 py-2.5 border border-slate-300 rounded-xl text-body-xs font-bold text-slate-700 hover:bg-slate-50 transition-all"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                        <button
+                          onClick={showHomeChangeRequest ? handleChangeRequest : handleSetHome}
+                          disabled={!selectedHomeLocation || homeAddressSubmitting || (showHomeChangeRequest && !homeChangeReason.trim())}
+                          className="flex-1 py-2.5 bg-primary hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-body-xs font-bold transition-all"
+                        >
+                          {homeAddressSubmitting ? 'Submitting...' : showHomeChangeRequest ? 'Submit Change Request' : 'Set & Lock Home Address'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

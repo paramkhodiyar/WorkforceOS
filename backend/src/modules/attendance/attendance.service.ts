@@ -80,6 +80,33 @@ export class AttendanceService {
       }
     }
 
+    // WFH: validate against user's home location if configured
+    if (workMode === "WFH" && gpsLat !== undefined && gpsLng !== undefined && gpsLat !== null && gpsLng !== null) {
+      const homeLat = user.homeLatitude;
+      const homeLng = user.homeLongitude;
+      const homeRadius = user.homeRadius ?? 200;
+
+      if (homeLat !== null && homeLat !== undefined && homeLng !== null && homeLng !== undefined) {
+        const R = 6371e3;
+        const phi1 = (homeLat * Math.PI) / 180;
+        const phi2 = (gpsLat * Math.PI) / 180;
+        const deltaPhi = ((gpsLat - homeLat) * Math.PI) / 180;
+        const deltaLambda = ((gpsLng - homeLng) * Math.PI) / 180;
+
+        const a =
+          Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+          Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+
+        if (distance > homeRadius) {
+          const distKm = (distance / 1000).toFixed(2);
+          notes = `Flagged: Outside Home Bounds (${distKm}km away)`;
+        }
+      }
+      // If no home location configured, no flagging — warning is shown on frontend
+    }
+
     const record = await prisma.attendance.upsert({
       where: { userId_date: { userId, date: today } },
       update: {

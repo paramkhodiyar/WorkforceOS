@@ -259,6 +259,20 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* Home Address Warning Banner - Mobile */}
+        {!user.homeAddressLocked && !user.homeLatitude && (
+          <Link href="/profile?tab=home-address" className="block">
+            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+              <span className="material-symbols-outlined text-amber-600 text-[20px] shrink-0">home_pin</span>
+              <div className="flex-1">
+                <p className="text-[11px] font-bold text-amber-800">Home Address Not Set</p>
+                <p className="text-[11px] text-amber-700 font-medium mt-0.5">Required for WFH check-in. Tap to set.</p>
+              </div>
+              <span className="material-symbols-outlined text-amber-500 text-[16px]">arrow_forward</span>
+            </div>
+          </Link>
+        )}
+
         {/* Quick Actions Panel */}
         <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
           <h3 className="text-label-sm font-bold text-slate-900 uppercase tracking-wider">Quick Actions</h3>
@@ -556,6 +570,20 @@ export default function DashboardPage() {
           </div>
           <LiveClock size="lg" className="w-80 shrink-0 shadow-sm" />
         </div>
+
+        {/* Home Address Warning Banner */}
+        {!user.homeAddressLocked && !user.homeLatitude && (
+          <Link href="/profile?tab=home-address" className="block">
+            <div className="flex items-center gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 hover:bg-amber-100 transition-colors cursor-pointer">
+              <span className="material-symbols-outlined text-amber-600 text-[22px] shrink-0">home_pin</span>
+              <div className="flex-1">
+                <p className="text-body-xs font-bold text-amber-800">Home Address Not Set</p>
+                <p className="text-body-xs text-amber-700 font-medium mt-0.5">Your home address is required for WFH attendance verification. Click here to set it in your profile.</p>
+              </div>
+              <span className="material-symbols-outlined text-amber-500 text-[18px]">arrow_forward</span>
+            </div>
+          </Link>
+        )}
 
         {/* Quick Actions Panel */}
         <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-3">

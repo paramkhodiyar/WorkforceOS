@@ -251,6 +251,10 @@ model User {
   personalEmail    String?
   personalPhone    String?
   address          Json?
+  homeLatitude     Float?
+  homeLongitude    Float?
+  homeRadius       Int?       @default(200)  // in meters
+  homeAddressLocked Boolean  @default(false)
   employeeType     EmployeeType @default(FULL_TIME)
   workLocation     String?
   shiftId          String?

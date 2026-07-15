@@ -79,6 +79,12 @@ export default function SideNavBar() {
       show: (isAdmin || isHR || isActualManager) && features.includes('attendance')
     },
     {
+      label: 'Ops Stats',
+      icon: 'analytics',
+      href: '/ops-stats',
+      show: isAdmin || isHR
+    },
+    {
       label: 'Attendance',
       icon: 'event_available',
       href: '/attendance',

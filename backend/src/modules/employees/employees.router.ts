@@ -17,7 +17,8 @@ import {
   listProfileRequests,
   createProfileRequest,
   approveProfileRequest,
-  rejectProfileRequest
+  rejectProfileRequest,
+  setHomeAddress
 } from "./employees.controller";
 import { createEmployeeSchema, updateEmployeeSchema, createProfileRequestSchema } from "./employees.validation";
 
@@ -43,6 +44,9 @@ router.post("/profile-requests", validate(createProfileRequestSchema), createPro
 router.get("/profile-requests", listProfileRequests);
 router.post("/profile-requests/:id/approve", requirePermission("employee", "update"), approveProfileRequest);
 router.post("/profile-requests/:id/reject", requirePermission("employee", "update"), rejectProfileRequest);
+
+// Home address (geotagging)
+router.post("/home-address", setHomeAddress);
 
 router.get("/:id", requirePermission("employee", "read"), getEmployeeById);
 router.patch("/:id", requirePermission("employee", "update"), validate(updateEmployeeSchema), updateEmployee);

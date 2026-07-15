@@ -36,6 +36,7 @@ export default function TasksPage() {
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [activeTab, setActiveTab] = useState<'board' | 'dashboard'>('board');
   const [dependencyTaskId, setDependencyTaskId] = useState<string | null>(null);
   const [blockerNoteInput, setBlockerNoteInput] = useState('');
@@ -228,10 +229,20 @@ export default function TasksPage() {
 
   async function handleSelectTask(task: any) {
     try {
+      setSelectedTask({
+        id: task.id,
+        taskId: task.taskId,
+        title: task.title,
+        loadingPlaceholder: true
+      });
+      setLoadingDetails(true);
       const res = await api.tasks.get(task.id);
       setSelectedTask(res.data);
     } catch (err: any) {
       toast.error(err.message || 'Failed to fetch task details');
+      setSelectedTask(null);
+    } finally {
+      setLoadingDetails(false);
     }
   }
 
@@ -1007,7 +1018,37 @@ export default function TasksPage() {
 
             {/* Scrollable Body */}
             <div className="flex-grow overflow-y-auto p-6 pb-16 space-y-6 custom-scrollbar">
-              {/* Description */}
+              {selectedTask.loadingPlaceholder ? (
+                <div className="space-y-6 animate-pulse">
+                  <div className="space-y-2">
+                    <div className="h-3 w-16 bg-slate-200 rounded"></div>
+                    <div className="h-16 w-full bg-slate-200 rounded-xl"></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="h-3 w-12 bg-slate-200 rounded"></div>
+                      <div className="h-8 w-24 bg-slate-200 rounded-lg"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 w-12 bg-slate-200 rounded"></div>
+                      <div className="h-8 w-24 bg-slate-200 rounded-lg"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-4 border-t border-slate-100">
+                    <div className="h-3 w-20 bg-slate-200 rounded"></div>
+                    <div className="h-6 w-32 bg-slate-200 rounded-lg"></div>
+                  </div>
+                  <div className="space-y-3 pt-4 border-t border-slate-100">
+                    <div className="h-3 w-28 bg-slate-200 rounded"></div>
+                    <div className="space-y-2">
+                      <div className="h-10 w-full bg-slate-100 rounded-xl"></div>
+                      <div className="h-10 w-full bg-slate-100 rounded-xl"></div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Description */}
               <div>
                 <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Description</span>
                 <p className="text-body-sm text-slate-700 mt-2.5 leading-relaxed font-medium bg-slate-50 border border-slate-200/50 p-3 rounded-xl">
@@ -1269,7 +1310,9 @@ export default function TasksPage() {
                   </button>
                 </form>
               </div>
-            </div>
+            </>
+          )}
+        </div>
 
           </div>
         </>

@@ -17,12 +17,14 @@ import { departmentsRouter } from "../modules/departments/departments.router";
 import { teamsRouter } from "../modules/teams/teams.router";
 import { calendarRouter } from "../modules/calendar/calendar.router";
 import { statsRouter } from "../modules/stats/stats.router";
+import { chatbotRouter } from "../modules/chatbot/chatbot.router";
 import { rateLimitByUser } from "../middleware/rateLimit.middleware";
 
 const router = Router();
 
 router.use("/auth", authRouter);
 router.use("/onboarding", onboardingRouter);
+router.use("/chatbot", chatbotRouter);
 
 // Apply user-scoped rate limiting to all authenticated api endpoints
 router.use(rateLimitByUser(200, 60));

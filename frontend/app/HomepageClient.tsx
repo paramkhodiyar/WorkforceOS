@@ -6,6 +6,7 @@ import { LandingHeader } from '../components/layout/LandingHeader';
 import { LandingFooter } from '../components/layout/LandingFooter';
 import { AmbientGrid } from '../components/ui/AmbientGrid';
 import { useAuth } from '../lib/auth/AuthProvider';
+import VoyagerChatbot from '../components/chatbot/VoyagerChatbot';
 
 export default function HomepageClient() {
   const { user } = useAuth();
@@ -1673,6 +1674,7 @@ export default function HomepageClient() {
 
       {/* Global Navigation Footer */}
       <LandingFooter />
+      <VoyagerChatbot />
     </div>
   );
 }

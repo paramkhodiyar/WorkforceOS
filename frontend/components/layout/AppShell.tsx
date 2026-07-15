@@ -4,6 +4,7 @@ import React from 'react';
 import SideNavBar from './SideNavBar';
 import TopNavBar from './TopNavBar';
 import BottomNavBar from './BottomNavBar';
+import NexusChatbot from '../chatbot/NexusChatbot';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <BottomNavBar />
+      <NexusChatbot />
     </div>
   );
 }

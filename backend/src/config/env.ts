@@ -19,8 +19,10 @@ const envSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string().min(1),
   S3_BASE_URL: z.string().url(),
   S3_ENDPOINT: z.string().url().optional(),
-  CORS_ORIGINS: z.string().default("*"),
-  ENCRYPTION_KEY: z.string().default("df06bc5258e72753ffc1ab1f0cdcdbfb876a3f0190a424e8d35759ef62cdab12")
+   CORS_ORIGINS: z.string().default("*"),
+  ENCRYPTION_KEY: z.string().default("df06bc5258e72753ffc1ab1f0cdcdbfb876a3f0190a424e8d35759ef62cdab12"),
+  GEMINI_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().optional()
 }).superRefine((data, ctx) => {
   if (data.NODE_ENV === "production") {
     if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY === "df06bc5258e72753ffc1ab1f0cdcdbfb876a3f0190a424e8d35759ef62cdab12") {

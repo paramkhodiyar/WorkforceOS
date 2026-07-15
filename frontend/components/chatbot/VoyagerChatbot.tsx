@@ -27,11 +27,20 @@ export default function VoyagerChatbot() {
 
   const parseMarkdown = (text: string) => {
     if (!text) return '';
-    let html = text.replace(/### (.*?)(?:\n|<br\/>|$)/g, '<h5 class="font-extrabold text-[12px] text-slate-800 mt-2 mb-1">$1</h5>');
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    html = html.replace(/^### (.*?)$/gm, '<h5 class="font-extrabold text-[12px] text-slate-800 mt-2 mb-1">$1</h5>');
+    html = html.replace(/^## (.*?)$/gm, '<h4 class="font-extrabold text-[13px] text-slate-800 mt-2 mb-1">$1</h4>');
+    html = html.replace(/^# (.*?)$/gm, '<h3 class="font-black text-[14px] text-slate-900 mt-2 mb-1">$1</h3>');
+    html = html.replace(/`(.*?)`/g, '<code class="bg-slate-100 text-red-650 px-1 py-0.5 rounded font-mono text-[10px]">$1</code>');
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>');
+    html = html.replace(/^[ \t]*[*+-][ \t]+(.*?)$/gm, '<li class="ml-4 list-disc text-slate-705 my-0.5">$1</li>');
     html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
-    html = html.replace(/^- (.*?)(?:\n|<br\/>|$)/gm, '<li class="ml-4 list-disc text-slate-700">$1</li>');
+    html = html.replace(/_(.*?)_/g, '<em class="italic">$1</em>');
     html = html.replace(/\n/g, '<br/>');
+    html = html.replace(/(<\/li>|<h[345]>)\s*<br\/>/g, '$1');
     return html;
   };
 

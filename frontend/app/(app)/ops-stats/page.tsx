@@ -150,17 +150,17 @@ export default function OpsStatsPage() {
       </div>
 
       {/* Main Stats Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Attendance - Late Frequency */}
-        <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[320px]">
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
             <div>
               <h2 className="text-title-sm font-bold text-slate-800">Top Late Employees</h2>
               <p className="text-[10px] text-slate-500 font-medium">Most check-ins flagged late in the last 30 days</p>
             </div>
             <span className="material-symbols-outlined text-[20px] text-slate-400">gavel</span>
           </div>
-          <div className="p-4 space-y-3">
+          <div className="p-4 space-y-3 overflow-y-auto flex-1">
             {lateEmployees && lateEmployees.length > 0 ? (
               lateEmployees.map((emp: any) => (
                 <div
@@ -187,21 +187,23 @@ export default function OpsStatsPage() {
                 </div>
               ))
             ) : (
-              <p className="text-body-xs text-slate-500 py-6 text-center">No late logs in the last 30 days.</p>
+              <div className="h-full flex items-center justify-center py-6">
+                <p className="text-body-xs text-slate-500 text-center">No late logs in the last 30 days.</p>
+              </div>
             )}
           </div>
         </div>
 
         {/* Leave - High Frequency */}
-        <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[320px]">
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
             <div>
               <h2 className="text-title-sm font-bold text-slate-800">High Leave Frequency</h2>
               <p className="text-[10px] text-slate-500 font-medium">Most leave applications requested in the last 30 days</p>
             </div>
             <span className="material-symbols-outlined text-[20px] text-slate-400">bar_chart</span>
           </div>
-          <div className="p-4 space-y-3">
+          <div className="p-4 space-y-3 overflow-y-auto flex-1">
             {leaveFrequencyEmployees && leaveFrequencyEmployees.length > 0 ? (
               leaveFrequencyEmployees.map((emp: any) => (
                 <div
@@ -228,14 +230,16 @@ export default function OpsStatsPage() {
                 </div>
               ))
             ) : (
-              <p className="text-body-xs text-slate-500 py-6 text-center">No leave requests in the last 30 days.</p>
+              <div className="h-full flex items-center justify-center py-6">
+                <p className="text-body-xs text-slate-500 text-center">No leave requests in the last 30 days.</p>
+              </div>
             )}
           </div>
         </div>
       </div>
 
       {/* Departments Overview */}
-      <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-5 border-b border-slate-100">
           <h2 className="text-title-sm font-bold text-slate-800">Departments Distribution</h2>
           <p className="text-[10px] text-slate-500 font-medium">Headcount density per department</p>

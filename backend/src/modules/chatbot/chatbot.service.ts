@@ -1,6 +1,9 @@
 import { prisma } from "../../config/database";
 import { config } from "../../config/env";
 import { AppError } from "../../utils/errors.util";
+import { redis } from "../../config/redis";
+import { LeaveService } from "../leave/leave.service";
+import { LeaveType } from "@prisma/client";
 
 export class ChatbotService {
   private static async callLLM(systemPrompt: string, userMessage: string): Promise<string> {
@@ -59,25 +62,22 @@ export class ChatbotService {
           })
         });
 
-        if (!response.ok) {
-          const errText = await response.text();
-          console.error("Groq API error response:", errText);
-          throw new Error(`Groq API returned status ${response.status}`);
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.choices?.[0]?.message?.content;
+          if (text) return text;
+        } else {
+          console.warn(`Groq API returned status ${response.status}.`);
         }
-
-        const data = await response.json();
-        const text = data.choices?.[0]?.message?.content;
-        if (text) return text;
       } catch (err) {
         console.error("Failed to fetch from Groq:", err);
       }
     }
 
-    // Fallback if APIs are not configured or failed
     return `### Voyager / Nexus Offline Mode
-Hi there! The AI LLM service keys (Gemini/Groq) are currently not configured or reachable. 
+Hi there! The AI LLM service keys (Gemini/Groq) are currently not configured, rate-limited, or reachable. 
 
-* **To resolve this**: Add \`GEMINI_API_KEY\` or \`GROQ_API_KEY\` to your backend \`.env\` file.
+* **To resolve this**: Add a valid \`GEMINI_API_KEY\` or \`GROQ_API_KEY\` to your backend \`.env\` file.
 * **Support Contact**: You can email **paramkhodiyar1008@gmail.com** for setup assistance.
 
 I am still here to help guide you manually if you need general directions!`;
@@ -146,25 +146,103 @@ WorkforceOS is a next-generation employee operations suite offering:
       pendingLeaveRequests: pendingLeaves.map(p => ({ type: p.leaveType, duration: p.days, start: p.startDate, end: p.endDate }))
     };
 
+    // Load recent chat history from Redis
+    const historyKey = `chatbot:history:${userId}`;
+    const historyData = await redis.get(historyKey);
+    let chatHistory = historyData ? JSON.parse(historyData) : [];
+
+    // Append new user message to history
+    chatHistory.push({ role: "user", text: message });
+    if (chatHistory.length > 10) chatHistory.shift();
+
+    const formattedHistory = chatHistory
+      .map((h: any) => `${h.role === "user" ? "Employee" : "Nexus"}: ${h.text}`)
+      .join("\n");
+
+    const todayDateStr = new Date().toISOString().split("T")[0];
+
     const systemPrompt = `You are "Nexus", the quirky, smart, and efficient operations assistant AI inside the WorkforceOS employee dashboard.
 Your job is strictly to help the current logged-in employee (${user.firstName} ${user.lastName}) manage their operations.
 
 You are provided with their real-time database context:
 ${JSON.stringify(employeeContext, null, 2)}
 
-**OPERATIONAL CAPABILITIES**:
-1. You can list or summarize their active tasks, priorities, and upcoming deadlines.
-2. You can check and report their remaining leave balances or pending requests.
-3. You can provide their 30-day attendance stats, rates, and late counts.
-4. You can explain how to apply for leave (tell them to navigate to the Leave tab and click "Apply Leave") or how to check in (tell them to click "Check In" on the Dashboard).
+Today's date is: ${todayDateStr}.
+Relative date guide:
+- Tomorrow is: ${new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split("T")[0]}
+- Day after tomorrow is: ${new Date(new Date().setDate(new Date().getDate() + 2)).toISOString().split("T")[0]}
+
+**OPERATIONAL FLOWS**:
+1. **Leave Application Flow**:
+   - If the employee says they want to apply for leave (e.g. sick leave, casual leave), identify and gather the missing fields:
+     - \`leaveType\`: Must be SICK, CASUAL, or EARNED.
+     - \`startDate\`: Date in YYYY-MM-DD format.
+     - \`endDate\`: Date in YYYY-MM-DD format.
+     - \`reason\`: A brief explanation.
+   - Ask for any missing fields politely.
+   - Once all details are collected, output a clear summary asking for confirmation (e.g., "Please confirm you want to apply for CASUAL leave from YYYY-MM-DD to YYYY-MM-DD. Reply CONFIRM to submit.").
+   - If they reply with "confirm", "yes", or confirm the summary, you MUST output the following command tag at the very end of your response:
+     [COMMAND: APPLY_LEAVE leaveType="LEAVETYPE" startDate="YYYY-MM-DD" endDate="YYYY-MM-DD" reason="REASON"]
+     (Ensure LEAVETYPE is capitalized SICK, CASUAL, or EARNED)
+   - Do NOT output the COMMAND tag until they confirm the summary.
 
 **CRITICAL CONSTRAINTS**:
 1. You are strictly forbidden from disclosing details of any other employee, manager, or department.
 2. You are strictly forbidden from writing code or resolving mathematical equations.
 3. You are strictly forbidden from answering off-topic questions.
-4. If they ask to perform an action you cannot do directly (e.g. approve a leave, delete a task), explain the manual steps (e.g. "To apply for leave, click on 'Leave' in the sidebar and press 'Apply Leave'") or politely direct them to contact HR. If you cannot answer or solve a query, direct them to contact HR at superadmin@workforceos.com.
-5. Format all responses in clean, markdown syntax (bold, italics, bullet points, headers). Keep responses polite, helpful, and concise.`;
+4. If you cannot answer or solve a query, direct them to contact HR at superadmin@workforceos.com.
+5. Format responses in clean markdown.
 
-    return this.callLLM(systemPrompt, message);
+Recent conversation history:
+${formattedHistory}
+
+Nexus:`;
+
+    let botResponse = await this.callLLM(systemPrompt, message);
+
+    // Check if the response contains the leave command
+    const commandMatch = botResponse.match(
+      /\[COMMAND:\s*APPLY_LEAVE\s+leaveType="([^"]+)"\s+startDate="([^"]+)"\s+endDate="([^"]+)"\s+reason="([^"]+)"\]/
+    );
+
+    if (commandMatch) {
+      const leaveType = commandMatch[1] as LeaveType;
+      const startDate = new Date(commandMatch[2]);
+      const endDate = new Date(commandMatch[3]);
+      const reason = commandMatch[4];
+
+      try {
+        await LeaveService.apply(userId, orgId, {
+          leaveType,
+          startDate,
+          endDate,
+          reason
+        });
+
+        // Replace command tag with successful completion text
+        botResponse = botResponse.replace(
+          /\[COMMAND:.*\]/,
+          `🎉 **Success!** Your leave request for **${leaveType}** leave from **${commandMatch[2]}** to **${commandMatch[3]}** has been successfully applied and sent to your manager for approval.`
+        );
+        // Clear history upon flow completion so they can start a new request clean
+        chatHistory = [];
+      } catch (err: any) {
+        console.error("Failed to apply leave via chatbot command:", err);
+        botResponse = botResponse.replace(
+          /\[COMMAND:.*\]/,
+          `⚠️ **Failed to apply leave**: ${err.message || "An unexpected error occurred."}`
+        );
+      }
+    }
+
+    // Save updated history
+    if (chatHistory.length > 0) {
+      chatHistory.push({ role: "model", text: botResponse });
+      await redis.setex(historyKey, 3600, JSON.stringify(chatHistory));
+    } else {
+      await redis.del(historyKey);
+    }
+
+    return botResponse;
   }
 }

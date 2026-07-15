@@ -541,6 +541,8 @@ model Task {
   deletedAt    DateTime?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  isBlocked    Boolean      @default(false)
+  blockerNote  String?
 
   scope        TaskScope    @default(PERSONAL)
   orgId        String       @default("")
@@ -572,6 +574,7 @@ model TaskStatusHistory {
   toStatus   TaskStatus
   changedBy  String
   changedAt  DateTime   @default(now())
+  comment    String?
 
   task       Task       @relation(fields: [taskId], references: [id])
 }

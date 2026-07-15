@@ -4,6 +4,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 
 /// WebViewScreen — the main app shell.
 ///
@@ -227,7 +228,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   // ── Back button → WebView history → exit dialog ───────────────────────────
 
-  Future<bool> _onWillPop() async {
+  Future<void> _handlePop(bool didPop) async {
+    if (didPop) return;
+
     final String? currentUrl = await _controller.currentUrl();
     
     // Check if we are on dashboard or login or root pages where pressing back should exit the app
@@ -236,12 +239,15 @@ class _WebViewScreenState extends State<WebViewScreen> {
         currentUrl.endsWith('/dashboard') || 
         currentUrl.endsWith('/dashboard/') ||
         currentUrl.endsWith('/login') ||
-        currentUrl.endsWith('/login/');
+        currentUrl.endsWith('/login/') ||
+        currentUrl == 'https://workforceos1.vercel.app/'; // Root URL fallback
 
     if (!isRootOrDashboard && await _controller.canGoBack()) {
       await _controller.goBack();
-      return false;
+      return;
     }
+
+    if (!mounted) return;
 
     final bool? exit = await showDialog<bool>(
       context: context,
@@ -315,15 +321,18 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ),
     );
 
-    return exit ?? false;
+    if (exit == true) {
+      await SystemNavigator.pop();
+    }
   }
 
   // ── UI ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) => _handlePop(didPop),
       child: Scaffold(
         backgroundColor: Colors.white,
         body: Stack(

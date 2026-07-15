@@ -22,6 +22,41 @@ export function requirePermission(resource: string, action: string | string[]) {
         return next();
       }
 
+      // Bypass read permissions on employees and team attendance for management roles
+      if (
+        (resource === "employee" && actions.includes("read")) ||
+        (resource === "attendance" && actions.includes("read_team"))
+      ) {
+        if (
+          req.user.systemRole === "HR" ||
+          req.user.systemRole === "DEPARTMENT_HEAD" ||
+          req.user.systemRole === "MANAGER" ||
+          roles.some(
+            (r: any) =>
+              r.roleName === "DEPARTMENT_HEAD" ||
+              r.roleName === "TEAM_MANAGER" ||
+              r.roleName === "HR_MANAGER"
+          )
+        ) {
+          return next();
+        }
+
+        // Check if user is a department head or team lead in the DB
+        const [headedDept, ledTeam] = await Promise.all([
+          prisma.department.findFirst({
+            where: { headId: req.user.id, isDeleted: false },
+            select: { id: true }
+          }),
+          prisma.team.findFirst({
+            where: { leadId: req.user.id, isDeleted: false },
+            select: { id: true }
+          })
+        ]);
+        if (headedDept || ledTeam) {
+          return next();
+        }
+      }
+
       if (roles.length === 0) {
         throw AppError.forbidden("No roles assigned to user");
       }

@@ -12,10 +12,32 @@ export class AuthService {
     const user = await prisma.user.findFirst({
       where: { email, isDeleted: false },
       include: {
+        department: true,
+        manager: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            avatarUrl: true
+          }
+        },
         roles: {
           include: {
             role: true
           }
+        },
+        departmentHead: {
+          where: { isDeleted: false },
+          select: { id: true, name: true }
+        },
+        teamLead: {
+          where: { isDeleted: false },
+          select: { id: true, name: true }
+        },
+        teams: {
+          where: { isDeleted: false },
+          select: { id: true, name: true }
         }
       }
     });
@@ -73,8 +95,13 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         systemRole: user.systemRole,
+        department: user.department,
+        manager: user.manager,
         organizationId: user.organizationId,
         roles: formattedRoles,
+        departmentHead: user.departmentHead,
+        teamLead: user.teamLead,
+        teams: user.teams,
         forcePasswordChange: user.forcePasswordChange
       }
     };

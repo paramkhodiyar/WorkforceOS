@@ -90,3 +90,11 @@ The platform has been updated with the following features:
 ### 🏢 Onboarding Logo Upload & Organization Customization
 - **Logo Upload Support**: Added a logo image uploader in Step 1 of the onboarding wizard, generating a base64 Data URL to dynamically display and save client organization logos.
 - **Multi-Brand Badging**: Rebuilt the desktop sidebar and mobile headers to dynamically display the current organization's logo and name, while retaining the WorkforceOS product identity via a small sub-badge.
+
+### ⏱️ Live Clock, Back Button Interception, & Tasks Blockers Workflow
+- **Mobile WebView Navigation Interception**: Integrated Flutter's modern `PopScope` widget in the mobile client. This intercepts Android back gestures and device swipe actions, checking if the current webpage is a dashboard/root, triggering `goBack()` for inner pages, and displaying a native exit confirmation dialog.
+- **Dynamic Digital Clock Widget**: Created a dynamic, real-time clock component updating every second. Added it to the desktop dashboard header card and centered in the mobile Quick Shift Attendance controls widget.
+- **Strict Senior-to-Junior Task Scoping**: Updated the user list filters to restrict task assignment: standard employees can only assign tasks to themselves, whereas managers, team leads, and department heads can assign to themselves plus members/reports under their respective direct leadership branches.
+- **Comprehensive Blocker Logs & Trail**: Added `isBlocked` and `blockerNote` support to the database schema. Employees can flag blockers with detailed notes during work, which shows a warning banner and notifications to managers, without locking the task's active status.
+- **Slide-out Details Sidebar**: Upgraded the task dashboard UI to slide out from the right on desktop, with a fully mobile-optimized viewport overlay. Features a complete chronological log trail (state changes, comments, reassignments with feedback comments) for project auditing.
+- **Self-assigned Task Automation**: Configured tasks to automatically close and transition to `CLOSED` upon completion if the assignee is also the task creator.

@@ -1,5 +1,6 @@
 import { prisma } from "../config/database";
 import { SystemRole } from "@prisma/client";
+import { redis } from "../config/redis";
 
 export async function getPermissionScopes(
   user: any,
@@ -14,6 +15,16 @@ export async function getPermissionScopes(
       departmentIds: [],
       teamIds: []
     };
+  }
+
+  const cacheKey = `scopes:${orgId}:${user.id}:${resource}:${action}`;
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (err) {
+    console.error("Redis get scopes error:", err);
   }
 
   const userRoles = await prisma.userRole.findMany({
@@ -45,6 +56,12 @@ export async function getPermissionScopes(
         scopes.teamIds.push(ur.scopeId);
       }
     }
+  }
+
+  try {
+    await redis.setex(cacheKey, 300, JSON.stringify(scopes));
+  } catch (err) {
+    console.error("Redis set scopes error:", err);
   }
 
   return scopes;

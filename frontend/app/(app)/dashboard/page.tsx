@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import LiveClock from '../../../components/dashboard/LiveClock';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -258,8 +259,45 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* Quick Actions Panel */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
+          <h3 className="text-label-sm font-bold text-slate-900 uppercase tracking-wider">Quick Actions</h3>
+          <div className="grid grid-cols-3 gap-3">
+            <Link 
+              href="/tasks" 
+              className="flex flex-col items-center justify-center p-3 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-2xl transition-all text-center group cursor-pointer"
+            >
+              <div className="h-10 w-10 rounded-full bg-blue-50 text-blue-600 border border-blue-150 flex items-center justify-center group-hover:bg-blue-100 group-hover:scale-105 transition-all">
+                <span className="material-symbols-outlined text-[20px]">assignment</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-slate-700 group-hover:text-blue-700 mt-2">View Tasks</span>
+            </Link>
+
+            <Link 
+              href="/leave" 
+              className="flex flex-col items-center justify-center p-3 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 rounded-2xl transition-all text-center group cursor-pointer"
+            >
+              <div className="h-10 w-10 rounded-full bg-amber-50 text-amber-600 border border-amber-150 flex items-center justify-center group-hover:bg-amber-100 group-hover:scale-105 transition-all">
+                <span className="material-symbols-outlined text-[20px]">date_range</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-slate-700 group-hover:text-amber-700 mt-2">Apply Leave</span>
+            </Link>
+
+            <Link 
+              href="/attendance" 
+              className="flex flex-col items-center justify-center p-3 bg-slate-50 hover:bg-green-50 border border-slate-200 hover:border-green-200 rounded-2xl transition-all text-center group cursor-pointer"
+            >
+              <div className="h-10 w-10 rounded-full bg-green-50 text-green-600 border border-green-150 flex items-center justify-center group-hover:bg-green-100 group-hover:scale-105 transition-all">
+                <span className="material-symbols-outlined text-[20px]">fingerprint</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-slate-700 group-hover:text-green-700 mt-2">Attendance</span>
+            </Link>
+          </div>
+        </div>
+
         {/* Quick Check-In/Check-Out Widget */}
         <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
+            <LiveClock size="sm" />
             {/* ── Shift Controls ── */}
             {isShiftCompleted ? (
               // Day is done — show a clear completed state
@@ -511,17 +549,63 @@ export default function DashboardPage() {
 
       {/* ── 🖥️ DESKTOP DASHBOARD ── */}
       <div className="hidden md:block space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
           <div>
-            <h1 className="text-headline-md font-bold text-on-surface">Dashboard</h1>
-            <p className="text-body-sm text-outline">Welcome back, {user.firstName}. Here is your dashboard summary.</p>
+            <h1 className="text-headline-lg font-black tracking-tight text-slate-900">Dashboard</h1>
+            <p className="text-body-sm text-outline mt-1">Welcome back, {user.firstName}. Here is your dashboard summary.</p>
+          </div>
+          <LiveClock size="lg" className="w-80 shrink-0 shadow-sm" />
+        </div>
+
+        {/* Quick Actions Panel */}
+        <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-3">
+          <h2 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Quick Actions</h2>
+          <div className="grid grid-cols-3 gap-6">
+            <Link 
+              href="/tasks" 
+              className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-2xl transition-all group cursor-pointer"
+            >
+              <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-600 border border-blue-150 flex items-center justify-center group-hover:bg-blue-100 group-hover:scale-105 transition-all">
+                <span className="material-symbols-outlined text-[24px]">assignment</span>
+              </div>
+              <div>
+                <p className="text-body-sm font-bold text-slate-900 group-hover:text-blue-700">View Tasks</p>
+                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Check assigned criteria & status</p>
+              </div>
+            </Link>
+
+            <Link 
+              href="/leave" 
+              className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 rounded-2xl transition-all group cursor-pointer"
+            >
+              <div className="h-12 w-12 rounded-xl bg-amber-50 text-amber-600 border border-amber-150 flex items-center justify-center group-hover:bg-amber-100 group-hover:scale-105 transition-all">
+                <span className="material-symbols-outlined text-[24px]">date_range</span>
+              </div>
+              <div>
+                <p className="text-body-sm font-bold text-slate-900 group-hover:text-amber-700">Apply Leave</p>
+                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Submit request & view balance</p>
+              </div>
+            </Link>
+
+            <Link 
+              href="/attendance" 
+              className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-green-50 border border-slate-200 hover:border-green-200 rounded-2xl transition-all group cursor-pointer"
+            >
+              <div className="h-12 w-12 rounded-xl bg-green-50 text-green-600 border border-green-150 flex items-center justify-center group-hover:bg-green-100 group-hover:scale-105 transition-all">
+                <span className="material-symbols-outlined text-[24px]">fingerprint</span>
+              </div>
+              <div>
+                <p className="text-body-sm font-bold text-slate-900 group-hover:text-green-700">Attendance Log</p>
+                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">View detailed shifts & history</p>
+              </div>
+            </Link>
           </div>
         </div>
 
         {(isAdmin || isHR || isManager) && metrics && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:border-slate-200/80 transition-all flex items-center justify-between">
+              <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:border-slate-300/80 transition-all flex items-center justify-between">
                 <div>
                   <p className="text-[10px] text-outline font-bold uppercase tracking-wider">Total Headcount</p>
                   <h3 className="text-headline-lg font-bold text-on-surface mt-1.5">{metrics.employeeCount}</h3>
@@ -531,7 +615,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:border-slate-200/80 transition-all flex items-center justify-between">
+              <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:border-slate-300/80 transition-all flex items-center justify-between">
                 <div>
                   <p className="text-[10px] text-outline font-bold uppercase tracking-wider">On Duty Today</p>
                   <h3 className="text-headline-lg font-bold text-green-600 mt-1.5">{metrics.employeeCount - metrics.onLeaveCount}</h3>
@@ -541,7 +625,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:border-slate-200/80 transition-all flex items-center justify-between">
+              <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:border-slate-300/80 transition-all flex items-center justify-between">
                 <div>
                   <p className="text-[10px] text-outline font-bold uppercase tracking-wider">On Leave</p>
                   <h3 className="text-headline-lg font-bold text-amber-600 mt-1.5">{metrics.onLeaveCount}</h3>
@@ -551,7 +635,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:border-slate-200/80 transition-all flex items-center justify-between">
+              <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:border-slate-300/80 transition-all flex items-center justify-between">
                 <div>
                   <p className="text-[10px] text-outline font-bold uppercase tracking-wider">Pending Tasks</p>
                   <h3 className="text-headline-lg font-bold text-rose-600 mt-1.5">{metrics.pendingLeaves}</h3>
@@ -594,14 +678,14 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <div className={`${isAdmin ? 'lg:col-span-1' : 'lg:col-span-3'} bg-white border border-slate-100 p-6 rounded-2xl shadow-sm`}>
+              <div className={`${isAdmin ? 'lg:col-span-1' : 'lg:col-span-3'} bg-white border border-slate-200 p-6 rounded-2xl shadow-sm`}>
                 <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-6">Pending Approvals Queue</h2>
                 {pendingItems.length === 0 ? (
                   <p className="text-body-sm text-outline py-8 text-center">No pending items in your queue.</p>
                 ) : (
                   <div className="space-y-4">
                     {pendingItems.map((item) => (
-                      <div key={item.id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
+                      <div key={item.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                         <div>
                           <p className="text-label-sm font-bold text-on-surface">{item.user?.firstName} {item.user?.lastName}</p>
                           <p className="text-[10px] text-outline uppercase font-semibold mt-0.5">{item.leaveType} Leave</p>
@@ -624,7 +708,7 @@ export default function DashboardPage() {
         {!isAdmin && !isHR && !isManager && metrics && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+              <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
                 <div>
                   <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-2">Attendance Check-in</h2>
                   <p className="text-body-sm text-outline mb-6">Record your clock-in status for today.</p>

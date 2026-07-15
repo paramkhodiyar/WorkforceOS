@@ -37,6 +37,10 @@ export default function TasksPage() {
 
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'board' | 'dashboard'>('board');
+  const [dependencyTaskId, setDependencyTaskId] = useState<string | null>(null);
+  const [blockerNoteInput, setBlockerNoteInput] = useState('');
+  const [showBlockerDialog, setShowBlockerDialog] = useState(false);
+  const [commentInput, setCommentInput] = useState('');
 
   const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -51,13 +55,20 @@ export default function TasksPage() {
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
-  const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
   const isIntern = systemRole === 'INTERN' || userRoles.some((r: any) => r.roleName === 'INTERN');
-  const canSeeOperations = isAdmin || isHR || isManager;
 
   const myLedTeams = isAdmin || isHR ? teams : teams.filter(t => t.leadId === user?.id);
   const myHeadedDepts = isAdmin || isHR ? departments : departments.filter(d => d.headId === user?.id);
+
+  const isManager =
+    userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD') ||
+    (user?.departmentHead && user.departmentHead.length > 0) ||
+    (user?.teamLead && user.teamLead.length > 0) ||
+    myLedTeams.length > 0 ||
+    myHeadedDepts.length > 0;
+
+  const canSeeOperations = isAdmin || isHR || isManager;
 
   const scopeOptions = [
     { value: 'PERSONAL', label: 'Personal (Self)' },
@@ -71,14 +82,12 @@ export default function TasksPage() {
       const empRes = await api.employees.list({ taskAssignees: 'true', limit: 1000 });
       setEmployees(empRes.data || []);
 
-      if (canSeeOperations) {
-        const [deptRes, teamRes] = await Promise.all([
-          api.departments.list(),
-          api.teams.list()
-        ]);
-        setDepartments(deptRes.data || []);
-        setTeams(teamRes.data || []);
-      }
+      const [deptRes, teamRes] = await Promise.all([
+        api.departments.list().catch(() => ({ data: [] })),
+        api.teams.list().catch(() => ({ data: [] }))
+      ]);
+      setDepartments(deptRes.data || []);
+      setTeams(teamRes.data || []);
     } catch (err) {
       console.error(err);
     }
@@ -101,8 +110,10 @@ export default function TasksPage() {
   }
 
   useEffect(() => {
-    loadInitialData();
-  }, [canSeeOperations]);
+    if (user) {
+      loadInitialData();
+    }
+  }, [user]);
 
   useEffect(() => {
     loadTasks();
@@ -144,7 +155,8 @@ export default function TasksPage() {
         assigneeId: assigneeId || undefined,
         dueDate: dueDate ? new Date(dueDate) : undefined,
         teamId: scope === 'TEAM' ? targetTeamId : undefined,
-        departmentId: scope === 'DEPARTMENT' ? targetDeptId : undefined
+        departmentId: scope === 'DEPARTMENT' ? targetDeptId : undefined,
+        dependencies: dependencyTaskId ? [dependencyTaskId] : []
       });
       setShowModal(false);
       setTitle('');
@@ -155,6 +167,7 @@ export default function TasksPage() {
       setScope('PERSONAL');
       setTargetTeamId('');
       setTargetDeptId('');
+      setDependencyTaskId(null);
       loadTasks();
     } catch (err: any) {
       toast.error(err.message || 'Failed to create task');
@@ -201,12 +214,75 @@ export default function TasksPage() {
         comment: commentText,
         action: reviewAction
       });
+      if (selectedTask && selectedTask.id === reviewingTaskId) {
+        const res = await api.tasks.get(reviewingTaskId);
+        setSelectedTask(res.data);
+      }
       setReviewingTaskId(null);
       loadTasks();
       toast.success(reviewAction === 'APPROVED' ? 'Task approved successfully' : 'Changes requested on task');
     } catch (err: any) {
       toast.error(err.message || 'Failed to submit task review');
     }
+  }
+
+  async function handleSelectTask(task: any) {
+    try {
+      const res = await api.tasks.get(task.id);
+      setSelectedTask(res.data);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to fetch task details');
+    }
+  }
+
+  async function handleFlagBlocker(taskId: string) {
+    if (!blockerNoteInput.trim()) {
+      toast.error('Blocker note is required');
+      return;
+    }
+    try {
+      await api.tasks.flagBlocker(taskId, blockerNoteInput.trim());
+      toast.success('Blocker flagged successfully');
+      setBlockerNoteInput('');
+      setShowBlockerDialog(false);
+      const res = await api.tasks.get(taskId);
+      setSelectedTask(res.data);
+      loadTasks();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to flag blocker');
+    }
+  }
+
+  async function handleResolveBlocker(taskId: string) {
+    try {
+      await api.tasks.resolveBlocker(taskId);
+      toast.success('Blocker resolved successfully');
+      const res = await api.tasks.get(taskId);
+      setSelectedTask(res.data);
+      loadTasks();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to resolve blocker');
+    }
+  }
+
+  async function handleAddComment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedTask || !commentInput.trim()) return;
+    try {
+      await api.tasks.addComment(selectedTask.id, commentInput.trim());
+      setCommentInput('');
+      toast.success('Comment added');
+      const res = await api.tasks.get(selectedTask.id);
+      setSelectedTask(res.data);
+      loadTasks();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add comment');
+    }
+  }
+
+  function getEmployeeName(id: string) {
+    const emp = employees.find(e => e.id === id);
+    return emp ? `${emp.firstName} ${emp.lastName}` : 'Someone';
   }
 
   async function handleDelayReviewConfirm(commentText: string) {
@@ -284,7 +360,7 @@ export default function TasksPage() {
   );
 
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-6 font-sans pb-12">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-headline-md font-extrabold text-on-surface">Tasks Center</h1>
@@ -394,7 +470,7 @@ export default function TasksPage() {
                     colTasks.map(task => (
                       <div
                         key={task.id}
-                        onClick={() => setSelectedTask(task)}
+                        onClick={() => handleSelectTask(task)}
                         className="p-4 bg-slate-50 hover:bg-slate-100/60 border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between gap-4 group"
                       >
                         <div className="space-y-1">
@@ -446,7 +522,7 @@ export default function TasksPage() {
                                           e.stopPropagation();
                                           handleMoveStatus(task, 'SUBMIT');
                                         }}
-                                        className="px-2.5 py-1 bg-green-600 hover:bg-green-750 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                                        className="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
                                       >
                                         Complete
                                       </button>
@@ -457,7 +533,7 @@ export default function TasksPage() {
                                           e.stopPropagation();
                                           handleMoveStatus(task, 'RESUBMIT');
                                         }}
-                                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-750 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
                                       >
                                         Resubmit
                                       </button>
@@ -604,7 +680,7 @@ export default function TasksPage() {
                     <div className="pt-1 flex gap-2">
                       <button
                         onClick={() => setDelayReviewingTaskId(task.id)}
-                        className="flex-1 py-2 bg-primary hover:bg-blue-750 text-on-primary font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                        className="flex-1 py-2 bg-primary hover:bg-blue-700 text-on-primary font-bold text-[10px] rounded-lg uppercase transition-all flex items-center justify-center gap-1.5 shadow-sm"
                       >
                         <span className="material-symbols-outlined text-[14px]">rate_review</span>
                         Raise Delay Review
@@ -856,6 +932,20 @@ export default function TasksPage() {
                 </div>
               )}
 
+              {/* Prior Task Dependency Dropdown */}
+              <div className="space-y-1">
+                <label className="text-label-xs font-bold text-slate-700 uppercase">Prior Task Dependency (Optional)</label>
+                <CustomSelect
+                  options={[
+                    { value: '', label: 'None' },
+                    ...tasks.map(t => ({ value: t.id, label: `${t.title} (${t.status})` }))
+                  ]}
+                  value={dependencyTaskId || ''}
+                  onChange={(val) => setDependencyTaskId(val || null)}
+                  placeholder="Select a related task..."
+                />
+              </div>
+
               <div className="pt-4 border-t border-slate-100 flex gap-3">
                 <Button
                   type="button"
@@ -880,53 +970,104 @@ export default function TasksPage() {
       )}
 
       {selectedTask && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">{selectedTask.title}</h2>
-              <button onClick={() => setSelectedTask(null)} className="p-1.5 hover:bg-slate-100 rounded-full cursor-pointer">
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setSelectedTask(null)}
+            className="fixed inset-0 w-screen h-screen bg-slate-900/40 backdrop-blur-[2px] z-45 transition-opacity"
+          />
+
+          {/* Slide-out Right Drawer */}
+          <div className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-100 flex justify-between items-start gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono font-bold">
+                    {selectedTask.taskId || 'TASK-ID'}
+                  </span>
+                  {selectedTask.isBlocked && (
+                    <span className="text-[9px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold uppercase animate-pulse flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[10px]">warning</span>
+                      Blocked
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-headline-sm font-black text-slate-900 leading-tight">
+                  {selectedTask.title}
+                </h2>
+              </div>
+              <button
+                onClick={() => setSelectedTask(null)}
+                className="p-1.5 hover:bg-slate-100 rounded-full cursor-pointer text-slate-400 hover:text-slate-700 shrink-0"
+              >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
-            <div className="space-y-4">
+            {/* Scrollable Body */}
+            <div className="flex-grow overflow-y-auto p-6 pb-16 space-y-6 custom-scrollbar">
+              {/* Description */}
               <div>
-                <span className="text-[10px] text-outline font-bold uppercase block">Description</span>
-                <p className="text-body-sm text-slate-700 mt-1 leading-relaxed font-medium">{selectedTask.description}</p>
+                <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Description</span>
+                <p className="text-body-sm text-slate-700 mt-2.5 leading-relaxed font-medium bg-slate-50 border border-slate-200/50 p-3 rounded-xl">
+                  {selectedTask.description || 'No description provided.'}
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-2">
+              {/* Blocker Alert Banner */}
+              {selectedTask.isBlocked && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-start gap-2.5">
+                    <span className="material-symbols-outlined text-red-600 text-[20px] shrink-0 mt-0.5">warning</span>
+                    <div>
+                      <p className="text-body-xs font-bold text-red-800">Current Blocker Problem</p>
+                      <p className="text-body-xs font-semibold text-red-700 mt-1 leading-relaxed italic">
+                        "{selectedTask.blockerNote}"
+                      </p>
+                    </div>
+                  </div>
+                  {(selectedTask.assigneeId === user?.id || selectedTask.creatorId === user?.id || isAdmin || isHR) && (
+                    <button
+                      onClick={() => handleResolveBlocker(selectedTask.id)}
+                      className="w-full py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-body-xs font-bold transition-all active:scale-[0.98]"
+                    >
+                      Resolve Blocker Problem
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Grid Metadata */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 pt-2 border-t border-slate-100">
                 <div>
-                  <span className="text-[10px] text-outline font-bold uppercase block">Priority</span>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded mt-1 inline-block ${
+                  <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Priority</span>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded mt-1.5 inline-block ${
                     selectedTask.priority === 'HIGH'
-                      ? 'bg-red-50 text-red-700'
+                      ? 'bg-red-50 text-red-700 border border-red-100'
                       : selectedTask.priority === 'MEDIUM'
-                      ? 'bg-yellow-50 text-yellow-700'
-                      : 'bg-slate-100 text-slate-700'
+                      ? 'bg-yellow-50 text-yellow-700 border border-yellow-100'
+                      : 'bg-slate-100 text-slate-700 border border-slate-200/50'
                   }`}>
                     {selectedTask.priority}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-outline font-bold uppercase block">Status</span>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded mt-1 inline-block ${
+                  <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Status</span>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded mt-1.5 inline-block ${
                     getColumnStatusKey(selectedTask.status) === 'DONE'
-                      ? 'bg-green-50 text-green-700'
+                      ? 'bg-green-50 text-green-700 border border-green-100'
                       : getColumnStatusKey(selectedTask.status) === 'IN_PROGRESS'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'bg-zinc-100 text-zinc-700'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                      : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
                   }`}>
                     {selectedTask.status}
                   </span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
-                  <span className="text-[10px] text-outline font-bold uppercase block">Assignee</span>
+                  <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Assignee</span>
                   {selectedTask.assignee ? (
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1.5">
                       <span className="h-6 w-6 rounded-full bg-blue-100 text-primary border border-blue-200 flex items-center justify-center font-bold text-[9px]">
                         {selectedTask.assignee.firstName[0]}{selectedTask.assignee.lastName[0]}
                       </span>
@@ -935,13 +1076,13 @@ export default function TasksPage() {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-body-sm text-slate-400 mt-1 inline-block font-medium">Unassigned</span>
+                    <span className="text-body-sm text-slate-400 mt-1.5 inline-block font-medium">Unassigned</span>
                   )}
                 </div>
                 <div>
-                  <span className="text-[10px] text-outline font-bold uppercase block">Created By</span>
+                  <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Created By</span>
                   {selectedTask.creator ? (
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1.5">
                       <span className="h-6 w-6 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-[9px]">
                         {selectedTask.creator.firstName[0]}{selectedTask.creator.lastName[0]}
                       </span>
@@ -950,29 +1091,188 @@ export default function TasksPage() {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-body-sm text-slate-400 mt-1 inline-block font-medium">N/A</span>
+                    <span className="text-body-sm text-slate-400 mt-1.5 inline-block font-medium">N/A</span>
                   )}
                 </div>
+                {selectedTask.dueDate && (
+                  <div>
+                    <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Due Date</span>
+                    <span className="text-body-sm font-bold text-slate-800 mt-1.5 block">
+                      {new Date(selectedTask.dueDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+                {selectedTask.dependencies && selectedTask.dependencies.length > 0 && (
+                  <div>
+                    <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Prior Dependency</span>
+                    <span className="text-body-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded mt-1.5 inline-block">
+                      {selectedTask.dependencies[0]?.dependencyTask?.title || 'Related Task'}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {selectedTask.dueDate && (
-                <div className="pt-2">
-                  <span className="text-[10px] text-outline font-bold uppercase block">Due Date</span>
-                  <span className="text-body-sm font-bold text-slate-800 mt-1 block">
-                    {new Date(selectedTask.dueDate).toLocaleDateString()}
-                  </span>
+              {/* Action Buttons Panel */}
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                {/* Assignee Actions */}
+                {selectedTask.assigneeId === user?.id && (
+                  <div className="space-y-2">
+                    {selectedTask.status === 'ASSIGNED' && (
+                      <button
+                        onClick={() => handleMoveStatus(selectedTask, 'START')}
+                        className="w-full py-2.5 bg-primary hover:bg-blue-700 text-white rounded-xl text-label-sm font-bold transition-all active:scale-[0.98]"
+                      >
+                        Accept & Start Work
+                      </button>
+                    )}
+                    {(selectedTask.status === 'ACCEPTED' || selectedTask.status === 'IN_PROGRESS' || selectedTask.status === 'CHANGES_REQUESTED') && (
+                      <>
+                        <button
+                          onClick={() => handleMoveStatus(selectedTask, 'SUBMIT')}
+                          className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-label-sm font-bold transition-all active:scale-[0.98]"
+                        >
+                          {selectedTask.assigneeId === selectedTask.creatorId ? 'Mark Task as Completed' : 'Submit for Review'}
+                        </button>
+                        {!selectedTask.isBlocked && (
+                          <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
+                            {showBlockerDialog ? (
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-slate-600 uppercase block">What is blocking you?</label>
+                                <textarea
+                                  value={blockerNoteInput}
+                                  onChange={(e) => setBlockerNoteInput(e.target.value)}
+                                  placeholder="e.g. Waiting for client credential approval..."
+                                  rows={2}
+                                  className="w-full px-3 py-2 text-body-xs bg-white border border-slate-200 focus:border-red-500 rounded-lg outline-none font-medium resize-none"
+                                />
+                                <div className="flex gap-2 justify-end">
+                                  <button
+                                    onClick={() => setShowBlockerDialog(false)}
+                                    className="px-3 py-1 bg-slate-200 hover:bg-slate-350 text-slate-700 text-body-xs font-bold rounded-md"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => handleFlagBlocker(selectedTask.id)}
+                                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-body-xs font-bold rounded-md"
+                                  >
+                                    Flag Blocker
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setShowBlockerDialog(true)}
+                                className="w-full py-2 border border-dashed border-red-300 hover:bg-red-50 text-red-600 rounded-lg text-body-xs font-bold flex items-center justify-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">warning</span>
+                                Flag Blocker / Problem
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Creator / Reviewer Actions */}
+                {(selectedTask.creatorId === user?.id || isAdmin || isHR) && (
+                  <div className="space-y-2">
+                    {(selectedTask.status === 'SUBMITTED' || selectedTask.status === 'RESUBMITTED' || selectedTask.status === 'IN_REVIEW') && (
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleMoveStatus(selectedTask, 'REQUEST_CHANGES')}
+                          className="flex-1 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl text-label-sm font-bold transition-all active:scale-[0.98]"
+                        >
+                          Request Changes
+                        </button>
+                        <button
+                          onClick={() => handleMoveStatus(selectedTask, 'APPROVE')}
+                          className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-label-sm font-bold transition-all active:scale-[0.98]"
+                        >
+                          Approve & Close
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Activity Log Trail */}
+              {selectedTask.statusHistory && selectedTask.statusHistory.length > 0 && (
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Activity Log & Trail</span>
+                  <div className="space-y-4 border-l border-slate-200 pl-4 ml-2">
+                    {selectedTask.statusHistory.map((hist: any) => (
+                      <div key={hist.id} className="relative text-body-xs font-semibold text-slate-700">
+                        <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 border-primary bg-white" />
+                        <div className="flex justify-between items-center text-slate-500 text-[10px]">
+                          <span className="font-extrabold text-slate-800">{getEmployeeName(hist.changedBy)}</span>
+                          <span>{new Date(hist.changedAt).toLocaleString()}</span>
+                        </div>
+                        <p className="mt-0.5 text-slate-750 font-medium">
+                          Status changed from <span className="font-mono text-[9px] bg-slate-100 px-1 rounded uppercase font-bold text-slate-650">{hist.fromStatus || 'Created'}</span> to <span className="font-mono text-[9px] bg-blue-50 px-1 rounded uppercase font-bold text-primary">{hist.toStatus}</span>
+                        </p>
+                        {hist.comment && (
+                          <p className="mt-1 text-[11px] font-semibold text-amber-700 bg-amber-50/50 border border-amber-100 p-2 rounded-lg italic">
+                            Note: "{hist.comment}"
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
+
+              {/* Comments Thread Section */}
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                <span className="text-[10px] text-outline font-bold uppercase block tracking-wider">Comments Thread</span>
+                
+                {/* Comments List */}
+                <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                  {selectedTask.comments && selectedTask.comments.length > 0 ? (
+                    selectedTask.comments.map((comment: any) => (
+                      <div key={comment.id} className="bg-slate-50 border border-slate-150 p-3 rounded-xl space-y-1">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="font-extrabold text-slate-850">
+                            {comment.user ? `${comment.user.firstName} ${comment.user.lastName}` : 'System'}
+                          </span>
+                          <span className="text-slate-400">
+                            {new Date(comment.createdAt).toLocaleDateString()} {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-body-xs font-semibold text-slate-700 leading-relaxed">
+                          {comment.body}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-body-xs text-slate-400 italic">No comments yet. Write a message below to start the conversation.</p>
+                  )}
+                </div>
+
+                {/* Add Comment Input */}
+                <form onSubmit={handleAddComment} className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={commentInput}
+                    onChange={(e) => setCommentInput(e.target.value)}
+                    placeholder="Type a response comment..."
+                    className="flex-grow px-3 py-2 text-body-xs bg-slate-50 border border-slate-200 focus:bg-white focus:border-primary rounded-xl outline-none font-medium transition-all"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3.5 bg-primary hover:bg-blue-700 text-white rounded-xl text-body-xs font-bold transition-all"
+                  >
+                    Send
+                  </button>
+                </form>
+              </div>
             </div>
 
-            <button
-              onClick={() => setSelectedTask(null)}
-              className="mt-6 w-full py-2.5 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-sm font-bold transition-all active:scale-[0.98] cursor-pointer"
-            >
-              Done
-            </button>
           </div>
-        </div>
+        </>
       )}
 
       <CommentDialog

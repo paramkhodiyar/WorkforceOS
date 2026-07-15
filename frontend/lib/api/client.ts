@@ -323,6 +323,16 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ body }),
       }),
+    get: (id: string): Promise<any> => request(`/tasks/${id}`),
+    flagBlocker: (id: string, note: string): Promise<any> =>
+      request(`/tasks/${id}/blocker`, {
+        method: 'POST',
+        body: JSON.stringify({ note }),
+      }),
+    resolveBlocker: (id: string): Promise<any> =>
+      request(`/tasks/${id}/resolve-blocker`, {
+        method: 'POST',
+      }),
   },
   expenses: {
     list: async (): Promise<any> => {

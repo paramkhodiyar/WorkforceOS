@@ -42,20 +42,47 @@ export class EmployeesService {
         { employeeId: { contains: filters.search, mode: "insensitive" } }
       ];
     }
-
     if (filters.taskAssignees === "true" || filters.taskAssignees === true) {
-      const scopes = await getPermissionScopes(user, orgId, "employee", "read");
+      const isHR = user.roles.some((r: any) => r.roleName === "HR_MANAGER");
+      const isAdmin = user.systemRole === "SUPER_ADMIN" || user.systemRole === "ORG_ADMIN";
 
-      if (!scopes.isGlobal) {
-        where.OR = [
-          ...(scopes.departmentIds.length > 0 ? [{ departmentId: { in: scopes.departmentIds } }] : []),
-          ...(scopes.teamIds.length > 0 ? [{ teams: { some: { id: { in: scopes.teamIds } } } }] : []),
-          { id: user.id }
+      if (!isAdmin && !isHR) {
+        // Fetch teams led by user
+        const ledTeams = await prisma.team.findMany({
+          where: { leadId: user.id, isDeleted: false },
+          select: { id: true }
+        });
+        const ledTeamIds = ledTeams.map((t) => t.id);
+
+        // Fetch departments headed by user
+        const headedDepts = await prisma.department.findMany({
+          where: { headId: user.id, isDeleted: false },
+          select: { id: true }
+        });
+        const headedDeptIds = headedDepts.map((d) => d.id);
+
+        const conditions: any[] = [
+          { id: user.id }, // Self
+          { managerId: user.id } // Direct reports
         ];
 
-        if (scopes.departmentIds.length === 0 && scopes.teamIds.length === 0) {
-          where.OR = [{ id: user.id }];
+        if (ledTeamIds.length > 0) {
+          conditions.push({
+            teams: {
+              some: {
+                id: { in: ledTeamIds }
+              }
+            }
+          });
         }
+
+        if (headedDeptIds.length > 0) {
+          conditions.push({
+            departmentId: { in: headedDeptIds }
+          });
+        }
+
+        where.OR = conditions;
       }
     }
 

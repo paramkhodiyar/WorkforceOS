@@ -17,7 +17,9 @@ import {
   addComment,
   listComments,
   uploadAttachment,
-  deleteAttachment
+  deleteAttachment,
+  addBlocker,
+  resolveBlocker
 } from "./tasks.controller";
 import {
   createTaskSchema,
@@ -47,6 +49,8 @@ router.post("/:id/submit", submitTask);
 router.post("/:id/review", validate(reviewSchema), reviewTask);
 router.post("/:id/resubmit", resubmitTask);
 router.post("/:id/close", closeTask);
+router.post("/:id/blocker", addBlocker);
+router.post("/:id/resolve-blocker", resolveBlocker);
 
 router.post("/:id/comments", validate(commentSchema), addComment);
 router.get("/:id/comments", listComments);

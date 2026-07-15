@@ -147,3 +147,21 @@ export const deleteAttachment = asyncHandler(async (req: Request, res: Response)
   await TasksService.deleteAttachment(taskId, orgId, attachId);
   return sendSuccess(res, null, "Attachment deleted successfully");
 });
+
+export const addBlocker = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const actorId = req.user!.id;
+  const { note } = req.body;
+  if (!note) {
+    throw AppError.badRequest("Blocker note is required");
+  }
+  const updated = await TasksService.addBlocker(req.params.id, orgId, note, actorId, req);
+  return sendSuccess(res, updated, "Blocker flagged successfully");
+});
+
+export const resolveBlocker = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const actorId = req.user!.id;
+  const updated = await TasksService.resolveBlocker(req.params.id, orgId, actorId, req);
+  return sendSuccess(res, updated, "Blocker resolved successfully");
+});

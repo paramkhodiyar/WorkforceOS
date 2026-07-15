@@ -523,7 +523,10 @@ export class TasksService {
           }
         },
         dependencies: { include: { dependencyTask: true } },
-        dependents: { include: { dependentTask: true } }
+        dependents: { include: { dependentTask: true } },
+        statusHistory: {
+          orderBy: { changedAt: "asc" }
+        }
       }
     });
 
@@ -848,7 +851,8 @@ export class TasksService {
     }
 
     const currentStatus = task.status;
-    const nextStatus = TaskStatus.SUBMITTED;
+    const isSelfAssigned = task.assigneeId === task.creatorId;
+    const nextStatus = isSelfAssigned ? TaskStatus.CLOSED : TaskStatus.SUBMITTED;
 
     // Check transition permission
     if (currentStatus === TaskStatus.ACCEPTED) {
@@ -905,13 +909,23 @@ export class TasksService {
       req
     });
 
-    await NotificationService.notify(
-      task.creatorId,
-      NotificationType.TASK_STATUS_CHANGED,
-      "Task Submitted for Review",
-      `The task "${task.title}" has been submitted by assignee.`,
-      { taskId: id }
-    );
+    if (isSelfAssigned) {
+      await NotificationService.notify(
+        task.creatorId,
+        NotificationType.TASK_STATUS_CHANGED,
+        "Self-assigned Task Closed",
+        `Your personal task "${task.title}" has been completed and closed.`,
+        { taskId: id }
+      );
+    } else {
+      await NotificationService.notify(
+        task.creatorId,
+        NotificationType.TASK_STATUS_CHANGED,
+        "Task Submitted for Review",
+        `The task "${task.title}" has been submitted by assignee.`,
+        { taskId: id }
+      );
+    }
 
     return updated;
   }
@@ -963,7 +977,8 @@ export class TasksService {
         taskId: id,
         fromStatus: TaskStatus.IN_REVIEW,
         toStatus: nextStatus,
-        changedBy: reviewerId
+        changedBy: reviewerId,
+        comment: comment || null
       }
     });
 
@@ -1222,6 +1237,132 @@ export class TasksService {
     return prisma.taskAttachment.deleteMany({
       where: { id: attachId, taskId }
     });
+  }
+
+  static async addBlocker(taskId: string, orgId: string, note: string, actorId: string, req?: any) {
+    const task = await prisma.task.findFirst({
+      where: { id: taskId, isDeleted: false, creator: { organizationId: orgId } }
+    });
+
+    if (!task) {
+      throw AppError.notFound("Task not found");
+    }
+
+    const isAssignee = task.assigneeId === actorId;
+    const isCreator = task.creatorId === actorId;
+    const actor = await prisma.user.findUnique({
+      where: { id: actorId },
+      include: { roles: true }
+    });
+    const isHR = actor?.roles.some((r: any) => r.roleName === "HR_MANAGER") || false;
+    const isAdmin = actor?.systemRole === "SUPER_ADMIN" || actor?.systemRole === "ORG_ADMIN" || false;
+
+    if (!isAssignee && !isCreator && !isAdmin && !isHR) {
+      throw AppError.forbidden("You do not have permission to flag blockers on this task");
+    }
+
+    const updated = await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        isBlocked: true,
+        blockerNote: note
+      }
+    });
+
+    await prisma.taskStatusHistory.create({
+      data: {
+        taskId,
+        fromStatus: task.status,
+        toStatus: task.status,
+        changedBy: actorId,
+        comment: `Flagged Blocker: ${note}`
+      }
+    });
+
+    await AuditService.log({
+      organizationId: orgId,
+      actorId,
+      action: AuditAction.UPDATED,
+      module: "tasks",
+      targetId: taskId,
+      targetType: "Task",
+      oldValue: { isBlocked: task.isBlocked, blockerNote: task.blockerNote },
+      newValue: { isBlocked: true, blockerNote: note },
+      req
+    });
+
+    await NotificationService.notify(
+      task.creatorId,
+      NotificationType.TASK_STATUS_CHANGED,
+      "Task Flagged as Blocked",
+      `The task "${task.title}" has been flagged as blocked: ${note}`,
+      { taskId }
+    );
+
+    return updated;
+  }
+
+  static async resolveBlocker(taskId: string, orgId: string, actorId: string, req?: any) {
+    const task = await prisma.task.findFirst({
+      where: { id: taskId, isDeleted: false, creator: { organizationId: orgId } }
+    });
+
+    if (!task) {
+      throw AppError.notFound("Task not found");
+    }
+
+    const isAssignee = task.assigneeId === actorId;
+    const isCreator = task.creatorId === actorId;
+    const actor = await prisma.user.findUnique({
+      where: { id: actorId },
+      include: { roles: true }
+    });
+    const isHR = actor?.roles.some((r: any) => r.roleName === "HR_MANAGER") || false;
+    const isAdmin = actor?.systemRole === "SUPER_ADMIN" || actor?.systemRole === "ORG_ADMIN" || false;
+
+    if (!isAssignee && !isCreator && !isAdmin && !isHR) {
+      throw AppError.forbidden("You do not have permission to resolve blockers on this task");
+    }
+
+    const updated = await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        isBlocked: false,
+        blockerNote: null
+      }
+    });
+
+    await prisma.taskStatusHistory.create({
+      data: {
+        taskId,
+        fromStatus: task.status,
+        toStatus: task.status,
+        changedBy: actorId,
+        comment: "Blocker Resolved"
+      }
+    });
+
+    await AuditService.log({
+      organizationId: orgId,
+      actorId,
+      action: AuditAction.UPDATED,
+      module: "tasks",
+      targetId: taskId,
+      targetType: "Task",
+      oldValue: { isBlocked: task.isBlocked, blockerNote: task.blockerNote },
+      newValue: { isBlocked: false, blockerNote: null },
+      req
+    });
+
+    await NotificationService.notify(
+      task.creatorId,
+      NotificationType.TASK_STATUS_CHANGED,
+      "Task Blocker Resolved",
+      `The blocker on task "${task.title}" has been resolved.`,
+      { taskId }
+    );
+
+    return updated;
   }
 }
 

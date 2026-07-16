@@ -183,6 +183,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ role }),
       }),
+    registerTrial: (data: { organizationName: string; adminName: string; adminEmail: string }): Promise<any> =>
+      request('/auth/register-trial', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     getAdminContact: (): Promise<any> => request('/auth/admin-contact'),
   },
   employees: {

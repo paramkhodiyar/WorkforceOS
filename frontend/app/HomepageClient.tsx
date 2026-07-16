@@ -6,6 +6,7 @@ import { LandingHeader } from '../components/layout/LandingHeader';
 import { LandingFooter } from '../components/layout/LandingFooter';
 import { AmbientGrid } from '../components/ui/AmbientGrid';
 import { useAuth } from '../lib/auth/AuthProvider';
+import { api } from '../lib/api/client';
 import VoyagerChatbot from '../components/chatbot/VoyagerChatbot';
 
 export default function HomepageClient() {
@@ -73,6 +74,14 @@ export default function HomepageClient() {
   // Onboarding Animation Simulator State
   const [simState, setSimState] = useState<'idle' | 'dragging' | 'dropped' | 'processing' | 'success'>('idle');
   const [simProgress, setSimProgress] = useState(0);
+
+  // Trial Registration Modal States
+  const [showTrialModal, setShowTrialModal] = useState(false);
+  const [trialOrgName, setTrialOrgName] = useState('');
+  const [trialAdminName, setTrialAdminName] = useState('');
+  const [trialAdminEmail, setTrialAdminEmail] = useState('');
+  const [trialLoading, setTrialLoading] = useState(false);
+  const [trialError, setTrialError] = useState('');
 
   useEffect(() => {
     let timer1: NodeJS.Timeout;
@@ -212,6 +221,39 @@ export default function HomepageClient() {
     }, 1500);
   };
 
+  const handleRegisterTrial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTrialError('');
+    setTrialLoading(true);
+
+    try {
+      const res = await api.auth.registerTrial({
+        organizationName: trialOrgName,
+        adminName: trialAdminName,
+        adminEmail: trialAdminEmail,
+      });
+
+      if (res.data?.tokens) {
+        localStorage.setItem('token', res.data.tokens.accessToken);
+        localStorage.setItem('refreshToken', res.data.tokens.refreshToken);
+        
+        if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
+          (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
+            type: 'save_token',
+            token: res.data.tokens.accessToken,
+            refreshToken: res.data.tokens.refreshToken,
+          }));
+        }
+
+        window.location.href = '/dashboard';
+      }
+    } catch (err: any) {
+      setTrialError(err.message || 'Trial registration failed. Please try again.');
+    } finally {
+      setTrialLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-600/10 selection:text-blue-900">
       {/* Global Navigation Header */}
@@ -250,19 +292,19 @@ export default function HomepageClient() {
 
           {/* CTA Row - No shadows */}
           <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4 mb-16">
+            <button
+              onClick={() => setShowTrialModal(true)}
+              className="px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-sm uppercase tracking-wider transition-all border border-blue-600 active:scale-95 text-center cursor-pointer"
+            >
+              Start 7-Day Free Trial
+            </button>
             <a
               id="hero-demo-cta-btn"
               href="#contact"
-              className="px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-sm uppercase tracking-wider transition-all border border-blue-600 active:scale-95 text-center cursor-pointer"
+              className="px-8 py-3.5 bg-white hover:bg-slate-55 text-slate-700 border border-slate-300 font-bold rounded-full text-sm uppercase tracking-wider active:scale-95 transition-all text-center cursor-pointer"
             >
               Request a demo
             </a>
-            <Link
-              href="/features"
-              className="px-8 py-3.5 bg-white hover:bg-slate-55 text-slate-700 border border-slate-300 font-bold rounded-full text-sm uppercase tracking-wider active:scale-95 transition-all text-center cursor-pointer"
-            >
-              See all modules
-            </Link>
           </div>
 
           {/* Fully Interactive Visual Dashboard Mockup - No shadows, flat design */}
@@ -271,9 +313,9 @@ export default function HomepageClient() {
               {/* Fake top bar */}
               <div className="h-8 border-b border-slate-200 bg-white flex items-center px-4 justify-between">
                 <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
                 </div>
                 <div className="text-[10px] text-slate-400 font-mono select-none">workforceos.com/dashboard</div>
                 <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded-full font-bold select-none">Live Simulator</span>
@@ -446,175 +488,187 @@ export default function HomepageClient() {
           <p className="text-slate-600 text-base md:text-lg mb-12 max-w-xl mx-auto font-normal">
             Have your company directory in an Excel spreadsheet? Just drag, drop, and onboard your entire team instantly. Try the simulator below.
           </p>
-
           {/* Interactive Workspace Simulator Container */}
-          <div className="w-full max-w-[850px] mx-auto bg-white border border-slate-350 rounded-[24px] p-6 shadow-sm flex flex-col md:flex-row gap-6 relative overflow-hidden select-none">
-            
-            {/* Left Column: Local Folder (Excel Source) */}
-            <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-left flex flex-col justify-between h-[280px] relative">
-              <div>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-3">Local Files</span>
-                <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg shadow-sm">
-                  {/* Folder Icon SVG */}
-                  <svg className="w-5 h-5 text-slate-500 fill-current shrink-0" viewBox="0 0 24 24">
-                    <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-                  </svg>
-                  <div>
-                    <span className="text-xs font-bold text-slate-700 block">Desktop</span>
-                    <span className="text-[10px] text-slate-400">2 files found</span>
-                  </div>
-                </div>
+          <div className="w-full max-w-[850px] mx-auto bg-white border border-slate-350 rounded-[24px] shadow-sm select-none overflow-hidden text-left">
+            {/* macOS Window Header */}
+            <div className="h-10 border-b border-slate-200 bg-slate-50 flex items-center px-6 justify-between shrink-0">
+              <div className="flex gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
               </div>
+              <div className="text-[10px] text-slate-400 font-mono select-none">workforceos.com/import-simulator</div>
+              <div className="w-12"></div>
+            </div>
 
-              {/* Animated Excel File */}
-              <div className="relative flex-1 flex items-center justify-center">
-                <div
-                  className={`px-4 py-3 bg-green-50 border border-green-200 rounded-lg shadow-md flex items-center gap-3 transition-all duration-[2000ms] ease-in-out z-20 cursor-grab active:cursor-grabbing ${
-                    simState === 'idle' ? 'opacity-100 translate-x-0 translate-y-0 scale-100' : ''
-                  } ${
-                    simState === 'dragging' ? 'opacity-100 translate-x-[110%] translate-y-[-10px] md:translate-x-[120%] md:translate-y-[0px] scale-95 shadow-lg rotate-3' : ''
-                  } ${
-                    simState === 'dropped' ? 'opacity-0 scale-50 translate-x-[120%] translate-y-[0px]' : ''
-                  } ${
-                    simState === 'processing' || simState === 'success' ? 'opacity-40 scale-75 cursor-not-allowed' : ''
-                  }`}
-                  style={{
-                    transformOrigin: 'center'
-                  }}
-                >
-                  {/* Spreadsheet Icon SVG */}
-                  <svg className="w-6 h-6 text-green-600 fill-current shrink-0" viewBox="0 0 24 24">
-                    <path d="M21.17 3.25Q21.5 3.25 21.75 3.5T22 4.08V19.92Q22 20.5 21.75 20.75T21.17 21H7.83Q7.5 21 7.25 20.75T7 20.17V17H2.83Q2.5 17 2.25 16.75T2 16.17V7.83Q2 7.5 2.25 7.25T2.83 7H7V3.83Q7 3.25 7.83 3.25M7 9H4.5V11H7M7 13H4.5V15H7M20 5H9V19H20M11 7H13.5V9.5H11M11 11H13.5V13.5H11M11 15H13.5V17.5H11M15 7H18V9.5H15M15 11H18V13.5H15M15 15H18V17.5H15" />
-                  </svg>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-green-800 block font-sans">employee_directory.xlsx</span>
-                    <span className="text-[9px] text-green-600 block font-sans">14 employees • 2 sheets</span>
+            <div className="p-6 flex flex-col md:flex-row gap-6 relative overflow-hidden">
+              
+              {/* Left Column: Local Folder (Excel Source) */}
+              <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-left flex flex-col justify-between h-[280px] relative">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-3">Local Files</span>
+                  <div className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg shadow-sm">
+                    {/* Folder Icon SVG */}
+                    <svg className="w-5 h-5 text-slate-500 fill-current shrink-0" viewBox="0 0 24 24">
+                      <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                    </svg>
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 block">Desktop</span>
+                      <span className="text-[10px] text-slate-400">2 files found</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Hand/Cursor Drag Indicator */}
-                {simState === 'idle' && (
-                  <div className="absolute top-[65%] left-[55%] animate-bounce-short z-30 pointer-events-none flex flex-col items-center">
-                    {/* Drag pointer hand SVG */}
-                    <svg className="w-6 h-6 text-slate-800 fill-current filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]" viewBox="0 0 24 24">
-                      <path d="M9 11.75V5c0-1.66 1.34-3 3-3s3 1.34 3 3v6.75c.98-.66 2.23-.42 2.92.57l.08.12c.57.87.41 2.05-.36 2.73l-4.14 3.7c-.57.51-1.31.79-2.07.79H10c-1.66 0-3-1.34-3-3v-2.31c0-.85.53-1.61 1.32-1.9l.68-.29M12 4c-.55 0-1 .45-1 1v6.75l-.92.39c-.26.11-.43.37-.43.66v2.31c0 1.1.9 2 2 2h1.43c.48 0 .94-.18 1.3-.5l4.13-3.7c.25-.22.3-.61.12-.89l-.07-.1c-.22-.32-.62-.4-.94-.18L15 14.25V5c0-.55-.45-1-1-1s-1 .45-1 1v7h-1v-7c0-.55-.45-1-1-1" />
+                {/* Animated Excel File */}
+                <div className="relative flex-1 flex items-center justify-center">
+                  <div
+                    className={`px-4 py-3 bg-green-50 border border-green-200 rounded-lg shadow-md flex items-center gap-3 transition-all duration-[2000ms] ease-in-out z-20 cursor-grab active:cursor-grabbing ${
+                      simState === 'idle' ? 'opacity-100 translate-x-0 translate-y-0 scale-100' : ''
+                    } ${
+                      simState === 'dragging' ? 'opacity-100 translate-x-[110%] translate-y-[-10px] md:translate-x-[120%] md:translate-y-[0px] scale-95 shadow-lg rotate-3' : ''
+                    } ${
+                      simState === 'dropped' ? 'opacity-0 scale-50 translate-x-[120%] translate-y-[0px]' : ''
+                    } ${
+                      simState === 'processing' || simState === 'success' ? 'opacity-40 scale-75 cursor-not-allowed' : ''
+                    }`}
+                    style={{
+                      transformOrigin: 'center'
+                    }}
+                  >
+                    {/* Spreadsheet Icon SVG */}
+                    <svg className="w-6 h-6 text-green-600 fill-current shrink-0" viewBox="0 0 24 24">
+                      <path d="M21.17 3.25Q21.5 3.25 21.75 3.5T22 4.08V19.92Q22 20.5 21.75 20.75T21.17 21H7.83Q7.5 21 7.25 20.75T7 20.17V17H2.83Q2.5 17 2.25 16.75T2 16.17V7.83Q2 7.5 2.25 7.25T2.83 7H7V3.83Q7 3.25 7.83 3.25M7 9H4.5V11H7M7 13H4.5V15H7M20 5H9V19H20M11 7H13.5V9.5H11M11 11H13.5V13.5H11M11 15H13.5V17.5H11M15 7H18V9.5H15M15 11H18V13.5H15M15 15H18V17.5H15" />
                     </svg>
-                    <span className="text-[9px] bg-slate-900 text-white font-bold px-1.5 py-0.5 rounded shadow mt-1">Drag Me</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="h-6"></div>
-            </div>
-
-            {/* Middle Indicator */}
-            <div className="hidden md:flex items-center justify-center">
-              <span className="text-slate-350 text-2xl font-bold">→</span>
-            </div>
-
-            {/* Right Column: WorkforceOS Destination */}
-            <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-left flex flex-col justify-between h-[280px] relative overflow-hidden">
-              
-              <div className="flex justify-between items-center shrink-0">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">WorkforceOS Portal</span>
-                <span className="text-[8px] font-bold px-2 py-0.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600">Enterprise Setup</span>
-              </div>
-
-              {/* Dynamic UI Content */}
-              <div className="flex-1 flex flex-col items-center justify-center py-4 w-full">
-                
-                {(simState === 'idle' || simState === 'dragging') && (
-                  <div className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 ${
-                    simState === 'dragging' ? 'border-blue-500 bg-blue-55/40 text-blue-600' : 'border-slate-350 text-slate-400'
-                  }`}>
-                    {/* Cloud Upload Icon SVG */}
-                    <svg className="w-8 h-8 text-blue-500 fill-none stroke-current stroke-2 mb-2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <span className="text-xs font-bold text-center block font-sans">Drop Excel sheet here</span>
-                    <span className="text-[9.5px] text-slate-400 mt-1 text-center font-sans">Supports xlsx, csv, multi-sheets</span>
-                  </div>
-                )}
-
-                {(simState === 'dropped' || simState === 'processing') && (
-                  <div className="w-full px-4 flex flex-col items-center justify-center animate-fade-in">
-                    {/* Mock Excel Sheet Animation */}
-                    <div className="w-full border border-slate-200 rounded-xl overflow-hidden text-[10px] font-sans bg-white shadow-sm max-w-[340px]">
-                      <div className="bg-slate-50 border-b border-slate-200 px-3 py-1.5 flex items-center justify-between font-bold text-slate-500">
-                        <div className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[14px] text-green-600">table_view</span>
-                          <span>employee_directory.xlsx</span>
-                        </div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase">Sheet1</span>
-                      </div>
-                      <table className="w-full border-collapse text-left">
-                        <thead>
-                          <tr className="bg-slate-50/50 border-b border-slate-150 text-[9px] font-bold text-slate-400">
-                            <th className="px-2.5 py-1 border-r border-slate-150">A (Name)</th>
-                            <th className="px-2.5 py-1 border-r border-slate-150">B (Email)</th>
-                            <th className="px-2.5 py-1">C (Designation)</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
-                          <tr className={`${simProgress > 10 && simProgress < 40 ? 'bg-blue-50/60 text-primary' : ''} transition-colors duration-250`}>
-                            <td className="px-2.5 py-1.5 border-r border-slate-150 font-bold text-slate-800">Michael Scott</td>
-                            <td className="px-2.5 py-1.5 border-r border-slate-150">michael@dunder.com</td>
-                            <td className="px-2.5 py-1.5">Regional Manager</td>
-                          </tr>
-                          <tr className={`${simProgress >= 40 && simProgress < 75 ? 'bg-blue-50/60 text-primary' : ''} transition-colors duration-250`}>
-                            <td className="px-2.5 py-1.5 border-r border-slate-150 font-bold text-slate-800">Dwight Schrute</td>
-                            <td className="px-2.5 py-1.5 border-r border-slate-150">dwight@dunder.com</td>
-                            <td className="px-2.5 py-1.5">Sales Leader</td>
-                          </tr>
-                          <tr className={`${simProgress >= 75 ? 'bg-blue-50/60 text-primary' : ''} transition-colors duration-250`}>
-                            <td className="px-2.5 py-1.5 border-r border-slate-150 font-bold text-slate-800">Jim Halpert</td>
-                            <td className="px-2.5 py-1.5 border-r border-slate-150">jim@dunder.com</td>
-                            <td className="px-2.5 py-1.5">Sales Representative</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="w-full max-w-[340px] mt-4 space-y-1">
-                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
-                        <span>
-                          {simProgress < 35 && "Scanning spreadsheet..."}
-                          {simProgress >= 35 && simProgress < 70 && "Mapping columns & data fields..."}
-                          {simProgress >= 70 && "Seeding organizational structure..."}
-                        </span>
-                        <span className="font-mono">{simProgress}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200">
-                        <div className="bg-green-500 h-full transition-all duration-100" style={{ width: `${simProgress}%` }}></div>
-                      </div>
+                    <div className="text-left">
+                      <span className="text-xs font-bold text-green-800 block font-sans">employee_directory.xlsx</span>
+                      <span className="text-[9px] text-green-600 block font-sans">14 employees • 2 sheets</span>
                     </div>
                   </div>
-                )}
 
-                {simState === 'success' && (
-                  <div className="w-full text-center flex flex-col items-center justify-center px-4" style={{ animation: "fade-in 0.4s ease-out forwards" }}>
-                    {/* Apple Success Spring scaling checkmark in matching green */}
-                    <div className="w-12 h-12 bg-green-50 border border-green-200 rounded-full flex items-center justify-center shadow-sm mb-3" style={{ animation: "scaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards" }}>
-                      <svg className="w-6 h-6 stroke-green-600 fill-none stroke-[3.5] stroke-linecap-round stroke-linejoin-round" viewBox="0 0 24 24">
-                        <polyline points="20 6 9 17 4 12" className="draw-checkmark" />
+                  {/* Hand/Cursor Drag Indicator */}
+                  {simState === 'idle' && (
+                    <div className="absolute top-[65%] left-[55%] animate-bounce-short z-30 pointer-events-none flex flex-col items-center">
+                      {/* Drag pointer hand SVG */}
+                      <svg className="w-6 h-6 text-slate-800 fill-current filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]" viewBox="0 0 24 24">
+                        <path d="M9 11.75V5c0-1.66 1.34-3 3-3s3 1.34 3 3v6.75c.98-.66 2.23-.42 2.92.57l.08.12c.57.87.41 2.05-.36 2.73l-4.14 3.7c-.57.51-1.31.79-2.07.79H10c-1.66 0-3-1.34-3-3v-2.31c0-.85.53-1.61 1.32-1.9l.68-.29M12 4c-.55 0-1 .45-1 1v6.75l-.92.39c-.26.11-.43.37-.43.66v2.31c0 1.1.9 2 2 2h1.43c.48 0 .94-.18 1.3-.5l4.13-3.7c.25-.22.3-.61.12-.89l-.07-.1c-.22-.32-.62-.4-.94-.18L15 14.25V5c0-.55-.45-1-1-1s-1 .45-1 1v7h-1v-7c0-.55-.45-1-1-1" />
                       </svg>
+                      <span className="text-[9px] bg-slate-900 text-white font-bold px-1.5 py-0.5 rounded shadow mt-1">Drag Me</span>
                     </div>
-                    <span className="text-xs font-extrabold text-green-700 uppercase tracking-widest block mb-1 font-sans">Onboarding Successful</span>
-                    <span className="text-sm font-bold text-slate-800 block font-sans">Dunder Mifflin Inc. Setup Completed</span>
-                    
-                    <div className="flex gap-1.5 justify-center mt-3 flex-wrap">
-                      <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">14 Employees</span>
-                      <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">3 Departments</span>
-                      <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">Default Passwords Set</span>
-                    </div>
-                  </div>
-                )}
-
+                  )}
+                </div>
+                
+                <div className="h-6"></div>
               </div>
 
-              <div className="h-6"></div>
-            </div>
+              {/* Middle Indicator */}
+              <div className="hidden md:flex items-center justify-center">
+                <span className="text-slate-350 text-2xl font-bold">→</span>
+              </div>
 
+              {/* Right Column: WorkforceOS Destination */}
+              <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-left flex flex-col justify-between h-[280px] relative overflow-hidden">
+                
+                <div className="flex justify-between items-center shrink-0">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">WorkforceOS Portal</span>
+                  <span className="text-[8px] font-bold px-2 py-0.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600">Enterprise Setup</span>
+                </div>
+
+                {/* Dynamic UI Content */}
+                <div className="flex-1 flex flex-col items-center justify-center py-4 w-full">
+                  
+                  {(simState === 'idle' || simState === 'dragging') && (
+                    <div className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 ${
+                      simState === 'dragging' ? 'border-blue-500 bg-blue-55/40 text-blue-600' : 'border-slate-350 text-slate-400'
+                    }`}>
+                      {/* Cloud Upload Icon SVG */}
+                      <svg className="w-8 h-8 text-blue-500 fill-none stroke-current stroke-2 mb-2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <span className="text-xs font-bold text-center block font-sans">Drop Excel sheet here</span>
+                      <span className="text-[9.5px] text-slate-400 mt-1 text-center font-sans">Supports xlsx, csv, multi-sheets</span>
+                    </div>
+                  )}
+
+                  {(simState === 'dropped' || simState === 'processing') && (
+                    <div className="w-full px-4 flex flex-col items-center justify-center animate-fade-in">
+                      {/* Mock Excel Sheet Animation */}
+                      <div className="w-full border border-slate-200 rounded-xl overflow-hidden text-[10px] font-sans bg-white shadow-sm max-w-[340px]">
+                        <div className="bg-slate-50 border-b border-slate-200 px-3 py-1.5 flex items-center justify-between font-bold text-slate-500">
+                          <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[14px] text-green-600">table_view</span>
+                            <span>employee_directory.xlsx</span>
+                          </div>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase">Sheet1</span>
+                        </div>
+                        <table className="w-full border-collapse text-left">
+                          <thead>
+                            <tr className="bg-slate-50/50 border-b border-slate-150 text-[9px] font-bold text-slate-400">
+                              <th className="px-2.5 py-1 border-r border-slate-150">A (Name)</th>
+                              <th className="px-2.5 py-1 border-r border-slate-150">B (Email)</th>
+                              <th className="px-2.5 py-1">C (Designation)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
+                            <tr className={`${simProgress > 10 && simProgress < 40 ? 'bg-blue-50/60 text-primary' : ''} transition-colors duration-250`}>
+                              <td className="px-2.5 py-1.5 border-r border-slate-150 font-bold text-slate-800">Michael Scott</td>
+                              <td className="px-2.5 py-1.5 border-r border-slate-150">michael@dunder.com</td>
+                              <td className="px-2.5 py-1.5">Regional Manager</td>
+                            </tr>
+                            <tr className={`${simProgress >= 40 && simProgress < 75 ? 'bg-blue-50/60 text-primary' : ''} transition-colors duration-250`}>
+                              <td className="px-2.5 py-1.5 border-r border-slate-150 font-bold text-slate-800">Dwight Schrute</td>
+                              <td className="px-2.5 py-1.5 border-r border-slate-150">dwight@dunder.com</td>
+                              <td className="px-2.5 py-1.5">Sales Leader</td>
+                            </tr>
+                            <tr className={`${simProgress >= 75 ? 'bg-blue-50/60 text-primary' : ''} transition-colors duration-250`}>
+                              <td className="px-2.5 py-1.5 border-r border-slate-150 font-bold text-slate-800">Jim Halpert</td>
+                              <td className="px-2.5 py-1.5 border-r border-slate-150">jim@dunder.com</td>
+                              <td className="px-2.5 py-1.5">Sales Representative</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="w-full max-w-[340px] mt-4 space-y-1">
+                        <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                          <span>
+                            {simProgress < 35 && "Scanning spreadsheet..."}
+                            {simProgress >= 35 && simProgress < 70 && "Mapping columns & data fields..."}
+                            {simProgress >= 70 && "Seeding organizational structure..."}
+                          </span>
+                          <span className="font-mono">{simProgress}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200">
+                          <div className="bg-green-500 h-full transition-all duration-100" style={{ width: `${simProgress}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {simState === 'success' && (
+                    <div className="w-full text-center flex flex-col items-center justify-center px-4" style={{ animation: "fade-in 0.4s ease-out forwards" }}>
+                      {/* Apple Success Spring scaling checkmark in matching green */}
+                      <div className="w-12 h-12 bg-green-50 border border-green-200 rounded-full flex items-center justify-center shadow-sm mb-3" style={{ animation: "scaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards" }}>
+                        <svg className="w-6 h-6 stroke-green-600 fill-none stroke-[3.5] stroke-linecap-round stroke-linejoin-round" viewBox="0 0 24 24">
+                          <polyline points="20 6 9 17 4 12" className="draw-checkmark" />
+                        </svg>
+                      </div>
+                      <span className="text-xs font-extrabold text-green-700 uppercase tracking-widest block mb-1 font-sans">Onboarding Successful</span>
+                      <span className="text-sm font-bold text-slate-800 block font-sans">Dunder Mifflin Inc. Setup Completed</span>
+                      
+                      <div className="flex gap-1.5 justify-center mt-3 flex-wrap">
+                        <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">14 Employees</span>
+                        <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">3 Departments</span>
+                        <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">Default Passwords Set</span>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                <div className="h-6"></div>
+              </div>
+
+            </div>
           </div>
 
           <div className="mt-10 flex flex-col items-center">
@@ -798,7 +852,14 @@ export default function HomepageClient() {
                 {/* Visual Dashboard Mockup - Interactive */}
                 <div className="order-1 md:order-2 bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/10] flex flex-col justify-between">
                   <div className="h-6 border-b border-slate-200 pb-2 mb-3 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-700">HR Workspace / Onboarding Wizard</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1 shrink-0 select-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-700">HR Workspace / Onboarding Wizard</span>
+                    </div>
                     <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Interactive mockup</span>
                   </div>
                   <div className="flex-1 flex flex-col gap-3 justify-center text-left">
@@ -907,7 +968,14 @@ export default function HomepageClient() {
                 {/* Mockup on left */}
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/10] flex flex-col justify-between">
                   <div className="h-6 border-b border-slate-200 pb-2 mb-1 flex items-center justify-between text-[10px] font-bold text-slate-700">
-                    <span>Employee Dashboard Simulator</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1 shrink-0 select-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+                      </div>
+                      <span>Employee Dashboard Simulator</span>
+                    </div>
                     <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Interactive mockup</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 flex-1 pt-2">
@@ -1004,7 +1072,14 @@ export default function HomepageClient() {
                 {/* Manager Visual Mockup - Interactive */}
                 <div className="order-1 md:order-2 bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/10] flex flex-col justify-between">
                   <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
-                    <span>Team Leave Approval Queue</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1 shrink-0 select-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+                      </div>
+                      <span>Team Leave Approval Queue</span>
+                    </div>
                     <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Interactive mockup</span>
                   </div>
                   <div className="bg-white border border-slate-200 rounded-lg p-3 flex-1 mb-2 flex flex-col justify-center">
@@ -1071,7 +1146,14 @@ export default function HomepageClient() {
                 {/* Finance Mockup on left - Interactive */}
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/10] flex flex-col justify-between">
                   <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
-                    <span>Payroll calculation portal</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1 shrink-0 select-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+                      </div>
+                      <span>Payroll calculation portal</span>
+                    </div>
                     <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Interactive mockup</span>
                   </div>
                   <div className="bg-white border border-slate-200 rounded-lg overflow-hidden flex-1 flex flex-col mb-3">
@@ -1180,7 +1262,14 @@ export default function HomepageClient() {
                 {/* Admin Mockup right - Interactive */}
                 <div className="order-1 md:order-2 bg-slate-50 border border-slate-200 rounded-xl p-4 aspect-[16/10] flex flex-col justify-between">
                   <div className="h-6 border-b border-slate-200 pb-2 mb-2 flex items-center justify-between text-[10px] font-bold text-slate-700">
-                    <span>Role Permissions Configuration</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1 shrink-0 select-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+                      </div>
+                      <span>Role Permissions Configuration</span>
+                    </div>
                     <span className="text-[8.5px] bg-blue-50 text-blue-600 px-2 py-0.5 border border-blue-100 rounded font-bold uppercase select-none">Interactive mockup</span>
                   </div>
                   <div className="bg-white border border-slate-200 rounded-lg p-2.5 flex-1 mb-2 flex flex-col justify-center gap-2">
@@ -1388,30 +1477,155 @@ export default function HomepageClient() {
         </div>
       </section>
 
-      {/* SECTION 5.5: MOBILE APP READY BANNER */}
-      <section className="py-20 bg-white text-slate-800 relative overflow-hidden">
-        <div className="max-w-[1100px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
-          <div className="flex-1 text-left space-y-4">
+      {/* SECTION 5.5: MOBILE APP READY & APK DOWNLOAD STORE */}
+      <section className="py-20 bg-slate-55 border-y border-slate-200 text-slate-800">
+        <div className="max-w-[1100px] mx-auto px-6 space-y-12">
+          
+          <div className="text-center space-y-4">
             <span className="inline-block px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full">
-              Android App Ready
+              Mobile App Hub
             </span>
-            <h2 className="text-2xl md:text-[2.25rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              WorkforceOS is fully optimized for mobile phones.
+            <h2 className="text-3xl md:text-[2.5rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              WorkforceOS in Your Pocket
             </h2>
-            <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-[600px] font-sans">
-              Access your dashboard, check in/out with geolocation, submit tasks, request leaves, and review payroll records on the go. Our interface is fully mobile responsive and prepared for native app wrapping.
+            <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-2xl mx-auto font-sans">
+              Access your dashboard, check in/out with geolocation, submit tasks, request leaves, and review payroll records on the go.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 font-sans w-full md:w-auto">
-            <div className="w-full sm:w-auto px-6 py-5 bg-slate-50 rounded-2xl border border-slate-200/50 flex flex-col items-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Android Compatibility</span>
-              <span className="text-sm font-extrabold text-slate-800">APK & WebView Ready</span>
+
+          {/* App Store Mockup Container */}
+          <div className="w-full max-w-[850px] mx-auto bg-white border border-slate-200 rounded-[24px] shadow-sm select-none overflow-hidden text-left">
+            {/* macOS Window Header */}
+            <div className="h-10 border-b border-slate-200 bg-slate-50 flex items-center px-6 justify-between shrink-0">
+              <div className="flex gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+              </div>
+              <div className="text-[10px] text-slate-400 font-mono select-none">workforceos.com/download-center</div>
+              <div className="w-12"></div>
             </div>
-            <div className="w-full sm:w-auto px-6 py-5 bg-slate-50 rounded-2xl border border-slate-200/50 flex flex-col items-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Responsiveness</span>
-              <span className="text-sm font-extrabold text-slate-800">100% Mobile Optimized</span>
+
+            <div className="p-6 md:p-10 flex flex-col md:flex-row gap-8 items-stretch">
+              {/* Left Column: APK Details */}
+              <div className="flex-1 space-y-6 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-blue-600 text-[28px]">android</span>
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-lg leading-tight">Android Application</h3>
+                      <p className="text-xs text-slate-400">Release Version 1.0.0 (Build 42)</p>
+                    </div>
+                  </div>
+
+                  <p className="text-slate-500 text-xs leading-relaxed font-sans">
+                    Download and install our secure native Android application to enable biometric logins (Fingerprint / Face ID) and real-time push notifications.
+                  </p>
+
+                  {/* Safety & Compliance Badges */}
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <span className="material-symbols-outlined text-green-605 text-[18px]">verified_user</span>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold text-slate-800 truncate">Play Protect Safe</p>
+                        <p className="text-[8px] text-slate-400 truncate">Google Certified</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <span className="material-symbols-outlined text-blue-600 text-[18px]">lock</span>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold text-slate-800 truncate">AES-256 Encrypted</p>
+                        <p className="text-[8px] text-slate-400 truncate">Data in Transit & Rest</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <span className="material-symbols-outlined text-slate-600 text-[18px]">shield</span>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold text-slate-800 truncate">ISO 27001 Infrastructure</p>
+                        <p className="text-[8px] text-slate-400 truncate">Compliance Verified</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <span className="material-symbols-outlined text-emerald-600 text-[18px]">gpp_good</span>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold text-slate-800 truncate">SHA-256 Verified</p>
+                        <p className="text-[8px] text-slate-400 truncate">No modified payloads</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Direct Download Button */}
+                <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                  <a
+                    href="/downloads/workforceos-release.apk"
+                    download
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 cursor-pointer border border-blue-600 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">download</span>
+                    Download Android APK (24.8 MB)
+                  </a>
+                  <div className="flex gap-2 shrink-0 justify-center">
+                    <div className="h-10 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 opacity-60 cursor-not-allowed">
+                      <span className="material-symbols-outlined text-[16px] text-slate-400">shop</span>
+                      <span className="text-[10px] font-bold text-slate-500 font-sans">Play Store</span>
+                    </div>
+                    <div className="h-10 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 opacity-60 cursor-not-allowed">
+                      <span className="material-symbols-outlined text-[16px] text-slate-400">phone_iphone</span>
+                      <span className="text-[10px] font-bold text-slate-500 font-sans">iOS App</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Interactive Phone Screen Showcase */}
+              <div className="w-full md:w-72 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shrink-0 relative overflow-hidden h-[340px]">
+                {/* Phone Notch/Speaker */}
+                <div className="w-24 h-4 bg-slate-800 rounded-full mx-auto mb-4 shrink-0 flex items-center justify-center">
+                  <span className="w-6 h-1 bg-slate-600 rounded-full"></span>
+                </div>
+                
+                {/* Mini mobile login mockup */}
+                <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4 flex flex-col justify-between relative">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <img src="/workforceoslogo.png" alt="logo" className="h-5 w-5 object-contain" />
+                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-800 font-sans">WorkforceOS</span>
+                    </div>
+                    <div className="space-y-1 text-left">
+                      <p className="text-[11px] font-bold text-slate-900">Sign in to organization</p>
+                      <p className="text-[8px] text-slate-400">Secure enterprise portal</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 w-full">
+                    <div className="h-7 border border-slate-200 rounded px-2 flex items-center text-[8px] text-slate-400 select-none">
+                      Work email address
+                    </div>
+                    <div className="h-7 border border-slate-200 rounded px-2 flex items-center justify-between text-[8px] text-slate-400 select-none">
+                      <span>Password</span>
+                      <span className="material-symbols-outlined text-[12px] text-slate-300">visibility_off</span>
+                    </div>
+                    <div className="h-7 bg-blue-600 rounded flex items-center justify-center text-[8px] font-bold text-white shadow-sm select-none cursor-pointer">
+                      Log In Securely
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-1 text-[7px] text-slate-400">
+                    <span className="material-symbols-outlined text-[10px] text-green-600">security</span>
+                    <span>Verified secure checkout via SSL</span>
+                  </div>
+                </div>
+
+                {/* Footer text */}
+                <p className="text-[8px] text-slate-400 text-center mt-3 font-semibold font-sans">SHA-256: 4e9d72a8c3...94b2f1</p>
+              </div>
+
             </div>
           </div>
+
         </div>
       </section>
 
@@ -1473,6 +1687,114 @@ export default function HomepageClient() {
               </ul>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* SECTION 7: PRICING PLANS */}
+      <section id="pricing" className="py-20 md:py-24 bg-white border-t border-slate-200">
+        <div className="max-w-[1100px] mx-auto px-6 space-y-12">
+          
+          <div className="text-center space-y-4">
+            <span className="inline-block px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full">
+              Subscription Plans
+            </span>
+            <h2 className="text-3xl md:text-[2.5rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Transparent pricing, built for growth.
+            </h2>
+            <p className="text-slate-550 text-sm md:text-base leading-relaxed max-w-2xl mx-auto font-sans">
+              All plans include our 7-day free trial. Setup takes under two minutes. Cancel or change plans at any time.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                name: 'Startup Tier',
+                price: '₹2,499',
+                billing: '/ month',
+                employees: 'Up to 15 employees',
+                features: ['Core HR Management', 'Geofenced Attendance', 'Standard Leave Management', 'Direct Manager Approvals', 'Mobile App Access'],
+                popular: false,
+                dots: true,
+              },
+              {
+                name: 'Growth Tier',
+                price: '₹7,999',
+                billing: '/ month',
+                employees: 'Up to 50 employees',
+                features: ['Everything in Startup', 'Advanced Payroll Generation', 'Performance Reviews', 'Expense Claim Auditing', 'Shift Configurations', 'Priority Email Support'],
+                popular: true,
+                dots: true,
+              },
+              {
+                name: 'Perpetual Enterprise',
+                price: '₹24,999',
+                billing: 'one-time',
+                employees: 'Unlimited employees',
+                features: ['Perpetual On-Premise License', 'Custom Active Directory (AD) sync', 'Dedicated SLA Support', 'All Advanced Modules Unlocked', 'White-label options available'],
+                popular: false,
+                dots: true,
+              }
+            ].map((plan, idx) => (
+              <div
+                key={idx}
+                className={`relative border rounded-[28px] p-8 bg-white transition-all flex flex-col justify-between select-none overflow-hidden ${
+                  plan.popular
+                    ? 'border-blue-600 bg-blue-50/5 scale-[1.02]'
+                    : 'border-slate-200 hover:border-slate-350'
+                }`}
+              >
+                {plan.dots && (
+                  <div className="flex gap-1.2 mb-6 justify-start shrink-0">
+                    <span className="w-2.2 h-2.2 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                    <span className="w-2.2 h-2.2 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                    <span className="w-2.2 h-2.2 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+                  </div>
+                )}
+
+                {plan.popular && (
+                  <span className="absolute top-3 right-6 text-[8px] font-extrabold uppercase tracking-wider bg-blue-600 text-white px-2.5 py-1 rounded-full">
+                    Popular
+                  </span>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-lg leading-tight">{plan.name}</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">{plan.employees}</p>
+                  </div>
+
+                  <div className="flex items-baseline">
+                    <span className="text-3xl font-[900] text-slate-900">{plan.price}</span>
+                    <span className="text-slate-500 text-xs ml-1 font-semibold">{plan.billing}</span>
+                  </div>
+
+                  <ul className="space-y-3.5 pt-4 border-t border-slate-100">
+                    {plan.features.map((feature, fIdx) => (
+                      <li key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-650 leading-normal">
+                        <span className="material-symbols-outlined text-[16px] text-blue-600 select-none">done</span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="pt-8">
+                  <button
+                    onClick={() => setShowTrialModal(true)}
+                    className={`w-full py-3 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                      plan.popular
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-slate-100 text-slate-705 hover:bg-slate-200 border border-slate-200'
+                    }`}
+                  >
+                    Start 7-Day Free Trial
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </section>
 
@@ -1675,6 +1997,107 @@ export default function HomepageClient() {
       {/* Global Navigation Footer */}
       <LandingFooter />
       <VoyagerChatbot />
+
+      {/* TRIAL REGISTRATION MODAL */}
+      {showTrialModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-[28px] max-w-md w-full p-8 space-y-6 relative text-left">
+            
+            {/* macOS Mock dots in the modal header */}
+            <div className="flex justify-between items-center shrink-0">
+              <div className="flex gap-1.2">
+                <span className="w-2.2 h-2.2 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
+                <span className="w-2.2 h-2.2 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
+                <span className="w-2.2 h-2.2 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
+              </div>
+              <button
+                onClick={() => {
+                  setShowTrialModal(false);
+                  setTrialError('');
+                }}
+                className="text-slate-400 hover:text-slate-650 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-slate-900 leading-tight">Start Your 7-Day Trial</h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-sans">
+                Set up a sandboxed organization workspace instantly. No credit card required, unlock all premium operational features.
+              </p>
+            </div>
+
+            <form onSubmit={handleRegisterTrial} className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                  Organization Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Dunder Mifflin Paper"
+                  value={trialOrgName}
+                  onChange={(e) => setTrialOrgName(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                  required
+                  disabled={trialLoading}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                  Admin Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. David Wallace"
+                  value={trialAdminName}
+                  onChange={(e) => setTrialAdminName(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                  required
+                  disabled={trialLoading}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                  Work Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="e.g. david@dundermifflin.com"
+                  value={trialAdminEmail}
+                  onChange={(e) => setTrialAdminEmail(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                  required
+                  disabled={trialLoading}
+                />
+              </div>
+
+              {trialError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-semibold text-center font-sans">
+                  {trialError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={trialLoading}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer font-sans"
+              >
+                {trialLoading ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Launching Workspace...
+                  </>
+                ) : (
+                  'Launch Sandbox Workspace'
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

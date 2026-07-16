@@ -8,6 +8,7 @@ import { AmbientGrid } from '../components/ui/AmbientGrid';
 import { useAuth } from '../lib/auth/AuthProvider';
 import { api } from '../lib/api/client';
 import VoyagerChatbot from '../components/chatbot/VoyagerChatbot';
+import Image from 'next/image';
 
 export default function HomepageClient() {
   const { user } = useAuth();
@@ -106,14 +107,14 @@ export default function HomepageClient() {
           timer3 = setTimeout(() => {
             setSimState('processing');
             let progressVal = 0;
-            
+
             progressInterval = setInterval(() => {
               progressVal += 5;
               setSimProgress(progressVal);
               if (progressVal >= 100) {
                 clearInterval(progressInterval);
                 setSimState('success');
-                
+
                 // Show success screen for 4.5 seconds, then repeat the loop
                 timer4 = setTimeout(() => {
                   runCycle();
@@ -236,7 +237,7 @@ export default function HomepageClient() {
       if (res.data?.tokens) {
         localStorage.setItem('token', res.data.tokens.accessToken);
         localStorage.setItem('refreshToken', res.data.tokens.refreshToken);
-        
+
         if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
           (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
             type: 'save_token',
@@ -367,8 +368,8 @@ export default function HomepageClient() {
                       <button
                         onClick={handleHeroClockIn}
                         className={`px-3 py-1 rounded text-[8px] font-bold transition-colors cursor-pointer border ${clockedIn
-                            ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-                            : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                          : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
                           }`}
                       >
                         {clockedIn ? 'Clock Out EMP-042' : 'Clock In EMP-042'}
@@ -464,7 +465,8 @@ export default function HomepageClient() {
 
       {/* SECTION 2.5: DRAG AND DROP ONBOARDING SIMULATOR */}
       <section className="py-20 md:py-24 bg-slate-50 border-b border-slate-200">
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style dangerouslySetInnerHTML={{
+          __html: `
           @keyframes scaleUp {
             0% { transform: scale(0.3); opacity: 0; }
             50% { transform: scale(1.1); }
@@ -502,7 +504,7 @@ export default function HomepageClient() {
             </div>
 
             <div className="p-6 flex flex-col md:flex-row gap-6 relative overflow-hidden">
-              
+
               {/* Left Column: Local Folder (Excel Source) */}
               <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-left flex flex-col justify-between h-[280px] relative">
                 <div>
@@ -522,15 +524,11 @@ export default function HomepageClient() {
                 {/* Animated Excel File */}
                 <div className="relative flex-1 flex items-center justify-center">
                   <div
-                    className={`px-4 py-3 bg-green-50 border border-green-200 rounded-lg shadow-md flex items-center gap-3 transition-all duration-[2000ms] ease-in-out z-20 cursor-grab active:cursor-grabbing ${
-                      simState === 'idle' ? 'opacity-100 translate-x-0 translate-y-0 scale-100' : ''
-                    } ${
-                      simState === 'dragging' ? 'opacity-100 translate-x-[110%] translate-y-[-10px] md:translate-x-[120%] md:translate-y-[0px] scale-95 shadow-lg rotate-3' : ''
-                    } ${
-                      simState === 'dropped' ? 'opacity-0 scale-50 translate-x-[120%] translate-y-[0px]' : ''
-                    } ${
-                      simState === 'processing' || simState === 'success' ? 'opacity-40 scale-75 cursor-not-allowed' : ''
-                    }`}
+                    className={`px-4 py-3 bg-green-50 border border-green-200 rounded-lg shadow-md flex items-center gap-3 transition-all duration-[2000ms] ease-in-out z-20 cursor-grab active:cursor-grabbing ${simState === 'idle' ? 'opacity-100 translate-x-0 translate-y-0 scale-100' : ''
+                      } ${simState === 'dragging' ? 'opacity-100 translate-x-[110%] translate-y-[-10px] md:translate-x-[120%] md:translate-y-[0px] scale-95 shadow-lg rotate-3' : ''
+                      } ${simState === 'dropped' ? 'opacity-0 scale-50 translate-x-[120%] translate-y-[0px]' : ''
+                      } ${simState === 'processing' || simState === 'success' ? 'opacity-40 scale-75 cursor-not-allowed' : ''
+                      }`}
                     style={{
                       transformOrigin: 'center'
                     }}
@@ -556,7 +554,7 @@ export default function HomepageClient() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="h-6"></div>
               </div>
 
@@ -567,7 +565,7 @@ export default function HomepageClient() {
 
               {/* Right Column: WorkforceOS Destination */}
               <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-left flex flex-col justify-between h-[280px] relative overflow-hidden">
-                
+
                 <div className="flex justify-between items-center shrink-0">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">WorkforceOS Portal</span>
                   <span className="text-[8px] font-bold px-2 py-0.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600">Enterprise Setup</span>
@@ -575,11 +573,10 @@ export default function HomepageClient() {
 
                 {/* Dynamic UI Content */}
                 <div className="flex-1 flex flex-col items-center justify-center py-4 w-full">
-                  
+
                   {(simState === 'idle' || simState === 'dragging') && (
-                    <div className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 ${
-                      simState === 'dragging' ? 'border-blue-500 bg-blue-55/40 text-blue-600' : 'border-slate-350 text-slate-400'
-                    }`}>
+                    <div className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 ${simState === 'dragging' ? 'border-blue-500 bg-blue-55/40 text-blue-600' : 'border-slate-350 text-slate-400'
+                      }`}>
                       {/* Cloud Upload Icon SVG */}
                       <svg className="w-8 h-8 text-blue-500 fill-none stroke-current stroke-2 mb-2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -654,7 +651,7 @@ export default function HomepageClient() {
                       </div>
                       <span className="text-xs font-extrabold text-green-700 uppercase tracking-widest block mb-1 font-sans">Onboarding Successful</span>
                       <span className="text-sm font-bold text-slate-800 block font-sans">Dunder Mifflin Inc. Setup Completed</span>
-                      
+
                       <div className="flex gap-1.5 justify-center mt-3 flex-wrap">
                         <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">14 Employees</span>
                         <span className="text-[8.5px] bg-slate-100 border border-slate-200 font-bold text-slate-600 px-2 py-0.5 rounded-full font-sans">3 Departments</span>
@@ -812,8 +809,8 @@ export default function HomepageClient() {
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key as any)}
                   className={`px-5 py-2.5 rounded-full font-semibold text-sm transition-all whitespace-nowrap cursor-pointer ${activeTab === tab.key
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-transparent text-slate-500 border border-slate-200 hover:bg-slate-55'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-transparent text-slate-500 border border-slate-200 hover:bg-slate-55'
                     }`}
                 >
                   {tab.name}
@@ -1107,8 +1104,8 @@ export default function HomepageClient() {
                     ) : (
                       <div className="text-center space-y-1.5">
                         <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded border inline-block ${priyaLeaveStatus === 'approved'
-                            ? 'bg-green-50 text-green-700 border-green-150'
-                            : 'bg-red-50 text-red-700 border-red-150'
+                          ? 'bg-green-50 text-green-700 border-green-150'
+                          : 'bg-red-50 text-red-700 border-red-150'
                           }`}>
                           Priya's Request: {priyaLeaveStatus === 'approved' ? 'Approved' : 'Rejected'}
                         </span>
@@ -1127,8 +1124,8 @@ export default function HomepageClient() {
                     <div className="grid grid-cols-4 gap-1.5 text-center">
                       <div className="p-1 border border-slate-100 rounded text-[9px] bg-green-50 text-green-750 font-semibold">Aarav</div>
                       <div className={`p-1 border rounded text-[9px] font-semibold transition-all ${priyaLeaveStatus === 'approved'
-                          ? 'bg-amber-50 text-amber-700 border-amber-100'
-                          : 'bg-green-50 text-green-750 border-green-100'
+                        ? 'bg-amber-50 text-amber-700 border-amber-100'
+                        : 'bg-green-50 text-green-750 border-green-100'
                         }`}>
                         Priya
                       </div>
@@ -1478,67 +1475,138 @@ export default function HomepageClient() {
       </section>
 
       {/* SECTION 5.5: MOBILE APP READY */}
-      <section className="py-20 bg-slate-55 border-y border-slate-200 text-slate-800">
+      <section className="py-20 bg-slate-50 border-y border-slate-200 text-slate-800">
         <div className="max-w-[1100px] mx-auto px-6 space-y-12">
-          
+
           <div className="text-center space-y-4">
             <span className="inline-block px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full">
               Mobile App Hub
             </span>
-            <h2 className="text-3xl md:text-[2.5rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+
+            <h2
+              className="text-3xl md:text-[2.5rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
               WorkforceOS in Your Pocket
             </h2>
-            <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-2xl mx-auto font-sans">
-              The Android app is functionally ready for attendance, approvals, tasks, payroll access, biometric login, and mobile-first HR workflows. iOS is in development.
+
+            <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-2xl mx-auto">
+              The Android app is functionally ready for attendance, approvals, tasks,
+              payroll access, biometric login, and mobile-first HR workflows. iOS is
+              in development.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_340px] gap-8 items-center bg-white border border-slate-200 rounded-[24px] p-6 md:p-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10 items-center bg-white border border-slate-200 rounded-[24px] p-6 md:p-8 lg:p-10 overflow-hidden">
+
+            {/* Left */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { icon: 'fingerprint', title: 'Biometric sign-in', body: 'Fast secure login on supported Android devices.' },
-                { icon: 'location_on', title: 'Geo attendance', body: 'Check-in, check-out, WFH, and WFO flows on mobile.' },
-                { icon: 'task_alt', title: 'Task actioning', body: 'Accept, submit, review, and track work from the phone.' },
-                { icon: 'payments', title: 'Payroll access', body: 'Employees can view compensation and payslip records.' }
+                {
+                  icon: "fingerprint",
+                  title: "Biometric sign-in",
+                  body: "Fast secure login on supported Android devices.",
+                },
+                {
+                  icon: "location_on",
+                  title: "Geo attendance",
+                  body: "Check-in, check-out, WFH, and WFO flows on mobile.",
+                },
+                {
+                  icon: "task_alt",
+                  title: "Task actioning",
+                  body: "Accept, submit, review, and track work from the phone.",
+                },
+                {
+                  icon: "payments",
+                  title: "Payroll access",
+                  body: "Employees can view compensation and payslip records.",
+                },
               ].map((feature) => (
-                <div key={feature.title} className="border border-slate-200 rounded-2xl p-5 bg-slate-50">
-                  <span className="material-symbols-outlined text-blue-600 text-[24px] mb-3 block">{feature.icon}</span>
-                  <h3 className="font-extrabold text-slate-900 text-sm mb-1">{feature.title}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">{feature.body}</p>
+                <div
+                  key={feature.title}
+                  className="border border-slate-200 rounded-2xl p-5 bg-slate-50 h-full"
+                >
+                  <span className="material-symbols-outlined text-blue-600 text-[24px] mb-3 block">
+                    {feature.icon}
+                  </span>
+
+                  <h3 className="font-extrabold text-slate-900 text-sm mb-2">
+                    {feature.title}
+                  </h3>
+
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    {feature.body}
+                  </p>
                 </div>
               ))}
             </div>
 
-            <div className="flex flex-col items-center text-center">
-              <div className="w-[210px] h-[360px] rounded-[34px] border-[10px] border-slate-900 bg-slate-50 shadow-sm p-3 flex flex-col">
+            {/* Right */}
+            <div className="flex flex-col items-center w-full">
+
+              <div className="w-full max-w-[220px] aspect-[210/360] rounded-[34px] border-[10px] border-slate-900 bg-slate-50 shadow-lg p-3 flex flex-col">
+
                 <div className="w-20 h-4 bg-slate-900 rounded-full mx-auto mb-5"></div>
-                <div className="flex-1 bg-white border border-slate-200 rounded-[24px] p-4 flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="h-14 w-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center mx-auto font-black text-xl">
-                      W
+
+                <div className="flex-1 bg-white border border-slate-200 rounded-[24px] p-4 flex flex-col justify-between overflow-hidden">
+
+                  <div>
+
+                    <div className="h-14 w-14 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center mx-auto">
+                      <Image
+                        src="/workforceoslogo.png"
+                        alt="WorkforceOS"
+                        width={40}
+                        height={40}
+                        className="object-contain"
+                      />
                     </div>
-                    <div>
-                      <p className="text-sm font-extrabold text-slate-900">WorkforceOS</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Android ready</p>
+
+                    <div className="mt-3 text-center">
+                      <p className="text-sm font-extrabold text-slate-900">
+                        WorkforceOS
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        Android Ready
+                      </p>
                     </div>
-                    <div className="space-y-2 text-left">
-                      {['Attendance', 'Tasks', 'Leaves', 'Payroll'].map((item) => (
-                        <div key={item} className="h-8 rounded-xl bg-slate-50 border border-slate-100 px-3 flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-600">{item}</span>
+
+                    <div className="space-y-2 mt-4">
+                      {["Attendance", "Tasks", "Leaves", "Payroll"].map((item) => (
+                        <div
+                          key={item}
+                          className="h-8 rounded-xl bg-slate-50 border border-slate-100 px-3 flex items-center justify-between"
+                        >
+                          <span className="text-[10px] font-bold text-slate-600">
+                            {item}
+                          </span>
+
                           <span className="h-2 w-2 rounded-full bg-blue-600"></span>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <Link href="/mobile-app" className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-[11px] font-extrabold text-center">
+
+                  <Link
+                    href="/mobile-app"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-extrabold text-center transition-colors"
+                  >
                     View Mobile App
                   </Link>
+
                 </div>
               </div>
-              <Link href="/mobile-app" className="mt-6 px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-colors">
-                Open mobile app page
+
+              <Link
+                href="/mobile-app"
+                className="mt-6 inline-flex items-center justify-center w-full max-w-[220px] py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider transition-colors"
+              >
+                Open Mobile App Page
               </Link>
+
             </div>
+
           </div>
 
         </div>
@@ -1608,12 +1676,12 @@ export default function HomepageClient() {
       {/* SECTION 7: PRICING PLANS */}
       <section id="pricing" className="py-20 md:py-24 bg-white border-t border-slate-200">
         <div className="max-w-[1100px] mx-auto px-6 space-y-12">
-          
+
           <div className="text-center space-y-4">
             <span className="inline-block px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full">
               Subscription Plans
             </span>
-              <h2 className="text-3xl md:text-[2.5rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h2 className="text-3xl md:text-[2.5rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               Attractive pricing, built for growing teams.
             </h2>
             <p className="text-slate-550 text-sm md:text-base leading-relaxed max-w-2xl mx-auto font-sans">
@@ -1853,7 +1921,7 @@ export default function HomepageClient() {
       {showTrialModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fade-in">
           <div className="bg-white border border-slate-200 rounded-[28px] max-w-md w-full p-8 space-y-6 relative text-left">
-            
+
             <div className="flex justify-between items-center shrink-0">
               <span className="text-[10px] bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1 rounded-full font-bold uppercase tracking-widest">
                 Trial Workspace

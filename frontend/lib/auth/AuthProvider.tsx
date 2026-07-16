@@ -24,6 +24,7 @@ export const SEED_USERS: SeedUser[] = [
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
+  const [organization, setOrganization] = useState<any>(null);
   const [features, setFeatures] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -34,12 +35,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(response.data);
       try {
         const orgRes = await api.organization.get();
+        setOrganization(orgRes.data);
         setFeatures(orgRes.data.enabledFeatures || []);
-      } catch (err) {
-        console.error(err);
+      } catch (orgResError) {
+        console.error(orgResError);
       }
     } catch (err) {
       setUser(null);
+      setOrganization(null);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
       }
@@ -75,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       try {
         const orgRes = await api.organization.get();
+        setOrganization(orgRes.data);
         setFeatures(orgRes.data.enabledFeatures || []);
       } catch (err) {
         console.error(err);
@@ -95,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     setUser(null);
+    setOrganization(null);
     setFeatures([]);
     // Notify native Flutter app to clear the stored biometric token
     if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
@@ -107,6 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        organization,
         loading,
         features,
         setFeatures,

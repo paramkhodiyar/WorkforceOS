@@ -6,7 +6,7 @@ import { useAuth } from '../../lib/auth/AuthProvider';
 import AppShell from '../../components/layout/AppShell';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, organization, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -14,13 +14,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!loading) {
       if (!user) {
         router.push('/login');
-      } else if (user.forcePasswordChange && pathname !== '/reset-password') {
+        return;
+      }
+
+      // Check Trial / Subscription Expiration
+      if (organization) {
+        const isTrial = organization.subscriptionStatus === 'TRIAL';
+        const isExpired = organization.subscriptionStatus === 'EXPIRED';
+        const trialEnded = organization.trialEndDate && new Date(organization.trialEndDate) < new Date();
+
+        if (isExpired || (isTrial && trialEnded)) {
+          router.push('/paywall');
+          return;
+        }
+
+        // Check Onboarding status
+        if (!organization.isSetupComplete && pathname !== '/onboarding/setup') {
+          router.push('/onboarding/setup');
+          return;
+        }
+      }
+
+      if (user.forcePasswordChange && pathname !== '/reset-password') {
         router.push('/reset-password');
       } else if (!user.forcePasswordChange && pathname === '/reset-password') {
         router.push('/dashboard');
       }
     }
-  }, [user, loading, router, pathname]);
+  }, [user, organization, loading, router, pathname]);
 
   if (loading) {
     return (

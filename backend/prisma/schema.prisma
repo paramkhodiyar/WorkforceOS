@@ -13,6 +13,19 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum SubscriptionTier {
+  STARTUP
+  GROWTH
+  ENTERPRISE
+}
+
 enum SystemRole {
   SUPER_ADMIN
   ORG_ADMIN
@@ -174,6 +187,15 @@ model Organization {
   officeLatitude  Float?
   officeLongitude Float?
   officeRadius    Float?
+
+  // Subscription & Onboarding fields
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  subscriptionTier SubscriptionTier @default(STARTUP)
+  trialStartDate DateTime?
+  trialEndDate DateTime?
+  isSetupComplete Boolean @default(false)
+  paymentRef String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

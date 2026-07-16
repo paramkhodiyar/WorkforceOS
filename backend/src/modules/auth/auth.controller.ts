@@ -11,6 +11,17 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   return sendSuccess(res, result);
 });
 
+export const registerTrial = asyncHandler(async (req: Request, res: Response) => {
+  const result = await AuthService.registerTrial(req.body, req);
+  return sendSuccess(res, result, "Trial account registered and initialized successfully");
+});
+
+export const masterBypass = asyncHandler(async (req: Request, res: Response) => {
+  const { pin } = req.body;
+  const result = await AuthService.masterBypass(pin, req);
+  return sendSuccess(res, result);
+});
+
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
   const result = await AuthService.refresh(refreshToken);

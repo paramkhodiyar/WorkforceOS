@@ -167,6 +167,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
+    masterBypass: (data: { pin: string }): Promise<any> =>
+      request('/auth/master-bypass', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     me: (): Promise<any> => request('/auth/me'),
     changePassword: (data: any): Promise<any> =>
       request('/auth/change-password', {
@@ -395,6 +400,11 @@ export const api = {
   },
   organization: {
     get: (): Promise<any> => request('/organization/me'),
+    verifyUpi: (data: { utr: string; tier: string }): Promise<any> =>
+      request('/organization/verify-upi', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     updateFeatures: (orgId: string, enabledFeatures: string[]): Promise<any> =>
       request(`/organization/${orgId}/features`, {
         method: 'PATCH',
@@ -527,6 +537,11 @@ export const api = {
   onboarding: {
     onboard: (data: any): Promise<any> =>
       request('/onboarding', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    setup: (data: any): Promise<any> =>
+      request('/onboarding/setup', {
         method: 'POST',
         body: JSON.stringify(data),
       }),

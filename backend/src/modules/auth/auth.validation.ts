@@ -13,3 +13,11 @@ export const changePasswordSchema = z.object({
   oldPassword: z.string().min(1),
   newPassword: z.string().min(6)
 });
+
+export const registerTrialSchema = z.object({
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(6),
+  companyName: z.string().min(1)
+});

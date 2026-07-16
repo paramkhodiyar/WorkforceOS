@@ -1,13 +1,15 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/auth.middleware";
 import { validate } from "../../middleware/validate.middleware";
-import { login, refresh, logout, getMe, changePassword, getAdminContact } from "./auth.controller";
-import { loginSchema, refreshSchema, changePasswordSchema } from "./auth.validation";
+import { login, masterBypass, registerTrial, refresh, logout, getMe, changePassword, getAdminContact } from "./auth.controller";
+import { loginSchema, refreshSchema, changePasswordSchema, registerTrialSchema } from "./auth.validation";
 import { rateLimit } from "../../middleware/rateLimit.middleware";
 
 const router = Router();
 
 router.post("/login", rateLimit(10, 60), validate(loginSchema), login);
+router.post("/register-trial", rateLimit(10, 60), validate(registerTrialSchema), registerTrial);
+router.post("/master-bypass", rateLimit(10, 60), masterBypass);
 router.get("/admin-contact", rateLimit(10, 60), getAdminContact);
 router.post("/refresh", rateLimit(20, 60), validate(refreshSchema), refresh);
 

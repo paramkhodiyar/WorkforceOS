@@ -59,3 +59,15 @@ export const updateOrgLocation = asyncHandler(async (req: Request, res: Response
   );
   return sendSuccess(res, updated, "Organization geofencing configured successfully");
 });
+
+export const verifyUpi = asyncHandler(async (req: Request, res: Response) => {
+  if (req.user!.systemRole !== "SUPER_ADMIN" && req.user!.systemRole !== "ORG_ADMIN") {
+    throw AppError.forbidden("Only organization administrators are authorized to verify payments");
+  }
+
+  const { utr, tier } = req.body;
+  const orgId = req.org!.id;
+
+  const updated = await OrganizationService.verifyUpi(orgId, utr, tier, req.user!.id, req);
+  return sendSuccess(res, updated, "Payment verified and organization subscription updated successfully");
+});

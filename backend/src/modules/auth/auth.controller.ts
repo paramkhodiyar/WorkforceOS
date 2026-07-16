@@ -100,7 +100,8 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     salaryBand: user.salaryBand,
     joinDate: user.joinDate,
     status: user.status,
-    systemRole: user.systemRole,
+    systemRole: req.user!.systemRole || user.systemRole,
+    originalRole: req.user!.originalRole,
     department: user.department,
     manager: user.manager,
     organizationId: user.organizationId,
@@ -141,4 +142,3 @@ export const getAdminContact = asyncHandler(async (req: Request, res: Response) 
     email: adminUser?.email || "superadmin@workforceos.com"
   });
 });
-

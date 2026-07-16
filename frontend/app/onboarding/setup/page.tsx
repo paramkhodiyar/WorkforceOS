@@ -186,16 +186,16 @@ export default function OnboardingSetupPage() {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col justify-between">
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
         {/* Header */}
-        <header className="border-b border-slate-900 px-8 py-4 flex items-center justify-between bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+        <header className="border-b border-slate-200 px-8 py-4 flex items-center justify-between bg-white/90 backdrop-blur-md sticky top-0 z-50">
           <div className="flex items-center gap-3">
             <img src="/workforceoslogo.png" alt="Logo" className="h-8 w-8 object-contain rounded" />
             <span className="text-lg font-bold tracking-wider uppercase">WorkforceOS Setup</span>
           </div>
           <button
             onClick={logout}
-            className="text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+            className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
           >
             Logout
           </button>
@@ -203,17 +203,17 @@ export default function OnboardingSetupPage() {
 
         {/* Content */}
         <main className="flex-1 max-w-md w-full mx-auto px-6 py-12 flex flex-col justify-center text-center space-y-6">
-          <div className="h-16 w-16 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mx-auto">
-            <span className="material-symbols-outlined text-[36px] text-blue-400">desktop_mac</span>
+          <div className="h-16 w-16 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-[36px] text-blue-600">desktop_mac</span>
           </div>
           <h2 className="text-2xl font-extrabold tracking-tight">Desktop Setup Required</h2>
-          <p className="text-slate-400 text-sm leading-relaxed">
+          <p className="text-slate-500 text-sm leading-relaxed">
             Setting up your organization, uploading Excel sheets, and configuring departments requires a larger screen. 
             Please open this URL on a desktop or laptop computer to complete onboarding:
           </p>
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800/80 select-all">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 select-all">
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">Setup URL</p>
-            <p className="text-xs font-mono text-blue-400 break-all font-semibold">https://workforceos1.vercel.app/onboarding/setup</p>
+            <p className="text-xs font-mono text-blue-600 break-all font-semibold">https://workforceos1.vercel.app/onboarding/setup</p>
           </div>
           <p className="text-xs text-slate-500">
             Once completed, the mobile app will automatically unlock.
@@ -221,7 +221,7 @@ export default function OnboardingSetupPage() {
         </main>
 
         {/* Footer */}
-        <footer className="text-center py-6 text-[10px] text-slate-500 border-t border-slate-900">
+        <footer className="text-center py-6 text-[10px] text-slate-500 border-t border-slate-200">
           WorkforceOS Management Platform
         </footer>
       </div>
@@ -229,16 +229,16 @@ export default function OnboardingSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
       {/* Header */}
-      <header className="border-b border-slate-900 px-8 py-4 flex items-center justify-between bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-slate-200 px-8 py-4 flex items-center justify-between bg-white/90 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <img src="/workforceoslogo.png" alt="Logo" className="h-8 w-8 object-contain rounded" />
           <span className="text-lg font-bold tracking-wider uppercase">WorkforceOS Setup</span>
         </div>
         <button
           onClick={logout}
-          className="text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+          className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
         >
           Logout
         </button>
@@ -248,27 +248,27 @@ export default function OnboardingSetupPage() {
       <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-12 flex flex-col justify-center">
         {/* Progress Tracker */}
         <div className="mb-12 max-w-md mx-auto text-center">
-          <span className="text-[10px] bg-blue-500/10 border border-blue-500/20 text-blue-400 px-3 py-1 rounded-full font-bold uppercase tracking-widest">
+          <span className="text-[10px] bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1 rounded-full font-bold uppercase tracking-widest">
             Onboarding Setup
           </span>
           <div className="flex justify-between items-center mt-6 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-            <span className={step >= 1 ? 'text-blue-400' : ''}>1. Company</span>
-            <span className={step >= 2 ? 'text-blue-400' : ''}>2. Upload Excel</span>
-            <span className={step >= 3 ? 'text-blue-400' : ''}>3. Tabular Preview</span>
-            <span className={step >= 4 ? 'text-blue-400' : ''}>4. Assign Roles</span>
+            <span className={step >= 1 ? 'text-blue-600' : ''}>1. Company</span>
+            <span className={step >= 2 ? 'text-blue-600' : ''}>2. Upload Excel</span>
+            <span className={step >= 3 ? 'text-blue-600' : ''}>3. Tabular Preview</span>
+            <span className={step >= 4 ? 'text-blue-600' : ''}>4. Assign Roles</span>
           </div>
-          <div className="w-full bg-slate-900 h-1.5 rounded-full mt-2 overflow-hidden">
+          <div className="w-full bg-white h-1.5 rounded-full mt-2 overflow-hidden">
             <div
-              className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${(step / 4) * 100}%` }}
             ></div>
           </div>
         </div>
 
         {/* Wizard Card Container */}
-        <div className="bg-slate-900 border border-slate-800/80 rounded-3xl p-8 md:p-10 shadow-2xl space-y-6">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 md:p-10 shadow-sm space-y-6">
           {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl text-sm font-medium text-center">
+            <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-sm font-medium text-center">
               {error}
             </div>
           )}
@@ -278,7 +278,7 @@ export default function OnboardingSetupPage() {
             <div className="space-y-6">
               <div className="text-center max-w-md mx-auto">
                 <h2 className="text-2xl font-extrabold tracking-tight">Configure Organization Profile</h2>
-                <p className="text-slate-400 text-xs mt-2 leading-relaxed">
+                <p className="text-slate-500 text-xs mt-2 leading-relaxed">
                   Provide your organization details and set a default password that new employees will use to log in initially.
                 </p>
               </div>
@@ -288,7 +288,7 @@ export default function OnboardingSetupPage() {
                   <label className="block text-[11px] text-slate-500 uppercase tracking-widest font-semibold">Company Name</label>
                   <input
                     type="text"
-                    className="w-full p-3 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl text-sm transition-all focus:ring-1 focus:ring-blue-500"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-sm transition-all focus:ring-1 focus:ring-blue-600"
                     placeholder="e.g. Acme Corporation"
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
@@ -298,7 +298,7 @@ export default function OnboardingSetupPage() {
                   <label className="block text-[11px] text-slate-500 uppercase tracking-widest font-semibold">Workspace Slug (URL Part)</label>
                   <input
                     type="text"
-                    className="w-full p-3 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl text-sm transition-all focus:ring-1 focus:ring-blue-500"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-sm transition-all focus:ring-1 focus:ring-blue-600"
                     placeholder="acme-corp"
                     value={orgSlug}
                     onChange={(e) => setOrgSlug(e.target.value)}
@@ -310,7 +310,7 @@ export default function OnboardingSetupPage() {
                 <label className="block text-[11px] text-slate-500 uppercase tracking-widest font-semibold">Default Employee Password</label>
                 <input
                   type="password"
-                  className="w-full p-3 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl text-sm transition-all focus:ring-1 focus:ring-blue-500 max-w-md"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-sm transition-all focus:ring-1 focus:ring-blue-600 max-w-md"
                   value={defaultPassword}
                   onChange={(e) => setDefaultPassword(e.target.value)}
                 />
@@ -319,11 +319,11 @@ export default function OnboardingSetupPage() {
                 </p>
               </div>
 
-              <div className="border-t border-slate-800/80 pt-6 flex justify-end">
+              <div className="border-t border-slate-200 pt-6 flex justify-end">
                 <button
                   disabled={!orgName || !orgSlug}
                   onClick={() => setStep(2)}
-                  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
                 >
                   Continue &rarr;
                 </button>
@@ -336,12 +336,12 @@ export default function OnboardingSetupPage() {
             <div className="space-y-6">
               <div className="text-center max-w-md mx-auto">
                 <h2 className="text-2xl font-extrabold tracking-tight">Upload Employee Sheet</h2>
-                <p className="text-slate-400 text-xs mt-2 leading-relaxed">
+                <p className="text-slate-500 text-xs mt-2 leading-relaxed">
                   Bulk import your team! Choose a standard Excel spreadsheet containing employee email, designation, and department details.
                 </p>
               </div>
 
-              <div className="border-2 border-dashed border-slate-800 hover:border-blue-500 bg-slate-950 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all relative">
+              <div className="border-2 border-dashed border-slate-200 hover:border-blue-600 bg-slate-50 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all relative">
                 <input
                   type="file"
                   onChange={handleFileChange}
@@ -352,12 +352,12 @@ export default function OnboardingSetupPage() {
                 {uploading ? (
                   <div className="flex flex-col items-center gap-3">
                     <LogoLoader size={45} />
-                    <span className="text-xs font-semibold text-blue-400">Parsing spreadsheet...</span>
+                    <span className="text-xs font-semibold text-blue-600">Parsing spreadsheet...</span>
                   </div>
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-[40px] text-slate-500 mb-2">upload_file</span>
-                    <span className="text-sm font-bold text-slate-300 block mb-1">
+                    <span className="text-sm font-bold text-slate-700 block mb-1">
                       {file ? file.name : 'Select Employee Spreadsheet'}
                     </span>
                     <span className="text-xs text-slate-500">Supports Excel (.xlsx) and CSV</span>
@@ -365,16 +365,16 @@ export default function OnboardingSetupPage() {
                 )}
               </div>
 
-              <div className="border-t border-slate-800/80 pt-6 flex justify-between">
+              <div className="border-t border-slate-200 pt-6 flex justify-between">
                 <button
                   onClick={() => setStep(1)}
-                  className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
                 >
                   &larr; Back
                 </button>
                 <button
                   onClick={() => setStep(3)}
-                  className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
                 >
                   Skip Import &rarr;
                 </button>
@@ -387,15 +387,15 @@ export default function OnboardingSetupPage() {
             <div className="space-y-6">
               <div className="text-center">
                 <h2 className="text-2xl font-extrabold tracking-tight">Review Employee Grid</h2>
-                <p className="text-slate-400 text-xs mt-2 leading-relaxed">
+                <p className="text-slate-500 text-xs mt-2 leading-relaxed">
                   Review the parsed employee details. Verify salaries, designations, and departments before merging into your official database.
                 </p>
               </div>
 
               {/* Responsive Table */}
-              <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-950 max-h-[350px] overflow-y-auto custom-scrollbar">
+              <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50 max-h-[350px] overflow-y-auto custom-scrollbar">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead className="bg-slate-900 border-b border-slate-800 font-bold text-slate-400 sticky top-0 z-10">
+                  <thead className="bg-white border-b border-slate-200 font-bold text-slate-500 sticky top-0 z-10">
                     <tr>
                       <th className="p-3 w-10">#</th>
                       <th className="p-3">First Name *</th>
@@ -409,16 +409,16 @@ export default function OnboardingSetupPage() {
                       <th className="p-3 w-10"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-900">
+                  <tbody className="divide-y divide-slate-100">
                     {employees.map((emp, idx) => (
-                      <tr key={idx} className="hover:bg-slate-900/60">
+                      <tr key={idx} className="hover:bg-slate-50">
                         <td className="p-3 text-slate-600 font-semibold">{idx + 1}</td>
                         <td className="p-2">
                           <input
                             type="text"
                             value={emp.firstName}
                             onChange={(e) => handleCellEdit(idx, 'firstName', e.target.value)}
-                            className="w-full px-2 py-1 bg-transparent rounded border border-transparent hover:border-slate-800 focus:border-blue-500 focus:bg-slate-950 font-medium"
+                            className="w-full px-2 py-1 bg-white rounded border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-slate-50 font-medium"
                           />
                         </td>
                         <td className="p-2">
@@ -426,7 +426,7 @@ export default function OnboardingSetupPage() {
                             type="text"
                             value={emp.lastName}
                             onChange={(e) => handleCellEdit(idx, 'lastName', e.target.value)}
-                            className="w-full px-2 py-1 bg-transparent rounded border border-transparent hover:border-slate-800 focus:border-blue-500 focus:bg-slate-950"
+                            className="w-full px-2 py-1 bg-white rounded border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-slate-50"
                           />
                         </td>
                         <td className="p-2">
@@ -434,7 +434,7 @@ export default function OnboardingSetupPage() {
                             type="email"
                             value={emp.email}
                             onChange={(e) => handleCellEdit(idx, 'email', e.target.value)}
-                            className="w-full px-2 py-1 bg-transparent rounded border border-transparent hover:border-slate-800 focus:border-blue-500 focus:bg-slate-950"
+                            className="w-full px-2 py-1 bg-white rounded border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-slate-50"
                           />
                         </td>
                         <td className="p-2">
@@ -442,7 +442,7 @@ export default function OnboardingSetupPage() {
                             type="text"
                             value={emp.designation || ''}
                             onChange={(e) => handleCellEdit(idx, 'designation', e.target.value)}
-                            className="w-full px-2 py-1 bg-transparent rounded border border-transparent hover:border-slate-800 focus:border-blue-500 focus:bg-slate-950"
+                            className="w-full px-2 py-1 bg-white rounded border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-slate-50"
                           />
                         </td>
                         <td className="p-2">
@@ -450,7 +450,7 @@ export default function OnboardingSetupPage() {
                             type="text"
                             value={emp.departmentName || ''}
                             onChange={(e) => handleCellEdit(idx, 'departmentName', e.target.value)}
-                            className="w-full px-2 py-1 bg-transparent rounded border border-transparent hover:border-slate-800 focus:border-blue-500 focus:bg-slate-950"
+                            className="w-full px-2 py-1 bg-white rounded border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-slate-50"
                           />
                         </td>
                         <td className="p-2">
@@ -458,7 +458,7 @@ export default function OnboardingSetupPage() {
                             type="text"
                             value={emp.basicSalary || ''}
                             onChange={(e) => handleCellEdit(idx, 'basicSalary', e.target.value)}
-                            className="w-full px-2 py-1 bg-transparent rounded border border-transparent hover:border-slate-800 focus:border-blue-500 focus:bg-slate-950"
+                            className="w-full px-2 py-1 bg-white rounded border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-slate-50"
                           />
                         </td>
                         <td className="p-2">
@@ -466,7 +466,7 @@ export default function OnboardingSetupPage() {
                             type="text"
                             value={emp.ctcAnnual || ''}
                             onChange={(e) => handleCellEdit(idx, 'ctcAnnual', e.target.value)}
-                            className="w-full px-2 py-1 bg-transparent rounded border border-transparent hover:border-slate-800 focus:border-blue-500 focus:bg-slate-950"
+                            className="w-full px-2 py-1 bg-white rounded border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-slate-50"
                           />
                         </td>
                         <td className="p-2">
@@ -474,13 +474,13 @@ export default function OnboardingSetupPage() {
                             type="text"
                             value={emp.managerEmail || ''}
                             onChange={(e) => handleCellEdit(idx, 'managerEmail', e.target.value)}
-                            className="w-full px-2 py-1 bg-transparent rounded border border-transparent hover:border-slate-800 focus:border-blue-500 focus:bg-slate-950"
+                            className="w-full px-2 py-1 bg-white rounded border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-slate-50"
                           />
                         </td>
                         <td className="p-2">
                           <button
                             onClick={() => handleDeleteRow(idx)}
-                            className="text-red-500 hover:text-red-400 p-1 flex items-center justify-center transition-colors rounded hover:bg-slate-900"
+                            className="text-red-500 hover:text-red-600 p-1 flex items-center justify-center transition-colors rounded hover:bg-white"
                           >
                             <span className="material-symbols-outlined text-[16px]">delete</span>
                           </button>
@@ -494,22 +494,22 @@ export default function OnboardingSetupPage() {
               <div className="flex gap-4">
                 <button
                   onClick={handleAddRow}
-                  className="px-4 py-2 border border-slate-800 hover:bg-slate-900 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                  className="px-4 py-2 border border-slate-200 hover:bg-white text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
                 >
                   <span>+ Add Custom Employee Row</span>
                 </button>
               </div>
 
-              <div className="border-t border-slate-800/80 pt-6 flex justify-between">
+              <div className="border-t border-slate-200 pt-6 flex justify-between">
                 <button
                   onClick={() => setStep(2)}
-                  className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
                 >
                   &larr; Back
                 </button>
                 <button
                   onClick={() => setStep(4)}
-                  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-500/10"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-500/10"
                 >
                   Verify & Next &rarr;
                 </button>
@@ -522,7 +522,7 @@ export default function OnboardingSetupPage() {
             <div className="space-y-6">
               <div className="text-center max-w-md mx-auto">
                 <h2 className="text-2xl font-extrabold tracking-tight">Assign Core Roles</h2>
-                <p className="text-slate-400 text-xs mt-2 leading-relaxed">
+                <p className="text-slate-500 text-xs mt-2 leading-relaxed">
                   Identify the HR managers and Finance administrators from the employee list. They will receive system-level access.
                 </p>
               </div>
@@ -530,10 +530,10 @@ export default function OnboardingSetupPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* HR Selection */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-slate-200">HR Administrators</h3>
-                  <div className="border border-slate-800 rounded-2xl bg-slate-950 p-4 max-h-[200px] overflow-y-auto custom-scrollbar space-y-2">
+                  <h3 className="text-sm font-bold text-slate-800">HR Administrators</h3>
+                  <div className="border border-slate-200 rounded-2xl bg-slate-50 p-4 max-h-[200px] overflow-y-auto custom-scrollbar space-y-2">
                     {employees.map((emp) => (
-                      <label key={emp.email} className="flex items-center gap-3 text-xs text-slate-400 cursor-pointer select-none">
+                      <label key={emp.email} className="flex items-center gap-3 text-xs text-slate-500 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={hrEmails.includes(emp.email.toLowerCase())}
@@ -541,7 +541,7 @@ export default function OnboardingSetupPage() {
                             const e = emp.email.toLowerCase();
                             setHrEmails(prev => prev.includes(e) ? prev.filter(x => x !== e) : [...prev, e]);
                           }}
-                          className="rounded border-slate-800 bg-slate-900 text-blue-500 focus:ring-0 focus:ring-offset-0"
+                          className="rounded border-slate-200 bg-white text-blue-500 focus:ring-0 focus:ring-offset-0"
                         />
                         <span>{emp.firstName} {emp.lastName} ({emp.email})</span>
                       </label>
@@ -551,10 +551,10 @@ export default function OnboardingSetupPage() {
 
                 {/* Finance Selection */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-slate-200">Finance Administrators</h3>
-                  <div className="border border-slate-800 rounded-2xl bg-slate-950 p-4 max-h-[200px] overflow-y-auto custom-scrollbar space-y-2">
+                  <h3 className="text-sm font-bold text-slate-800">Finance Administrators</h3>
+                  <div className="border border-slate-200 rounded-2xl bg-slate-50 p-4 max-h-[200px] overflow-y-auto custom-scrollbar space-y-2">
                     {employees.map((emp) => (
-                      <label key={emp.email} className="flex items-center gap-3 text-xs text-slate-400 cursor-pointer select-none">
+                      <label key={emp.email} className="flex items-center gap-3 text-xs text-slate-500 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={financeEmails.includes(emp.email.toLowerCase())}
@@ -562,7 +562,7 @@ export default function OnboardingSetupPage() {
                             const e = emp.email.toLowerCase();
                             setFinanceEmails(prev => prev.includes(e) ? prev.filter(x => x !== e) : [...prev, e]);
                           }}
-                          className="rounded border-slate-800 bg-slate-900 text-blue-500 focus:ring-0 focus:ring-offset-0"
+                          className="rounded border-slate-200 bg-white text-blue-500 focus:ring-0 focus:ring-offset-0"
                         />
                         <span>{emp.firstName} {emp.lastName} ({emp.email})</span>
                       </label>
@@ -571,17 +571,17 @@ export default function OnboardingSetupPage() {
                 </div>
               </div>
 
-              <div className="border-t border-slate-800/80 pt-6 flex justify-between">
+              <div className="border-t border-slate-200 pt-6 flex justify-between">
                 <button
                   onClick={() => setStep(3)}
-                  className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
                 >
                   &larr; Back
                 </button>
                 <button
                   disabled={isSubmitting}
                   onClick={handleOnboardSubmit}
-                  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-2"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
@@ -599,7 +599,7 @@ export default function OnboardingSetupPage() {
       </main>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-[10px] text-slate-500 border-t border-slate-900">
+      <footer className="text-center py-6 text-[10px] text-slate-500 border-t border-slate-200">
         WorkforceOS Management Platform. Locked and Secured.
       </footer>
     </div>

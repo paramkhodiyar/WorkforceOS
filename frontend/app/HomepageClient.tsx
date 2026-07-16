@@ -672,14 +672,14 @@ export default function HomepageClient() {
           </div>
 
           <div className="mt-10 flex flex-col items-center">
-            <Link
-              href="/onboarding"
+            <button
+              onClick={() => setShowTrialModal(true)}
               className="px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-sm uppercase tracking-wider active:scale-95 transition-all border border-blue-600 cursor-pointer shadow-md shadow-blue-600/10 flex items-center gap-2 hover:gap-3"
             >
-              <span>Onboard Your Company Now</span>
+              <span>Start Your Trial Workspace</span>
               <span className="text-xs font-bold font-mono">→</span>
-            </Link>
-            <span className="text-[11px] text-slate-400 mt-2.5 font-medium font-sans">Free import • Takes under 2 minutes • Supports multi-sheet spreadsheets</span>
+            </button>
+            <span className="text-[11px] text-slate-400 mt-2.5 font-medium font-sans">Trial workspace first • Setup opens after purchase • Supports multi-sheet spreadsheets</span>
           </div>
 
         </div>
@@ -1477,7 +1477,7 @@ export default function HomepageClient() {
         </div>
       </section>
 
-      {/* SECTION 5.5: MOBILE APP READY & APK DOWNLOAD STORE */}
+      {/* SECTION 5.5: MOBILE APP READY */}
       <section className="py-20 bg-slate-55 border-y border-slate-200 text-slate-800">
         <div className="max-w-[1100px] mx-auto px-6 space-y-12">
           
@@ -1489,140 +1489,55 @@ export default function HomepageClient() {
               WorkforceOS in Your Pocket
             </h2>
             <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-2xl mx-auto font-sans">
-              Access your dashboard, check in/out with geolocation, submit tasks, request leaves, and review payroll records on the go.
+              The Android app is functionally ready for attendance, approvals, tasks, payroll access, biometric login, and mobile-first HR workflows. iOS is in development.
             </p>
           </div>
 
-          {/* App Store Mockup Container */}
-          <div className="w-full max-w-[850px] mx-auto bg-white border border-slate-200 rounded-[24px] shadow-sm select-none overflow-hidden text-left">
-            {/* macOS Window Header */}
-            <div className="h-10 border-b border-slate-200 bg-slate-50 flex items-center px-6 justify-between shrink-0">
-              <div className="flex gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
-              </div>
-              <div className="text-[10px] text-slate-400 font-mono select-none">workforceos.com/download-center</div>
-              <div className="w-12"></div>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_340px] gap-8 items-center bg-white border border-slate-200 rounded-[24px] p-6 md:p-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { icon: 'fingerprint', title: 'Biometric sign-in', body: 'Fast secure login on supported Android devices.' },
+                { icon: 'location_on', title: 'Geo attendance', body: 'Check-in, check-out, WFH, and WFO flows on mobile.' },
+                { icon: 'task_alt', title: 'Task actioning', body: 'Accept, submit, review, and track work from the phone.' },
+                { icon: 'payments', title: 'Payroll access', body: 'Employees can view compensation and payslip records.' }
+              ].map((feature) => (
+                <div key={feature.title} className="border border-slate-200 rounded-2xl p-5 bg-slate-50">
+                  <span className="material-symbols-outlined text-blue-600 text-[24px] mb-3 block">{feature.icon}</span>
+                  <h3 className="font-extrabold text-slate-900 text-sm mb-1">{feature.title}</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">{feature.body}</p>
+                </div>
+              ))}
             </div>
 
-            <div className="p-6 md:p-10 flex flex-col md:flex-row gap-8 items-stretch">
-              {/* Left Column: APK Details */}
-              <div className="flex-1 space-y-6 flex flex-col justify-between">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-blue-600 text-[28px]">android</span>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-[210px] h-[360px] rounded-[34px] border-[10px] border-slate-900 bg-slate-50 shadow-sm p-3 flex flex-col">
+                <div className="w-20 h-4 bg-slate-900 rounded-full mx-auto mb-5"></div>
+                <div className="flex-1 bg-white border border-slate-200 rounded-[24px] p-4 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="h-14 w-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center mx-auto font-black text-xl">
+                      W
                     </div>
                     <div>
-                      <h3 className="font-extrabold text-slate-900 text-lg leading-tight">Android Application</h3>
-                      <p className="text-xs text-slate-400">Release Version 1.0.0 (Build 42)</p>
+                      <p className="text-sm font-extrabold text-slate-900">WorkforceOS</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Android ready</p>
+                    </div>
+                    <div className="space-y-2 text-left">
+                      {['Attendance', 'Tasks', 'Leaves', 'Payroll'].map((item) => (
+                        <div key={item} className="h-8 rounded-xl bg-slate-50 border border-slate-100 px-3 flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-600">{item}</span>
+                          <span className="h-2 w-2 rounded-full bg-blue-600"></span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-
-                  <p className="text-slate-500 text-xs leading-relaxed font-sans">
-                    Download and install our secure native Android application to enable biometric logins (Fingerprint / Face ID) and real-time push notifications.
-                  </p>
-
-                  {/* Safety & Compliance Badges */}
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                      <span className="material-symbols-outlined text-green-605 text-[18px]">verified_user</span>
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-bold text-slate-800 truncate">Play Protect Safe</p>
-                        <p className="text-[8px] text-slate-400 truncate">Google Certified</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                      <span className="material-symbols-outlined text-blue-600 text-[18px]">lock</span>
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-bold text-slate-800 truncate">AES-256 Encrypted</p>
-                        <p className="text-[8px] text-slate-400 truncate">Data in Transit & Rest</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                      <span className="material-symbols-outlined text-slate-600 text-[18px]">shield</span>
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-bold text-slate-800 truncate">ISO 27001 Infrastructure</p>
-                        <p className="text-[8px] text-slate-400 truncate">Compliance Verified</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                      <span className="material-symbols-outlined text-emerald-600 text-[18px]">gpp_good</span>
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-bold text-slate-800 truncate">SHA-256 Verified</p>
-                        <p className="text-[8px] text-slate-400 truncate">No modified payloads</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Direct Download Button */}
-                <div className="pt-4 flex flex-col sm:flex-row gap-3">
-                  <a
-                    href="/downloads/workforceos-release.apk"
-                    download
-                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 cursor-pointer border border-blue-600 active:scale-95"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">download</span>
-                    Download Android APK (24.8 MB)
-                  </a>
-                  <div className="flex gap-2 shrink-0 justify-center">
-                    <div className="h-10 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 opacity-60 cursor-not-allowed">
-                      <span className="material-symbols-outlined text-[16px] text-slate-400">shop</span>
-                      <span className="text-[10px] font-bold text-slate-500 font-sans">Play Store</span>
-                    </div>
-                    <div className="h-10 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 opacity-60 cursor-not-allowed">
-                      <span className="material-symbols-outlined text-[16px] text-slate-400">phone_iphone</span>
-                      <span className="text-[10px] font-bold text-slate-500 font-sans">iOS App</span>
-                    </div>
-                  </div>
+                  <Link href="/mobile-app" className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-[11px] font-extrabold text-center">
+                    View Mobile App
+                  </Link>
                 </div>
               </div>
-
-              {/* Right Column: Interactive Phone Screen Showcase */}
-              <div className="w-full md:w-72 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shrink-0 relative overflow-hidden h-[340px]">
-                {/* Phone Notch/Speaker */}
-                <div className="w-24 h-4 bg-slate-800 rounded-full mx-auto mb-4 shrink-0 flex items-center justify-center">
-                  <span className="w-6 h-1 bg-slate-600 rounded-full"></span>
-                </div>
-                
-                {/* Mini mobile login mockup */}
-                <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4 flex flex-col justify-between relative">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <img src="/workforceoslogo.png" alt="logo" className="h-5 w-5 object-contain" />
-                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-800 font-sans">WorkforceOS</span>
-                    </div>
-                    <div className="space-y-1 text-left">
-                      <p className="text-[11px] font-bold text-slate-900">Sign in to organization</p>
-                      <p className="text-[8px] text-slate-400">Secure enterprise portal</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 w-full">
-                    <div className="h-7 border border-slate-200 rounded px-2 flex items-center text-[8px] text-slate-400 select-none">
-                      Work email address
-                    </div>
-                    <div className="h-7 border border-slate-200 rounded px-2 flex items-center justify-between text-[8px] text-slate-400 select-none">
-                      <span>Password</span>
-                      <span className="material-symbols-outlined text-[12px] text-slate-300">visibility_off</span>
-                    </div>
-                    <div className="h-7 bg-blue-600 rounded flex items-center justify-center text-[8px] font-bold text-white shadow-sm select-none cursor-pointer">
-                      Log In Securely
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-1 text-[7px] text-slate-400">
-                    <span className="material-symbols-outlined text-[10px] text-green-600">security</span>
-                    <span>Verified secure checkout via SSL</span>
-                  </div>
-                </div>
-
-                {/* Footer text */}
-                <p className="text-[8px] text-slate-400 text-center mt-3 font-semibold font-sans">SHA-256: 4e9d72a8c3...94b2f1</p>
-              </div>
-
+              <Link href="/mobile-app" className="mt-6 px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-colors">
+                Open mobile app page
+              </Link>
             </div>
           </div>
 
@@ -1698,101 +1613,37 @@ export default function HomepageClient() {
             <span className="inline-block px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full">
               Subscription Plans
             </span>
-            <h2 className="text-3xl md:text-[2.5rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              Transparent pricing, built for growth.
+              <h2 className="text-3xl md:text-[2.5rem] font-[800] tracking-[-0.02em] leading-tight text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Attractive pricing, built for growing teams.
             </h2>
             <p className="text-slate-550 text-sm md:text-base leading-relaxed max-w-2xl mx-auto font-sans">
-              All plans include our 7-day free trial. Setup takes under two minutes. Cancel or change plans at any time.
+              Start with a friendly monthly plan, scale when your team grows, or choose a one-time enterprise license. Full plan details are on the pricing page.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              {
-                name: 'Startup Tier',
-                price: '₹2,499',
-                billing: '/ month',
-                employees: 'Up to 15 employees',
-                features: ['Core HR Management', 'Geofenced Attendance', 'Standard Leave Management', 'Direct Manager Approvals', 'Mobile App Access'],
-                popular: false,
-                dots: true,
-              },
-              {
-                name: 'Growth Tier',
-                price: '₹7,999',
-                billing: '/ month',
-                employees: 'Up to 50 employees',
-                features: ['Everything in Startup', 'Advanced Payroll Generation', 'Performance Reviews', 'Expense Claim Auditing', 'Shift Configurations', 'Priority Email Support'],
-                popular: true,
-                dots: true,
-              },
-              {
-                name: 'Perpetual Enterprise',
-                price: '₹24,999',
-                billing: 'one-time',
-                employees: 'Unlimited employees',
-                features: ['Perpetual On-Premise License', 'Custom Active Directory (AD) sync', 'Dedicated SLA Support', 'All Advanced Modules Unlocked', 'White-label options available'],
-                popular: false,
-                dots: true,
-              }
-            ].map((plan, idx) => (
-              <div
-                key={idx}
-                className={`relative border rounded-[28px] p-8 bg-white transition-all flex flex-col justify-between select-none overflow-hidden ${
-                  plan.popular
-                    ? 'border-blue-600 bg-blue-50/5 scale-[1.02]'
-                    : 'border-slate-200 hover:border-slate-350'
-                }`}
-              >
-                {plan.dots && (
-                  <div className="flex gap-1.2 mb-6 justify-start shrink-0">
-                    <span className="w-2.2 h-2.2 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
-                    <span className="w-2.2 h-2.2 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
-                    <span className="w-2.2 h-2.2 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
-                  </div>
-                )}
-
-                {plan.popular && (
-                  <span className="absolute top-3 right-6 text-[8px] font-extrabold uppercase tracking-wider bg-blue-600 text-white px-2.5 py-1 rounded-full">
-                    Popular
-                  </span>
-                )}
-
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-extrabold text-slate-800 text-lg leading-tight">{plan.name}</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">{plan.employees}</p>
-                  </div>
-
-                  <div className="flex items-baseline">
-                    <span className="text-3xl font-[900] text-slate-900">{plan.price}</span>
-                    <span className="text-slate-500 text-xs ml-1 font-semibold">{plan.billing}</span>
-                  </div>
-
-                  <ul className="space-y-3.5 pt-4 border-t border-slate-100">
-                    {plan.features.map((feature, fIdx) => (
-                      <li key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-650 leading-normal">
-                        <span className="material-symbols-outlined text-[16px] text-blue-600 select-none">done</span>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+              { icon: 'rocket_launch', title: 'Startup-friendly entry', body: 'A low-friction plan for small teams moving away from spreadsheets.' },
+              { icon: 'trending_up', title: 'Scales with your org', body: 'Upgrade when payroll, performance, expense, and shift workflows get serious.' },
+              { icon: 'workspace_premium', title: 'Enterprise option', body: 'One-time license and custom deployment path for larger teams.' }
+            ].map((item) => (
+              <div key={item.title} className="bg-white border border-slate-200 rounded-2xl p-7 text-left">
+                <div className="h-10 w-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center mb-5">
+                  <span className="material-symbols-outlined text-blue-600 text-[22px]">{item.icon}</span>
                 </div>
-
-                <div className="pt-8">
-                  <button
-                    onClick={() => setShowTrialModal(true)}
-                    className={`w-full py-3 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                      plan.popular
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-slate-100 text-slate-705 hover:bg-slate-200 border border-slate-200'
-                    }`}
-                  >
-                    Start 7-Day Free Trial
-                  </button>
-                </div>
+                <h3 className="font-extrabold text-slate-900 text-base mb-2">{item.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{item.body}</p>
               </div>
             ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
+            <Link href="/pricing" className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-sm uppercase tracking-wider transition-all text-center">
+              View detailed pricing
+            </Link>
+            <button onClick={() => setShowTrialModal(true)} className="px-8 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold rounded-full text-sm uppercase tracking-wider transition-all">
+              Start 7-day trial
+            </button>
           </div>
 
         </div>
@@ -2003,13 +1854,10 @@ export default function HomepageClient() {
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fade-in">
           <div className="bg-white border border-slate-200 rounded-[28px] max-w-md w-full p-8 space-y-6 relative text-left">
             
-            {/* macOS Mock dots in the modal header */}
             <div className="flex justify-between items-center shrink-0">
-              <div className="flex gap-1.2">
-                <span className="w-2.2 h-2.2 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>
-                <span className="w-2.2 h-2.2 rounded-full bg-[#ffbd2e] border border-[#dea123]"></span>
-                <span className="w-2.2 h-2.2 rounded-full bg-[#27c93f] border border-[#1aab29]"></span>
-              </div>
+              <span className="text-[10px] bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1 rounded-full font-bold uppercase tracking-widest">
+                Trial Workspace
+              </span>
               <button
                 onClick={() => {
                   setShowTrialModal(false);
@@ -2025,6 +1873,9 @@ export default function HomepageClient() {
               <h3 className="text-xl font-black text-slate-900 leading-tight">Start Your 7-Day Trial</h3>
               <p className="text-xs text-slate-500 leading-relaxed font-sans">
                 Set up a sandboxed organization workspace instantly. No credit card required, unlock all premium operational features.
+              </p>
+              <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                Trial workspaces use <span className="font-mono font-bold text-slate-600">Workforce123!</span> as the temporary admin password.
               </p>
             </div>
 

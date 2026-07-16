@@ -88,7 +88,7 @@ export default function PaywallPage() {
       // Wait 1.5 seconds for UX, then reload user details to unlock access
       setTimeout(async () => {
         await refetchUser();
-        window.location.href = '/onboarding/setup';
+        window.location.href = '/dashboard';
       }, 1500);
     } catch (err: any) {
       setError(err.message || 'Verification failed. Please check the UTR and try again.');
@@ -141,7 +141,7 @@ export default function PaywallPage() {
             Unlock premium workspace access.
           </h1>
           <p className="text-slate-600 max-w-xl text-sm leading-relaxed">
-            Your 7-day trial of WorkforceOS has ended. Select a plan below to activate your account and start importing your team structure.
+            Your 7-day trial of WorkforceOS has ended. Select a plan below to activate your account and continue using your workspace.
           </p>
         </div>
 

@@ -11,7 +11,12 @@ export function requirePermission(resource: string, action: string | string[]) {
         throw AppError.unauthorized("Authentication required");
       }
 
-      if (req.user.systemRole === "SUPER_ADMIN" || req.user.systemRole === "ORG_ADMIN") {
+      if (
+        req.user.systemRole === "SYS_OWNER" ||
+        req.user.systemRole === "SUPER_ADMIN" ||
+        req.user.systemRole === "ORG_ADMIN" ||
+        req.user.originalRole === "SYS_OWNER"
+      ) {
         return next();
       }
 

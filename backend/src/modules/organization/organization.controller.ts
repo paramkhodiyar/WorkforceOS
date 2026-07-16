@@ -22,13 +22,18 @@ export const getOrgBySlug = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const updateOrgFeatures = asyncHandler(async (req: Request, res: Response) => {
-  if (req.user!.systemRole !== "SUPER_ADMIN" && req.user!.systemRole !== "ORG_ADMIN") {
+  if (
+    req.user!.systemRole !== "SYS_OWNER" &&
+    req.user!.systemRole !== "SUPER_ADMIN" &&
+    req.user!.systemRole !== "ORG_ADMIN" &&
+    req.user!.originalRole !== "SYS_OWNER"
+  ) {
     throw AppError.forbidden("Only organization administrators are authorized to configure features");
   }
 
   const { orgId } = req.params;
 
-  if (req.user!.systemRole === "ORG_ADMIN" && req.user!.organizationId !== orgId) {
+  if (req.user!.systemRole === "ORG_ADMIN" && req.user!.organizationId !== orgId && req.user!.originalRole !== "SYS_OWNER") {
     throw AppError.forbidden("You can only configure features for your own organization");
   }
 
@@ -39,13 +44,18 @@ export const updateOrgFeatures = asyncHandler(async (req: Request, res: Response
 });
 
 export const updateOrgLocation = asyncHandler(async (req: Request, res: Response) => {
-  if (req.user!.systemRole !== "SUPER_ADMIN" && req.user!.systemRole !== "ORG_ADMIN") {
+  if (
+    req.user!.systemRole !== "SYS_OWNER" &&
+    req.user!.systemRole !== "SUPER_ADMIN" &&
+    req.user!.systemRole !== "ORG_ADMIN" &&
+    req.user!.originalRole !== "SYS_OWNER"
+  ) {
     throw AppError.forbidden("Only organization administrators are authorized to configure geofencing settings");
   }
 
   const { orgId } = req.params;
 
-  if (req.user!.systemRole === "ORG_ADMIN" && req.user!.organizationId !== orgId) {
+  if (req.user!.systemRole === "ORG_ADMIN" && req.user!.organizationId !== orgId && req.user!.originalRole !== "SYS_OWNER") {
     throw AppError.forbidden("You can only configure geofencing settings for your own organization");
   }
 
@@ -61,7 +71,12 @@ export const updateOrgLocation = asyncHandler(async (req: Request, res: Response
 });
 
 export const verifyUpi = asyncHandler(async (req: Request, res: Response) => {
-  if (req.user!.systemRole !== "SUPER_ADMIN" && req.user!.systemRole !== "ORG_ADMIN") {
+  if (
+    req.user!.systemRole !== "SYS_OWNER" &&
+    req.user!.systemRole !== "SUPER_ADMIN" &&
+    req.user!.systemRole !== "ORG_ADMIN" &&
+    req.user!.originalRole !== "SYS_OWNER"
+  ) {
     throw AppError.forbidden("Only organization administrators are authorized to verify payments");
   }
 

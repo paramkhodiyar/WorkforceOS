@@ -75,6 +75,21 @@ async function main() {
     }
   });
 
+  console.log("Seeding system owner...");
+  await prisma.user.create({
+    data: {
+      email: "paramkhodiyar1008@gmail.com",
+      passwordHash: await bcrypt.hash("Param@1008", 10),
+      firstName: "Param",
+      lastName: "Owner",
+      systemRole: SystemRole.SYS_OWNER,
+      organizationId: org.id,
+      status: UserStatus.ACTIVE,
+      employeeId: "OWNER-001",
+      forcePasswordChange: false
+    }
+  });
+
   console.log("Seeding role templates...");
   const rolesData = [
     {

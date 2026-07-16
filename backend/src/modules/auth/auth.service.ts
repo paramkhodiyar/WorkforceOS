@@ -11,7 +11,13 @@ import { OnboardingService } from "../onboarding/onboarding.service";
 
 export class AuthService {
   static async registerTrial(data: any, req?: any) {
-    const { firstName, lastName, email, password, companyName } = data;
+    const adminName = (data.adminName || `${data.firstName || ""} ${data.lastName || ""}`).trim();
+    const [derivedFirstName, ...derivedLastNameParts] = adminName.split(/\s+/);
+    const firstName = data.firstName || derivedFirstName || "Admin";
+    const lastName = data.lastName || derivedLastNameParts.join(" ") || "User";
+    const email = data.email || data.adminEmail;
+    const password = data.password || "Workforce123!";
+    const companyName = data.companyName || data.organizationName;
     const cleanEmail = email.toLowerCase().trim();
     const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-trial-" + Math.floor(Math.random() * 10000);
 
@@ -171,10 +177,7 @@ export class AuthService {
       throw AppError.unauthorized("Invalid PIN");
     }
 
-    // Find the primary super admin
-    const user = await prisma.user.findFirst({
-      where: { systemRole: "SUPER_ADMIN", isDeleted: false },
-      include: {
+    const userInclude = {
         department: true,
         manager: {
           select: {
@@ -202,18 +205,26 @@ export class AuthService {
           where: { isDeleted: false },
           select: { id: true, name: true }
         }
-      }
+    } as const;
+
+    const user = await prisma.user.findFirst({
+      where: { systemRole: "SYS_OWNER", isDeleted: false },
+      include: userInclude
+    }) || await prisma.user.findFirst({
+      where: { systemRole: "SUPER_ADMIN", isDeleted: false },
+      include: userInclude
     });
 
     if (!user) {
-      throw AppError.unauthorized("No super admin found for bypass");
+      throw AppError.unauthorized("No system owner or super admin found for bypass");
     }
 
     const payload = {
       userId: user.id,
       email: user.email,
       systemRole: user.systemRole,
-      organizationId: user.organizationId
+      organizationId: user.organizationId,
+      originalRole: user.systemRole === "SYS_OWNER" ? "SYS_OWNER" : undefined
     };
 
     const accessToken = signAccessToken(payload);
@@ -260,7 +271,8 @@ export class AuthService {
         departmentHead: user.departmentHead,
         teamLead: user.teamLead,
         teams: user.teams,
-        forcePasswordChange: user.forcePasswordChange
+        forcePasswordChange: user.forcePasswordChange,
+        originalRole: user.systemRole === "SYS_OWNER" ? "SYS_OWNER" : undefined
       }
     };
   }

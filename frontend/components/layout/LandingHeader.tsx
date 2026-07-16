@@ -45,6 +45,8 @@ export function LandingHeader() {
 
   const navLinks = [
     { name: 'Features', href: '/features' },
+    { name: 'Pricing', href: '/pricing' },
+    { name: 'Mobile App', href: '/mobile-app' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];

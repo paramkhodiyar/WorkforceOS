@@ -4,6 +4,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: User & {
+        originalRole?: string;
         roles?: Array<{
           roleId: string;
           roleName: string;

@@ -9,7 +9,12 @@ export async function getPermissionScopes(
   action: string
 ) {
   // Super Admins and Org Admins have global scopes
-  if (user.systemRole === SystemRole.SUPER_ADMIN || user.systemRole === SystemRole.ORG_ADMIN) {
+  if (
+    user.systemRole === SystemRole.SYS_OWNER ||
+    user.systemRole === SystemRole.SUPER_ADMIN ||
+    user.systemRole === SystemRole.ORG_ADMIN ||
+    user.originalRole === SystemRole.SYS_OWNER
+  ) {
     return {
       isGlobal: true,
       departmentIds: [],

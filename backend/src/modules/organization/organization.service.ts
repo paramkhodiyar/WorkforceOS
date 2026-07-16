@@ -96,35 +96,18 @@ export class OrganizationService {
       throw new Error("Organization not found");
     }
 
-    // Update org subscription status
     const updated = await prisma.organization.update({
       where: { id },
       data: {
         subscriptionStatus: "ACTIVE",
         subscriptionTier: tier,
         paymentRef: utr,
-        isSetupComplete: false // Force them to complete onboarding now that they paid
+        trialEndDate: null,
+        isSetupComplete: true
       }
     });
 
-    // Clear trial demo data if it was a trial organization
     if (org.name.includes("(Trial)") || org.slug.includes("-trial-")) {
-      const usersToDelete = org.users.filter(u => u.id !== actorId);
-      const userIdsToDelete = usersToDelete.map(u => u.id);
-
-      if (userIdsToDelete.length > 0) {
-        await prisma.attendance.deleteMany({ where: { userId: { in: userIdsToDelete } } });
-        await prisma.leaveRequest.deleteMany({ where: { userId: { in: userIdsToDelete } } });
-        await prisma.leaveBalance.deleteMany({ where: { userId: { in: userIdsToDelete } } });
-        await prisma.userRole.deleteMany({ where: { userId: { in: userIdsToDelete } } });
-        await prisma.refreshToken.deleteMany({ where: { userId: { in: userIdsToDelete } } });
-        await prisma.task.deleteMany({ where: { assigneeId: { in: userIdsToDelete } } });
-        await prisma.user.deleteMany({ where: { id: { in: userIdsToDelete } } });
-      }
-
-      await prisma.task.deleteMany({ where: { orgId: id } });
-      await prisma.department.deleteMany({ where: { organizationId: id } });
-
       const cleanName = org.name.replace(" (Trial)", "");
       await prisma.organization.update({
         where: { id },

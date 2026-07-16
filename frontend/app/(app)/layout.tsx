@@ -17,9 +17,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      const isSystemOwner = user.systemRole === 'SYS_OWNER' || user.originalRole === 'SYS_OWNER';
+
       // Intercept SYS_OWNER without selected active role
       if (user.systemRole === 'SYS_OWNER' && pathname !== '/select-role') {
         router.push('/select-role');
+        return;
+      }
+
+      if (isSystemOwner) {
         return;
       }
 

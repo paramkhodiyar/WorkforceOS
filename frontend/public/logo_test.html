@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkforceOS — Alignment Check</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h2 { margin-bottom: 5px; }
+    p { color: #94a3b8; margin: 0 0 20px; }
+    .row {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+    .box {
+      width: 300px;
+      height: 340px;
+      background: #fff;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .box img, .box svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+    }
+    .overlay img { opacity: .45; z-index: 1; }
+    .overlay .vec { opacity: .75; z-index: 2; }
+  </style>
+</head>
+<body>
+  <h2>WorkforceOS Logo — Pixel Alignment Check</h2>
+  <p>Comparing original PNG vs extracted SVG vector (channels are transparent cutouts revealing white bg)</p>
+
+  <div class="row">
+    <div class="card">
+      <div class="label">Original PNG</div>
+      <div class="box">
+        <img src="/workforceoslogo.png" alt="original">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">50/50 Overlay</div>
+      <div class="box overlay">
+        <img src="/workforceoslogo.png" alt="original">
+        <svg class="vec" viewBox="0 0 572 650" xmlns="http://www.w3.org/2000/svg">
+          <rect width="572" height="650" fill="white" opacity="0"/>
+          <polygon points="298.0,637.5 297.0,533.5 409.5,466.0 395.5,452.0 391.0,452.5 297.0,506.5 296.5,331.0 448.5,244.0 449.0,357.5 470.0,362.5 559.0,311.5 559.5,485.0" fill="#fd8902" />
+          <polygon points="274.0,638.5 11.5,485.0 11.5,181.0 21.0,182.5 100.5,229.0 101.5,362.0 122.5,356.0 123.0,242.5 275.5,332.0 274.5,507.0 180.0,452.5 161.5,466.0 274.5,533.0" fill="#59cb8f" />
+          <polygon points="34.5,166.0 26.0,157.5 284.0,11.5 543.0,156.5 545.0,161.5 460.0,210.5 343.5,146.0 332.5,163.0 335.0,166.5 436.0,224.5 287.0,311.5 134.5,224.0 236.5,166.0 227.0,145.5 111.5,210.0" fill="#028b61" />
+          <polygon points="472.0,334.5 470.5,230.0 555.0,180.5 558.5,181.0 558.0,284.5" fill="#028b61" />
+        </svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">SVG Vector (on white)</div>
+      <div class="box">
+        <svg viewBox="0 0 572 650" xmlns="http://www.w3.org/2000/svg">
+          <rect width="572" height="650" fill="white"/>
+          <polygon points="298.0,637.5 297.0,533.5 409.5,466.0 395.5,452.0 391.0,452.5 297.0,506.5 296.5,331.0 448.5,244.0 449.0,357.5 470.0,362.5 559.0,311.5 559.5,485.0" fill="#fd8902" />
+          <polygon points="274.0,638.5 11.5,485.0 11.5,181.0 21.0,182.5 100.5,229.0 101.5,362.0 122.5,356.0 123.0,242.5 275.5,332.0 274.5,507.0 180.0,452.5 161.5,466.0 274.5,533.0" fill="#59cb8f" />
+          <polygon points="34.5,166.0 26.0,157.5 284.0,11.5 543.0,156.5 545.0,161.5 460.0,210.5 343.5,146.0 332.5,163.0 335.0,166.5 436.0,224.5 287.0,311.5 134.5,224.0 236.5,166.0 227.0,145.5 111.5,210.0" fill="#028b61" />
+          <polygon points="472.0,334.5 470.5,230.0 555.0,180.5 558.5,181.0 558.0,284.5" fill="#028b61" />
+        </svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">SVG Vector (on dark)</div>
+      <div class="box" style="background:#0f172a;">
+        <svg viewBox="0 0 572 650" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="298.0,637.5 297.0,533.5 409.5,466.0 395.5,452.0 391.0,452.5 297.0,506.5 296.5,331.0 448.5,244.0 449.0,357.5 470.0,362.5 559.0,311.5 559.5,485.0" fill="#fd8902" />
+          <polygon points="274.0,638.5 11.5,485.0 11.5,181.0 21.0,182.5 100.5,229.0 101.5,362.0 122.5,356.0 123.0,242.5 275.5,332.0 274.5,507.0 180.0,452.5 161.5,466.0 274.5,533.0" fill="#59cb8f" />
+          <polygon points="34.5,166.0 26.0,157.5 284.0,11.5 543.0,156.5 545.0,161.5 460.0,210.5 343.5,146.0 332.5,163.0 335.0,166.5 436.0,224.5 287.0,311.5 134.5,224.0 236.5,166.0 227.0,145.5 111.5,210.0" fill="#028b61" />
+          <polygon points="472.0,334.5 470.5,230.0 555.0,180.5 558.5,181.0 558.0,284.5" fill="#028b61" />
+        </svg>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -31,3 +31,25 @@ backend/uploads/
 backend/scratch/
 
 WorkforceOS_Complete_Redesign_Spec.md
+
+# ── Temporary logo-tracing / SVG-extraction scripts ──────────────────────────
+frontend/trace.js
+frontend/trace_lines.js
+frontend/trace_channels.js
+frontend/trace_grooves.js
+frontend/skeleton.js
+frontend/find_exact_center.js
+frontend/find_hexagon_corners.js
+frontend/extract_vector.js
+frontend/extract_logo_python.py
+frontend/build_final_svg.js
+frontend/build_complete_svg.py
+frontend/optimize_alignment.js
+frontend/logo_polygons.json
+frontend/logo_polygons_full.json
+frontend/workforceos_logo.svg
+frontend/workforceos_logo_python.svg
+frontend/workforceos_logo_v2.svg
+frontend/workforceos_logo_final.svg
+frontend/workforceos_logo_complete.svg
+frontend/extracted_logo.svg

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkforceOS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    #splash {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ─── Cube ─────────────────────────────────────────── */
+    /*
+     * cube-wrap is the "ground" element that squishes on landing.
+     * transform-origin at bottom center so the squish looks like
+     * the cube hitting the floor.
+     */
+    #cube-wrap {
+      position: relative;
+      width: 160px;
+      height: 182px;
+      transform-origin: center bottom;
+    }
+
+    /*
+     * Each piece is an absolutely-positioned div containing a full-canvas
+     * SVG (viewBox 0 0 572 650). Because all SVGs share the same viewBox
+     * the pieces are all pixel-perfectly aligned when every piece div is
+     * at transform: none. Moving the div in CSS pixels moves the whole
+     * transparent canvas, so the polygon inside drifts.
+     */
+    .piece {
+      position: absolute;
+      inset: 0;
+      will-change: transform, opacity;
+    }
+
+    .piece svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    /* ─── Landing shadow ring ────────────────────────────── */
+    #shadow-ring {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%) scaleX(1);
+      width: 120px;
+      height: 20px;
+      opacity: 0;
+      pointer-events: none;
+      will-change: opacity, transform;
+    }
+
+    /* ─── App name ───────────────────────────────────────── */
+    #app-name {
+      display: flex;
+      align-items: baseline;
+      margin-top: 16px;
+      will-change: transform, opacity;
+      opacity: 0;
+      transform: translateY(-120px);
+    }
+
+    #name-main {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #111827;
+      line-height: 1;
+    }
+
+    #name-os {
+      font-size: 36px;
+      font-weight: 300;
+      letter-spacing: -0.03em;
+      color: #59cb8f;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+<div id="splash">
+
+  <div id="cube-wrap">
+
+    <!-- Landing shadow (SVG ellipse, renders below the cube) -->
+    <svg id="shadow-ring" viewBox="0 0 120 20" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="60" cy="10" rx="55" ry="7" fill="rgba(0,0,0,0.12)"/>
+    </svg>
+
+    <!--
+      PIECE ORDER: paint back → front
+      1. Dark green top face
+      2. Dark green right-wall strip
+      3. Light green left face
+      4. Orange right face
+    -->
+
+    <!-- Top face — floats UP when scattered -->
+    <div class="piece" id="p-top">
+      <svg viewBox="0 0 572 650" xmlns="http://www.w3.org/2000/svg">
+        <polygon
+          points="34,166 26,158 284,12 543,157 545,162 460,211 344,146 333,163 335,167 436,225 287,312 135,224 237,166 227,146 112,210"
+          fill="#028b61"/>
+      </svg>
+    </div>
+
+    <!-- Right strip — floats RIGHT when scattered -->
+    <div class="piece" id="p-strip">
+      <svg viewBox="0 0 572 650" xmlns="http://www.w3.org/2000/svg">
+        <polygon
+          points="472,335 471,230 555,181 559,181 558,285"
+          fill="#028b61"/>
+      </svg>
+    </div>
+
+    <!-- Left face — floats LEFT when scattered -->
+    <div class="piece" id="p-left">
+      <svg viewBox="0 0 572 650" xmlns="http://www.w3.org/2000/svg">
+        <polygon
+          points="274,639 12,485 12,181 21,183 101,229 102,362 123,356 123,243 276,332 275,507 180,453 162,466 275,533"
+          fill="#59cb8f"/>
+      </svg>
+    </div>
+
+    <!-- Right face — floats RIGHT when scattered -->
+    <div class="piece" id="p-right">
+      <svg viewBox="0 0 572 650" xmlns="http://www.w3.org/2000/svg">
+        <polygon
+          points="298,638 297,534 410,466 396,452 391,453 297,507 297,331 449,244 449,358 470,363 559,312 560,485"
+          fill="#fd8902"/>
+      </svg>
+    </div>
+
+  </div><!-- /cube-wrap -->
+
+  <div id="app-name">
+    <span id="name-main">workforce</span><span id="name-os">os</span>
+  </div>
+
+</div><!-- /splash -->
+
+<script>
+/*
+ * ANIMATION STORYBOARD
+ * ────────────────────────────────────────────────────────────
+ *  0.00s  Pieces rendered in scattered isometric positions
+ *  0.30s  Pieces begin flying toward each other
+ *  1.00s  All pieces arrive — cube assembled
+ *  1.05s  Squish (cube hits "floor")
+ *  1.20s  Squish rebounds — shadow ring pulses in
+ *  1.45s  Shadow ring fades away
+ *  1.55s  "workforceos" falls from above — heavy landing
+ *  1.90s  Text settles
+ *  3.90s  Everything fades out
+ * ────────────────────────────────────────────────────────────
+ *
+ * Scatter directions follow the 3 isometric axes:
+ *   Top face   →  straight UP:         translate(0, -Y)
+ *   Left face  →  iso-left (↖ isomtrc): translate(-X, +X/2)
+ *   Right face →  iso-right (↗ isomtrc): translate(+X, +X/2)
+ *   Strip      →  same as right face
+ */
+
+const pTop   = document.getElementById('p-top');
+const pStrip = document.getElementById('p-strip');
+const pLeft  = document.getElementById('p-left');
+const pRight = document.getElementById('p-right');
+const cubeWrap  = document.getElementById('cube-wrap');
+const shadowRing = document.getElementById('shadow-ring');
+const appName   = document.getElementById('app-name');
+
+// ── Utility ─────────────────────────────────────────────────
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+function setCSS(el, props) {
+  Object.assign(el.style, props);
+}
+
+function transition(el, transform, duration, easing, delay = 0, extraProps = {}) {
+  const tStr = `transform ${duration}ms ${easing} ${delay}ms`;
+  const oStr = extraProps.opacity !== undefined
+    ? `, opacity ${duration * 0.7}ms ease ${delay}ms`
+    : '';
+  setCSS(el, {
+    transition: tStr + oStr,
+    transform,
+    ...extraProps,
+  });
+}
+
+// ── Scatter positions (CSS pixel translations on the 160×182 box) ──
+// Isometric left  = screen direction (-1, +0.5) normalised
+// Isometric right = screen direction (+1, +0.5) normalised
+const SCATTER = {
+  top:   'translate(0px, -72px)',
+  left:  'translate(-68px, 34px)',
+  right: 'translate(68px, 34px)',
+  strip: 'translate(78px, 20px)',
+};
+
+const ASSEMBLED = 'translate(0px, 0px)';
+
+// ── Run ─────────────────────────────────────────────────────
+async function run() {
+
+  /* ── 0: Snap to scattered positions instantly ── */
+  setCSS(pTop,   { transition: 'none', transform: SCATTER.top });
+  setCSS(pStrip, { transition: 'none', transform: SCATTER.strip });
+  setCSS(pLeft,  { transition: 'none', transform: SCATTER.left });
+  setCSS(pRight, { transition: 'none', transform: SCATTER.right });
+  setCSS(cubeWrap, { transition: 'none', transform: 'scaleY(1) scaleX(1)' });
+  setCSS(shadowRing, { transition: 'none', opacity: '0', transform: 'translateX(-50%) scaleX(0.4)' });
+  setCSS(appName, { transition: 'none', opacity: '0', transform: 'translateY(-120px)' });
+
+  await wait(300); // brief hold showing scattered state
+
+  /* ── 1: Assemble — pieces fly together ── */
+  // Stagger: top arrives first (it falls), sides come in simultaneously
+  const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'; // fast start, decelerate
+  const dur = 650;
+
+  transition(pTop,   ASSEMBLED, dur,       ease, 0);
+  transition(pLeft,  ASSEMBLED, dur,       ease, 40);
+  transition(pRight, ASSEMBLED, dur,       ease, 40);
+  transition(pStrip, ASSEMBLED, dur - 50, ease, 80);
+
+  await wait(dur + 80 + 30); // wait for last piece + a tiny beat
+
+  /* ── 2: Squish — cube "hits the floor" ── */
+  setCSS(cubeWrap, {
+    transition: 'transform 90ms cubic-bezier(0.55, 0, 1, 0.45)',
+    transform: 'scaleX(1.08) scaleY(0.86)',
+  });
+
+  await wait(90);
+
+  /* ── 3: Rebound + shadow ring ── */
+  setCSS(cubeWrap, {
+    transition: 'transform 380ms cubic-bezier(0.34, 1.6, 0.64, 1)',
+    transform: 'scaleX(1) scaleY(1)',
+  });
+
+  // Shadow ring pulses in right as cube rebounds
+  setCSS(shadowRing, {
+    transition: 'opacity 120ms ease, transform 380ms cubic-bezier(0.34, 1.6, 0.64, 1)',
+    opacity: '1',
+    transform: 'translateX(-50%) scaleX(1)',
+  });
+
+  await wait(380);
+
+  // Shadow fades out
+  setCSS(shadowRing, {
+    transition: 'opacity 400ms ease',
+    opacity: '0',
+  });
+
+  await wait(180);
+
+  /* ── 4: App name drops in heavy ── */
+  // First make it visible at the starting (high-up) position
+  setCSS(appName, {
+    transition: 'none',
+    opacity: '1',
+    transform: 'translateY(-110px)',
+  });
+
+  await wait(16); // one rAF so browser registers the snap
+
+  // Fast drop to slightly BELOW final position (overshoot = weight)
+  setCSS(appName, {
+    transition: 'transform 320ms cubic-bezier(0.55, 0, 0.75, 0)',
+    transform: 'translateY(6px)',
+  });
+
+  await wait(320);
+
+  // Quick spring back to exact zero
+  setCSS(appName, {
+    transition: 'transform 200ms cubic-bezier(0.34, 1.4, 0.64, 1)',
+    transform: 'translateY(0px)',
+  });
+
+  await wait(2600); // ── Hold so user can read ──
+
+  /* ── 5: Fade everything out ── */
+  const splash = document.getElementById('splash');
+  setCSS(splash, {
+    transition: 'opacity 700ms ease',
+    opacity: '0',
+  });
+
+  await wait(700);
+  // (React Native / the actual app would unmount the splash here)
+}
+
+run();
+</script>
+</body>
+</html>

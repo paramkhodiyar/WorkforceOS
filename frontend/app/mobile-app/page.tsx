@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LandingHeader } from '../../components/layout/LandingHeader';
 import { LandingFooter } from '../../components/layout/LandingFooter';
+import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'Mobile App | WorkforceOS',
@@ -63,8 +64,14 @@ export default function MobileAppPage() {
                         WorkforceOS
                       </Link>
                       <div className="flex gap-4 items-center">
-                        <div className="h-24 w-24 rounded-[22px] bg-blue-600 text-white flex items-center justify-center font-black text-4xl shadow-sm">
-                          W
+                        <div className="h-24 w-24 rounded-[22px] bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                          <Image
+                            src="/workforceoslogo.png"
+                            alt="WorkforceOS Logo"
+                            width={70}
+                            height={70}
+                            className="object-contain"
+                          />
                         </div>
                         <div className="min-w-0">
                           <h2 className="text-2xl font-black tracking-tight leading-tight">WorkforceOS</h2>

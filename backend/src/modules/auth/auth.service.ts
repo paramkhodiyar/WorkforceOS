@@ -311,7 +311,8 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       systemRole: user.systemRole,
-      organizationId: user.organizationId
+      organizationId: user.organizationId,
+      originalRole: user.systemRole === "SYS_OWNER" ? "SYS_OWNER" : undefined
     };
 
     const accessToken = signAccessToken(payload);
@@ -400,7 +401,8 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       systemRole: user.systemRole,
-      organizationId: user.organizationId
+      organizationId: user.organizationId,
+      originalRole: user.systemRole === "SYS_OWNER" ? "SYS_OWNER" : undefined
     };
 
     const newAccessToken = signAccessToken(payload);
@@ -481,5 +483,62 @@ export class AuthService {
     });
 
     return updatedUser;
+  }
+
+  static async switchRole(userId: string, selectedRole: string, currentPayload: any) {
+    if (currentPayload.originalRole !== "SYS_OWNER") {
+      throw AppError.forbidden("Only the system owner is authorized to switch roles dynamically");
+    }
+
+    const allowedRoles = ["ORG_ADMIN", "HR", "EMPLOYEE"];
+    if (!allowedRoles.includes(selectedRole)) {
+      throw AppError.badRequest("Invalid target role for owner simulation");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw AppError.notFound("User not found");
+    }
+
+    const payload = {
+      userId: user.id,
+      email: user.email,
+      systemRole: selectedRole,
+      organizationId: user.organizationId,
+      originalRole: "SYS_OWNER"
+    };
+
+    const accessToken = signAccessToken(payload);
+    const refreshToken = signRefreshToken(payload);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        token: refreshToken,
+        expiresAt
+      }
+    });
+
+    // Clear session cache to force reload in authenticate middleware
+    await redis.del(`user:session:${userId}`).catch(() => {});
+
+    return {
+      tokens: { accessToken, refreshToken },
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        systemRole: selectedRole,
+        organizationId: user.organizationId,
+        originalRole: "SYS_OWNER"
+      }
+    };
   }
 }

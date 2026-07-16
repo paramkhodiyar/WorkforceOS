@@ -3,6 +3,7 @@ export interface JwtPayload {
   email: string;
   systemRole: string;
   organizationId: string;
+  originalRole?: string;
 }
 
 export interface TokenPair {

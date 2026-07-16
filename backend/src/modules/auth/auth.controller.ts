@@ -22,6 +22,13 @@ export const masterBypass = asyncHandler(async (req: Request, res: Response) => 
   return sendSuccess(res, result);
 });
 
+export const switchRole = asyncHandler(async (req: Request, res: Response) => {
+  const { role } = req.body;
+  const userId = req.user!.id;
+  const result = await AuthService.switchRole(userId, role, req.user!);
+  return sendSuccess(res, result, "Role simulated successfully");
+});
+
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
   const result = await AuthService.refresh(refreshToken);

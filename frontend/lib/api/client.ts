@@ -178,6 +178,11 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
+    switchRole: (role: string): Promise<any> =>
+      request('/auth/switch-role', {
+        method: 'POST',
+        body: JSON.stringify({ role }),
+      }),
     getAdminContact: (): Promise<any> => request('/auth/admin-contact'),
   },
   employees: {

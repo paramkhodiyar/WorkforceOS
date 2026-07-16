@@ -108,6 +108,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login');
   }
 
+  async function switchRole(role: string): Promise<void> {
+    setLoading(true);
+    try {
+      const response = await api.auth.switchRole(role);
+      const token = response.data.tokens.accessToken;
+      localStorage.setItem('token', token);
+      localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+      setUser(response.data.user);
+      
+      if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
+        (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
+          type: 'save_token',
+          token,
+          refreshToken: response.data.tokens.refreshToken,
+        }));
+      }
+
+      try {
+        const orgRes = await api.organization.get();
+        setOrganization(orgRes.data);
+        setFeatures(orgRes.data.enabledFeatures || []);
+      } catch (err) {
+        console.error(err);
+      }
+      setLoading(false);
+      router.push('/dashboard');
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -119,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         quickLogin,
         logout,
+        switchRole,
         refetchUser: loadUser,
       }}
     >

@@ -17,6 +17,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Intercept SYS_OWNER without selected active role
+      if (user.systemRole === 'SYS_OWNER' && pathname !== '/select-role') {
+        router.push('/select-role');
+        return;
+      }
+
       // Check Trial / Subscription Expiration
       if (organization) {
         const isTrial = organization.subscriptionStatus === 'TRIAL';

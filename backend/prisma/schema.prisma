@@ -27,6 +27,7 @@ enum SubscriptionTier {
 }
 
 enum SystemRole {
+  SYS_OWNER
   SUPER_ADMIN
   ORG_ADMIN
   HR

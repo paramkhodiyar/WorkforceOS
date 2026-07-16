@@ -94,6 +94,12 @@ export default function TopNavBar() {
       </div>
 
       <div className="flex items-center gap-4">
+        {user.originalRole === 'SYS_OWNER' && (
+          <Link href="/select-role" className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 hover:bg-blue-100 transition-all shrink-0">
+            <span className="material-symbols-outlined text-[14px]">sync_alt</span>
+            Switch ({user.systemRole})
+          </Link>
+        )}
         <div className="relative">
           <button
             onClick={() => {

@@ -63,6 +63,8 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
 
     req.user = {
       ...user,
+      systemRole: decoded.systemRole || user.systemRole,
+      originalRole: decoded.originalRole,
       roles: formattedRoles
     } as any;
 

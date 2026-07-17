@@ -189,8 +189,8 @@ export async function computeLopDays(
   year: number,
   organizationId: string
 ): Promise<{ lopDays: number; workingDays: number }> {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0); // last day of month
+  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)); // last day of month
 
   const attendanceRecords = await prisma.attendance.findMany({
     where: {
@@ -228,11 +228,12 @@ export async function computeLopDays(
     holidaysInMonth.map(h => h.date.toISOString().split("T")[0])
   );
 
-  let tempDate = new Date(startDate);
+  let tempDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDateUTC = new Date(Date.UTC(year, month, 0));
   let weekdayHolidays = 0;
   
-  while (tempDate <= endDate) {
-    const dayOfWeek = tempDate.getDay(); // 0 = Sunday, 6 = Saturday
+  while (tempDate <= endDateUTC) {
+    const dayOfWeek = tempDate.getUTCDay(); // 0 = Sunday, 6 = Saturday
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     
     if (isWeekend) {
@@ -243,10 +244,10 @@ export async function computeLopDays(
         weekdayHolidays++;
       }
     }
-    tempDate.setDate(tempDate.getDate() + 1);
+    tempDate.setUTCDate(tempDate.getUTCDate() + 1);
   }
 
-  const totalDaysInMonth = new Date(year, month, 0).getDate();
+  const totalDaysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const workingDays = totalDaysInMonth - weekendCount - weekdayHolidays;
 
   const lopDays = Math.max(workingDays - paidDays, 0);

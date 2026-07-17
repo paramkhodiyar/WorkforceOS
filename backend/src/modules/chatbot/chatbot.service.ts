@@ -6,6 +6,22 @@ import { LeaveService } from "../leave/leave.service";
 import { LeaveType } from "@prisma/client";
 
 export class ChatbotService {
+  private static formatLocalDate(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  private static shiftLocalDate(date: Date, days: number) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  }
+
+  private static parseLocalDate(dateStr: string) {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
   private static async callLLM(systemPrompt: string, userMessage: string): Promise<string> {
     const geminiKey = config.GEMINI_API_KEY;
     const groqKey = config.GROQ_API_KEY;
@@ -113,7 +129,7 @@ WorkforceOS is a next-generation employee operations suite offering:
         select: { title: true, status: true, dueDate: true, priority: true }
       }),
       prisma.attendance.findMany({
-        where: { userId, date: { gte: new Date(new Date().setDate(new Date().getDate() - 30)) } },
+        where: { userId, date: { gte: ChatbotService.shiftLocalDate(new Date(), -30) } },
         select: { date: true, status: true, workMode: true }
       }),
       prisma.leaveBalance.findMany({
@@ -158,7 +174,12 @@ WorkforceOS is a next-generation employee operations suite offering:
       .map((h: any) => `${h.role === "user" ? "Employee" : "Nexus"}: ${h.text}`)
       .join("\n");
 
-    const todayDateStr = new Date().toISOString().split("T")[0];
+    const today = new Date();
+    const todayDateStr = ChatbotService.formatLocalDate(today);
+
+    const tomorrowStr = ChatbotService.formatLocalDate(ChatbotService.shiftLocalDate(today, 1));
+
+    const dayAfterStr = ChatbotService.formatLocalDate(ChatbotService.shiftLocalDate(today, 2));
 
     const systemPrompt = `You are "Nexus", the quirky, smart, and efficient operations assistant AI inside the WorkforceOS employee dashboard.
 Your job is strictly to help the current logged-in employee (${user.firstName} ${user.lastName}) manage their operations.
@@ -168,8 +189,8 @@ ${JSON.stringify(employeeContext, null, 2)}
 
 Today's date is: ${todayDateStr}.
 Relative date guide:
-- Tomorrow is: ${new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split("T")[0]}
-- Day after tomorrow is: ${new Date(new Date().setDate(new Date().getDate() + 2)).toISOString().split("T")[0]}
+- Tomorrow is: ${tomorrowStr}
+- Day after tomorrow is: ${dayAfterStr}
 
 **OPERATIONAL FLOWS**:
 1. **Leave Application Flow**:
@@ -206,8 +227,8 @@ Nexus:`;
 
     if (commandMatch) {
       const leaveType = commandMatch[1] as LeaveType;
-      const startDate = new Date(commandMatch[2]);
-      const endDate = new Date(commandMatch[3]);
+      const startDate = ChatbotService.parseLocalDate(commandMatch[2]);
+      const endDate = ChatbotService.parseLocalDate(commandMatch[3]);
       const reason = commandMatch[4];
 
       try {

@@ -18,8 +18,8 @@ export async function getAttendanceExceptions(orgId: string, limit: number, skip
 }
 
 export async function getAttendanceSummary(userId: string, month: number, year: number) {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0);
+  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
   const result = await prisma.$queryRaw<any[]>`
     SELECT

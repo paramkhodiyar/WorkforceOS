@@ -106,7 +106,9 @@ async function seedDefaultHolidays(orgId: string, year: number) {
               const cleanDateStr = dateParts[0].trim() + "," + dateParts[1];
               const parsedDate = new Date(cleanDateStr);
               if (!isNaN(parsedDate.getTime())) {
-                const utcDate = new Date(Date.UTC(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate()));
+                const utcDate = new Date(
+                  Date.UTC(parsedDate.getUTCFullYear(), parsedDate.getUTCMonth(), parsedDate.getUTCDate())
+                );
                 try {
                   await prisma.holiday.create({
                     data: {
@@ -157,11 +159,11 @@ async function seedDefaultHolidays(orgId: string, year: number) {
   }
 
   const defaults = [
-    { date: new Date(year, 0, 26), name: "Republic Day" },
-    { date: new Date(year, 4, 1), name: "May Day / Labor Day" },
-    { date: new Date(year, 7, 15), name: "Independence Day" },
-    { date: new Date(year, 9, 2), name: "Gandhi Jayanti" },
-    { date: new Date(year, 11, 25), name: "Christmas Day" }
+    { date: new Date(Date.UTC(year, 0, 26)), name: "Republic Day" },
+    { date: new Date(Date.UTC(year, 4, 1)), name: "May Day / Labor Day" },
+    { date: new Date(Date.UTC(year, 7, 15)), name: "Independence Day" },
+    { date: new Date(Date.UTC(year, 9, 2)), name: "Gandhi Jayanti" },
+    { date: new Date(Date.UTC(year, 11, 25)), name: "Christmas Day" }
   ];
 
   for (const holiday of defaults) {
@@ -183,13 +185,15 @@ async function seedDefaultHolidays(orgId: string, year: number) {
 export const listHolidays = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
   const currentYear = new Date().getFullYear();
+  const yearStart = new Date(Date.UTC(currentYear, 0, 1));
+  const yearEnd = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
 
   let holidays = await prisma.holiday.findMany({
     where: {
       organizationId: orgId,
       date: {
-        gte: new Date(currentYear, 0, 1),
-        lte: new Date(currentYear, 11, 31)
+        gte: yearStart,
+        lte: yearEnd
       }
     },
     orderBy: { date: "asc" }
@@ -201,8 +205,8 @@ export const listHolidays = asyncHandler(async (req: Request, res: Response) => 
       where: {
         organizationId: orgId,
         date: {
-          gte: new Date(currentYear, 0, 1),
-          lte: new Date(currentYear, 11, 31)
+          gte: yearStart,
+          lte: yearEnd
         }
       },
       orderBy: { date: "asc" }

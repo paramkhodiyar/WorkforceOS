@@ -614,8 +614,8 @@ export default function AttendancePage() {
               <div className="block md:hidden space-y-4">
                 {paginatedTeam.map(member => {
                   const todayRecord = member.attendances?.[0];
-                  const isCheckedIn = todayRecord && !todayRecord.checkOut;
-                  const hasCheckedOut = todayRecord && todayRecord.checkOut;
+                  const isCheckedIn = todayRecord && todayRecord.checkIn && !todayRecord.checkOut;
+                  const hasCheckedOut = todayRecord && todayRecord.checkIn && todayRecord.checkOut;
 
                   return (
                     <div key={member.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm hover:border-slate-350 transition-all text-body-sm">
@@ -726,8 +726,8 @@ export default function AttendancePage() {
                 <tbody className="divide-y divide-slate-100 text-body-sm">
                   {paginatedTeam.map(member => {
                     const todayRecord = member.attendances?.[0];
-                    const isCheckedIn = todayRecord && !todayRecord.checkOut;
-                    const hasCheckedOut = todayRecord && todayRecord.checkOut;
+                    const isCheckedIn = todayRecord && todayRecord.checkIn && !todayRecord.checkOut;
+                    const hasCheckedOut = todayRecord && todayRecord.checkIn && todayRecord.checkOut;
 
                     return (
                       <tr key={member.id} className="hover:bg-slate-50 transition-colors">

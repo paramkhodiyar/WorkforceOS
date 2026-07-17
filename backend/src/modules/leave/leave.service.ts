@@ -77,13 +77,34 @@ export class LeaveService {
       throw AppError.badRequest("Overlapping leave request exists");
     }
 
-    const year = currentDate.getFullYear();
-    const balance = await prisma.leaveBalance.findUnique({
-      where: { userId_leaveType_year: { userId, leaveType: data.leaveType, year } }
-    });
+    // Split days by calendar year
+    const daysByYear: Record<number, number> = {};
+    let splitTemp = new Date(currentDate);
+    while (splitTemp <= endDate) {
+      const dayOfWeek = splitTemp.getUTCDay();
+      const dateStr = splitTemp.toISOString().split("T")[0];
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isHoliday = holidayStrings.has(dateStr);
 
-    if (!balance || (balance.remaining - balance.pending) < days) {
-      throw AppError.badRequest("Insufficient leave balance");
+      if (!isWeekend && !isHoliday) {
+        const yr = splitTemp.getUTCFullYear();
+        daysByYear[yr] = (daysByYear[yr] || 0) + 1;
+      }
+      splitTemp.setUTCDate(splitTemp.getUTCDate() + 1);
+    }
+
+    // Validate balances for each year
+    const balancesToUpdate: { balanceId: string; year: number; yearDays: number }[] = [];
+    for (const [yearStr, yearDays] of Object.entries(daysByYear)) {
+      const yr = parseInt(yearStr, 10);
+      const balance = await prisma.leaveBalance.findUnique({
+        where: { userId_leaveType_year: { userId, leaveType: data.leaveType, year: yr } }
+      });
+
+      if (!balance || (balance.remaining - balance.pending) < yearDays) {
+        throw AppError.badRequest(`Insufficient leave balance for the year ${yr}`);
+      }
+      balancesToUpdate.push({ balanceId: balance.id, year: yr, yearDays });
     }
 
     const request = await prisma.leaveRequest.create({
@@ -98,12 +119,14 @@ export class LeaveService {
       }
     });
 
-    await prisma.leaveBalance.update({
-      where: { id: balance.id },
-      data: {
-        pending: { increment: days }
-      }
-    });
+    for (const b of balancesToUpdate) {
+      await prisma.leaveBalance.update({
+        where: { id: b.balanceId },
+        data: {
+          pending: { increment: b.yearDays }
+        }
+      });
+    }
 
     await AuditService.log({
       organizationId: orgId,
@@ -271,9 +294,6 @@ export class LeaveService {
       throw AppError.notFound("Leave request not found");
     }
 
-    if (request.status === LeaveStatus.MANAGER_APPROVED) {
-      throw AppError.badRequest("Leave request has already been approved by a manager");
-    }
     if (request.status === LeaveStatus.HR_APPROVED) {
       throw AppError.badRequest("Leave request has already been approved by HR");
     }
@@ -282,6 +302,24 @@ export class LeaveService {
     }
     if (request.status === LeaveStatus.CANCELLED) {
       throw AppError.badRequest("Leave request has been cancelled");
+    }
+
+    // Check if approver is HR or Admin
+    const approver = await prisma.user.findFirst({
+      where: { id: approverId, organizationId: orgId, isDeleted: false },
+      include: { roles: { include: { role: true } } }
+    });
+
+    const isHrOrAdmin = 
+      ["SUPER_ADMIN", "ORG_ADMIN", "HR"].includes(approver?.systemRole || "") || 
+      approver?.roles.some(ur => ur.role.name === "HR_MANAGER") || false;
+
+    if (isHrOrAdmin) {
+      return LeaveService.processFinalApproval(request, orgId, approverId, comment, req);
+    }
+
+    if (request.status === LeaveStatus.MANAGER_APPROVED) {
+      throw AppError.badRequest("Leave request has already been approved by a manager");
     }
     if (request.status !== LeaveStatus.PENDING) {
       throw AppError.badRequest("Leave request is not in a pending state");
@@ -357,9 +395,6 @@ export class LeaveService {
       throw AppError.notFound("Leave request not found");
     }
 
-    if (request.status === LeaveStatus.PENDING) {
-      throw AppError.badRequest("Leave request must be approved by a manager first");
-    }
     if (request.status === LeaveStatus.HR_APPROVED) {
       throw AppError.badRequest("Leave request has already been approved by HR");
     }
@@ -369,10 +404,12 @@ export class LeaveService {
     if (request.status === LeaveStatus.CANCELLED) {
       throw AppError.badRequest("Leave request has been cancelled");
     }
-    if (request.status !== LeaveStatus.MANAGER_APPROVED) {
-      throw AppError.badRequest("Leave request is not approved by manager");
-    }
 
+    return LeaveService.processFinalApproval(request, orgId, approverId, comment, req);
+  }
+
+  static async processFinalApproval(request: any, orgId: string, approverId: string, comment?: string, req?: any) {
+    const id = request.id;
     const updated = await prisma.leaveRequest.update({
       where: { id },
       data: { status: LeaveStatus.HR_APPROVED }
@@ -386,22 +423,6 @@ export class LeaveService {
         comment
       }
     });
-
-    const year = new Date(request.startDate).getFullYear();
-    const balance = await prisma.leaveBalance.findUnique({
-      where: { userId_leaveType_year: { userId: request.userId, leaveType: request.leaveType, year } }
-    });
-
-    if (balance) {
-      await prisma.leaveBalance.update({
-        where: { id: balance.id },
-        data: {
-          pending: { decrement: request.days },
-          remaining: { decrement: request.days },
-          used: { increment: request.days }
-        }
-      });
-    }
 
     // Leave + Attendance Integration
     const startStr = request.startDate.toISOString().split("T")[0];
@@ -423,6 +444,39 @@ export class LeaveService {
     const holidayStrings = new Set(
       holidays.map((h) => h.date.toISOString().split("T")[0])
     );
+
+    const daysByYear: Record<number, number> = {};
+    let splitTemp = new Date(currentDate);
+    while (splitTemp <= endDate) {
+      const dayOfWeek = splitTemp.getUTCDay();
+      const dateStr = splitTemp.toISOString().split("T")[0];
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isHoliday = holidayStrings.has(dateStr);
+
+      if (!isWeekend && !isHoliday) {
+        const yr = splitTemp.getUTCFullYear();
+        daysByYear[yr] = (daysByYear[yr] || 0) + 1;
+      }
+      splitTemp.setUTCDate(splitTemp.getUTCDate() + 1);
+    }
+
+    for (const [yearStr, yearDays] of Object.entries(daysByYear)) {
+      const yr = parseInt(yearStr, 10);
+      const balance = await prisma.leaveBalance.findUnique({
+        where: { userId_leaveType_year: { userId: request.userId, leaveType: request.leaveType, year: yr } }
+      });
+
+      if (balance) {
+        await prisma.leaveBalance.update({
+          where: { id: balance.id },
+          data: {
+            pending: { decrement: yearDays },
+            remaining: { decrement: yearDays },
+            used: { increment: yearDays }
+          }
+        });
+      }
+    }
 
     let tempDate = new Date(currentDate);
     while (tempDate <= endDate) {
@@ -483,8 +537,8 @@ export class LeaveService {
     await NotificationService.notify(
       request.userId,
       NotificationType.LEAVE_APPROVED,
-      "Leave Approved by HR",
-      `HR has approved your leave request for ${request.days} day(s) of ${request.leaveType} leave. Enjoy your time off!`,
+      "Leave Approved",
+      `Your leave request for ${request.days} day(s) of ${request.leaveType} leave has been approved and finalized.`,
       { leaveRequestId: id }
     );
 
@@ -530,18 +584,52 @@ export class LeaveService {
       }
     });
 
-    const year = new Date(request.startDate).getFullYear();
-    const balance = await prisma.leaveBalance.findUnique({
-      where: { userId_leaveType_year: { userId: request.userId, leaveType: request.leaveType, year } }
+    const startStr = request.startDate.toISOString().split("T")[0];
+    const endStr = request.endDate.toISOString().split("T")[0];
+
+    const currentDate = new Date(startStr);
+    const endDate = new Date(endStr);
+
+    const holidays = await prisma.holiday.findMany({
+      where: {
+        organizationId: orgId,
+        date: { gte: currentDate, lte: endDate }
+      }
     });
 
-    if (balance) {
-      await prisma.leaveBalance.update({
-        where: { id: balance.id },
-        data: {
-          pending: { decrement: request.days }
-        }
+    const holidayStrings = new Set(
+      holidays.map((h) => h.date.toISOString().split("T")[0])
+    );
+
+    const daysByYear: Record<number, number> = {};
+    let splitTemp = new Date(currentDate);
+    while (splitTemp <= endDate) {
+      const dayOfWeek = splitTemp.getUTCDay();
+      const dateStr = splitTemp.toISOString().split("T")[0];
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isHoliday = holidayStrings.has(dateStr);
+
+      if (!isWeekend && !isHoliday) {
+        const yr = splitTemp.getUTCFullYear();
+        daysByYear[yr] = (daysByYear[yr] || 0) + 1;
+      }
+      splitTemp.setUTCDate(splitTemp.getUTCDate() + 1);
+    }
+
+    for (const [yearStr, yearDays] of Object.entries(daysByYear)) {
+      const yr = parseInt(yearStr, 10);
+      const balance = await prisma.leaveBalance.findUnique({
+        where: { userId_leaveType_year: { userId: request.userId, leaveType: request.leaveType, year: yr } }
       });
+
+      if (balance) {
+        await prisma.leaveBalance.update({
+          where: { id: balance.id },
+          data: {
+            pending: { decrement: yearDays }
+          }
+        });
+      }
     }
 
     await AuditService.log({
@@ -580,18 +668,52 @@ export class LeaveService {
       data: { status: LeaveStatus.CANCELLED }
     });
 
-    const year = new Date(request.startDate).getFullYear();
-    const balance = await prisma.leaveBalance.findUnique({
-      where: { userId_leaveType_year: { userId, leaveType: request.leaveType, year } }
+    const startStr = request.startDate.toISOString().split("T")[0];
+    const endStr = request.endDate.toISOString().split("T")[0];
+
+    const currentDate = new Date(startStr);
+    const endDate = new Date(endStr);
+
+    const holidays = await prisma.holiday.findMany({
+      where: {
+        organizationId: orgId,
+        date: { gte: currentDate, lte: endDate }
+      }
     });
 
-    if (balance) {
-      await prisma.leaveBalance.update({
-        where: { id: balance.id },
-        data: {
-          pending: { decrement: request.days }
-        }
+    const holidayStrings = new Set(
+      holidays.map((h) => h.date.toISOString().split("T")[0])
+    );
+
+    const daysByYear: Record<number, number> = {};
+    let splitTemp = new Date(currentDate);
+    while (splitTemp <= endDate) {
+      const dayOfWeek = splitTemp.getUTCDay();
+      const dateStr = splitTemp.toISOString().split("T")[0];
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isHoliday = holidayStrings.has(dateStr);
+
+      if (!isWeekend && !isHoliday) {
+        const yr = splitTemp.getUTCFullYear();
+        daysByYear[yr] = (daysByYear[yr] || 0) + 1;
+      }
+      splitTemp.setUTCDate(splitTemp.getUTCDate() + 1);
+    }
+
+    for (const [yearStr, yearDays] of Object.entries(daysByYear)) {
+      const yr = parseInt(yearStr, 10);
+      const balance = await prisma.leaveBalance.findUnique({
+        where: { userId_leaveType_year: { userId, leaveType: request.leaveType, year: yr } }
       });
+
+      if (balance) {
+        await prisma.leaveBalance.update({
+          where: { id: balance.id },
+          data: {
+            pending: { decrement: yearDays }
+          }
+        });
+      }
     }
 
     await AuditService.log({

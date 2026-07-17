@@ -102,9 +102,7 @@ export class PayrollService {
       }
 
       // ── LOP days from attendance ────────────────────────────────────────────
-      // Standard working days in a month = 26 (Mon–Sat). Adjust if needed.
-      const WORKING_DAYS_PER_MONTH = 26;
-      const lopDays = await computeLopDays(emp.id, month, year, WORKING_DAYS_PER_MONTH);
+      const { lopDays, workingDays } = await computeLopDays(emp.id, month, year, orgId);
 
       // ── Full statutory breakdown ────────────────────────────────────────────
       const breakdown = computeSalaryBreakdown(basic, {
@@ -113,7 +111,7 @@ export class PayrollService {
         pfApplicable: emp.pfApplicable ?? true,
         taxRegime: (emp.taxRegime as "OLD" | "NEW") ?? "NEW",
         lopDays,
-        workingDaysInMonth: WORKING_DAYS_PER_MONTH
+        workingDaysInMonth: workingDays
       });
 
       await prisma.payrollRecord.create({

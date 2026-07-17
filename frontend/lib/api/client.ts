@@ -425,6 +425,16 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
+    listHolidays: (): Promise<any> => request('/organization/holidays'),
+    createHoliday: (data: { date: string; name: string; isOptional?: boolean }): Promise<any> =>
+      request('/organization/holidays', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    deleteHoliday: (id: string): Promise<any> =>
+      request(`/organization/holidays/${id}`, {
+        method: 'DELETE',
+      }),
   },
   notifications: {
     list: (): Promise<any> => request('/notifications'),

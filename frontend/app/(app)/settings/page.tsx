@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
@@ -494,6 +495,14 @@ export default function SettingsPage() {
               <span className="h-2 w-2 rounded-full bg-red-500 block"></span>
             )}
           </button>
+        )}
+        {(isAdmin || isHR) && (
+          <Link
+            href="/settings/holidays"
+            className="flex-1 sm:flex-none px-4 py-2.5 text-center text-label-sm font-bold rounded-lg transition-all hover:bg-slate-550 hover:bg-slate-50 cursor-pointer whitespace-nowrap flex items-center justify-center gap-1.5 text-slate-600"
+          >
+            <span>Holiday Settings</span>
+          </Link>
         )}
       </div>
 

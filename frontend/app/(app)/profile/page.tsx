@@ -98,7 +98,7 @@ function ProfileContent() {
         try {
           const todayRes = await api.attendance.getCurrentStatus();
           const todayRecord = todayRes.data;
-          if (todayRecord) {
+          if (todayRecord && todayRecord.checkIn) {
             if (!todayRecord.checkOut) {
               setAttendanceStatus('ACTIVE');
             } else {
@@ -117,7 +117,7 @@ function ProfileContent() {
           const records = teamRes.data?.records || (Array.isArray(teamRes.data) ? teamRes.data : []);
           const member = records.find((m: any) => m.id === targetId);
           const todayRecord = member?.attendances?.[0];
-          if (todayRecord) {
+          if (todayRecord && todayRecord.checkIn) {
             if (!todayRecord.checkOut) {
               setAttendanceStatus('ACTIVE');
             } else {

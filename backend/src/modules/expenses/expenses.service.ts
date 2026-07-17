@@ -231,6 +231,20 @@ export class ExpensesService {
       throw AppError.badRequest("Claim not found or not in submitted state");
     }
 
+    const approver = await prisma.user.findFirst({
+      where: { id: approverId, organizationId: orgId, isDeleted: false },
+      include: { roles: { include: { role: true } } }
+    });
+
+    const isManager = claim.user.managerId === approverId;
+    const isHrOrAdmin = 
+      ["SUPER_ADMIN", "ORG_ADMIN", "HR"].includes(approver?.systemRole || "") || 
+      approver?.roles.some(ur => ur.role.name === "HR_MANAGER") || false;
+
+    if (!isManager && !isHrOrAdmin) {
+      throw AppError.forbidden("Access denied: only your manager or an administrator can approve this expense claim");
+    }
+
     const updated = await prisma.expenseClaim.update({
       where: { id },
       data: { status: ExpenseStatus.MANAGER_APPROVED }
@@ -357,11 +371,35 @@ export class ExpensesService {
 
   static async reject(id: string, orgId: string, approverId: string, reason: string, req?: any) {
     const claim = await prisma.expenseClaim.findFirst({
-      where: { id, isDeleted: false }
+      where: { id, isDeleted: false },
+      include: { user: true }
     });
 
     if (!claim || claim.status === ExpenseStatus.PAID || claim.status === ExpenseStatus.REJECTED || claim.status === ExpenseStatus.DRAFT) {
       throw AppError.badRequest("Claim cannot be rejected in its current state");
+    }
+
+    const approver = await prisma.user.findFirst({
+      where: { id: approverId, organizationId: orgId, isDeleted: false },
+      include: { roles: { include: { role: true } } }
+    });
+
+    const isHrOrAdmin = 
+      ["SUPER_ADMIN", "ORG_ADMIN", "HR"].includes(approver?.systemRole || "") || 
+      approver?.roles.some(ur => ur.role.name === "HR_MANAGER") || false;
+
+    if (claim.status === ExpenseStatus.SUBMITTED) {
+      const isManager = claim.user.managerId === approverId;
+      if (!isManager && !isHrOrAdmin) {
+        throw AppError.forbidden("Access denied: only your manager or an administrator can reject this expense claim");
+      }
+    } else if (claim.status === ExpenseStatus.MANAGER_APPROVED) {
+      const isFinance = 
+        approver?.systemRole === "FINANCE" || 
+        approver?.roles.some(ur => ur.role.name === "FINANCE_MANAGER") || false;
+      if (!isFinance && !isHrOrAdmin) {
+        throw AppError.forbidden("Access denied: only finance personnel or an administrator can reject this expense claim");
+      }
     }
 
     const updated = await prisma.expenseClaim.update({

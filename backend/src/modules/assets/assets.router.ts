@@ -30,8 +30,17 @@ router.get("/", requirePermission("asset", "read"), validate(getAssetsFilterSche
 router.post("/", requirePermission("asset", "create"), validate(createAssetSchema), createAsset);
 router.patch("/:id", requirePermission("asset", "update"), validate(updateAssetSchema), updateAsset);
 router.post("/:id/assign", requirePermission("asset", "assign"), validate(assignAssetSchema), assignAsset);
-router.post("/:id/return", validate(returnAssetSchema), returnAsset);
-router.get("/:id/history", getHistory);
-router.get("/employee/:id", getEmployeeAssets);
+router.post("/:id/return", requirePermission("asset", ["update", "assign"]), validate(returnAssetSchema), returnAsset);
+router.get("/:id/history", requirePermission("asset", "read"), getHistory);
+router.get(
+  "/employee/:id",
+  (req, res, next) => {
+    if (req.params.id === req.user?.id) {
+      return next();
+    }
+    return requirePermission("asset", "read")(req, res, next);
+  },
+  getEmployeeAssets
+);
 
 export const assetsRouter = router;

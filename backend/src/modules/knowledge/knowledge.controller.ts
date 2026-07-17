@@ -64,11 +64,23 @@ export const deleteArticle = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getVersions = asyncHandler(async (req: Request, res: Response) => {
-  const list = await KnowledgeService.getVersions(req.params.id);
+  const userId = req.user!.id;
+  const orgId = req.org!.id;
+  const updateScopes = await getPermissionScopes(req.user!, orgId, "knowledge", "update");
+  const publishScopes = await getPermissionScopes(req.user!, orgId, "knowledge", "publish");
+  const isHrOrAdmin = updateScopes.isGlobal || publishScopes.isGlobal;
+
+  const list = await KnowledgeService.getVersions(req.params.id, userId, isHrOrAdmin);
   return sendSuccess(res, list);
 });
 
 export const getVersionById = asyncHandler(async (req: Request, res: Response) => {
-  const version = await KnowledgeService.getVersionById(req.params.id, req.params.versionId);
+  const userId = req.user!.id;
+  const orgId = req.org!.id;
+  const updateScopes = await getPermissionScopes(req.user!, orgId, "knowledge", "update");
+  const publishScopes = await getPermissionScopes(req.user!, orgId, "knowledge", "publish");
+  const isHrOrAdmin = updateScopes.isGlobal || publishScopes.isGlobal;
+
+  const version = await KnowledgeService.getVersionById(req.params.id, req.params.versionId, userId, isHrOrAdmin);
   return sendSuccess(res, version);
 });

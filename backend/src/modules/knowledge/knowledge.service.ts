@@ -185,14 +185,38 @@ export class KnowledgeService {
     });
   }
 
-  static async getVersions(id: string) {
+  static async getVersions(id: string, userId: string, isHrOrAdmin: boolean) {
+    const article = await prisma.knowledgeArticle.findFirst({
+      where: { id, isDeleted: false }
+    });
+
+    if (!article) {
+      throw AppError.notFound("Article not found");
+    }
+
+    if (!article.isPublished && article.authorId !== userId && !isHrOrAdmin) {
+      throw AppError.forbidden("Access denied: article draft is not visible to you");
+    }
+
     return prisma.knowledgeVersion.findMany({
       where: { articleId: id },
       orderBy: { createdAt: "desc" }
     });
   }
 
-  static async getVersionById(id: string, versionId: string) {
+  static async getVersionById(id: string, versionId: string, userId: string, isHrOrAdmin: boolean) {
+    const article = await prisma.knowledgeArticle.findFirst({
+      where: { id, isDeleted: false }
+    });
+
+    if (!article) {
+      throw AppError.notFound("Article not found");
+    }
+
+    if (!article.isPublished && article.authorId !== userId && !isHrOrAdmin) {
+      throw AppError.forbidden("Access denied: article draft is not visible to you");
+    }
+
     const version = await prisma.knowledgeVersion.findFirst({
       where: { id: versionId, articleId: id }
     });

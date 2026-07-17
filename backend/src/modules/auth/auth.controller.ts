@@ -16,12 +16,6 @@ export const registerTrial = asyncHandler(async (req: Request, res: Response) =>
   return sendSuccess(res, result, "Trial account registered and initialized successfully");
 });
 
-export const masterBypass = asyncHandler(async (req: Request, res: Response) => {
-  const { pin } = req.body;
-  const result = await AuthService.masterBypass(pin, req);
-  return sendSuccess(res, result);
-});
-
 export const switchRole = asyncHandler(async (req: Request, res: Response) => {
   const { role } = req.body;
   const userId = req.user!.id;

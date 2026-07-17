@@ -114,7 +114,8 @@ function ProfileContent() {
       } else if (isAdmin || isHR) {
         try {
           const teamRes = await api.attendance.team();
-          const member = teamRes.data?.find((m: any) => m.id === targetId);
+          const records = teamRes.data?.records || (Array.isArray(teamRes.data) ? teamRes.data : []);
+          const member = records.find((m: any) => m.id === targetId);
           const todayRecord = member?.attendances?.[0];
           if (todayRecord) {
             if (!todayRecord.checkOut) {

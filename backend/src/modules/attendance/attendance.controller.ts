@@ -114,7 +114,7 @@ export const getTeam = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const allAttendance = await AttendanceService.getAllAttendance(orgId);
-  const filtered = allAttendance.filter((r: any) => scopedUserIds.has(r.userId));
+  const filtered = allAttendance.filter((r: any) => scopedUserIds.has(r.id));
 
   return sendSuccess(res, { records: filtered, scopeLabel, isScoped: true });
 });

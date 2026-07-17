@@ -6,8 +6,11 @@ import { getAttendanceExceptions, getAttendanceSummary } from "../../db/queries/
 
 export class AttendanceService {
   static getTodayDate() {
-    const todayStr = new Date().toISOString().split("T")[0];
-    return new Date(todayStr);
+    const options = { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" } as const;
+    const formatter = new Intl.DateTimeFormat("en-US", options);
+    const [{ value: month }, , { value: day }, , { value: year }] = formatter.formatToParts(new Date());
+    const dateStr = `${year}-${month}-${day}`;
+    return new Date(dateStr);
   }
 
   static async checkIn(userId: string, orgId: string, ipAddress?: string, gpsLat?: number, gpsLng?: number, workMode?: any, req?: any) {

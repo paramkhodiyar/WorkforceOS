@@ -8,6 +8,7 @@ import { AuditAction } from "@prisma/client";
 import { redis } from "../../config/redis";
 
 import { OnboardingService } from "../onboarding/onboarding.service";
+import { sendTrialLeadEmails } from "../../utils/email.util";
 
 export class AuthService {
   static async registerTrial(data: any, req?: any) {
@@ -18,6 +19,9 @@ export class AuthService {
     const email = data.email || data.adminEmail;
     const password = data.password || "Workforce123!";
     const companyName = data.companyName || data.organizationName;
+    const companySize = data.companySize || "Not provided";
+    const phone = data.phone || "Not provided";
+    const challenge = data.challenge || "";
     const cleanEmail = email.toLowerCase().trim();
     const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-trial-" + Math.floor(Math.random() * 10000);
 
@@ -34,7 +38,7 @@ export class AuthService {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           email: cleanEmail,
-          phone: "9876543210",
+          phone,
           designation: "CEO / Org Admin",
           departmentName: "Management",
           salaryBand: "BAND_A",
@@ -88,6 +92,20 @@ export class AuthService {
         trialEndDate,
         isSetupComplete: true // Trial organizations start out pre-setup
       }
+    });
+
+    await sendTrialLeadEmails({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: cleanEmail,
+      phone,
+      companyName,
+      companySize,
+      challenge,
+      source: req?.body?.source || "7-day trial modal",
+      submittedAt: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+    }).catch((error) => {
+      console.error("Failed to send trial lead emails:", error);
     });
 
     // Seed dummy Tasks, Leave Requests, and Attendance for evaluation

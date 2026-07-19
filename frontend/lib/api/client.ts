@@ -183,7 +183,19 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ role }),
       }),
-    registerTrial: (data: { organizationName: string; adminName: string; adminEmail: string }): Promise<any> =>
+    registerTrial: (data: {
+      organizationName?: string;
+      companyName?: string;
+      adminName?: string;
+      firstName?: string;
+      lastName?: string;
+      adminEmail?: string;
+      email?: string;
+      phone: string;
+      companySize: string;
+      challenge?: string;
+      source?: string;
+    }): Promise<any> =>
       request('/auth/register-trial', {
         method: 'POST',
         body: JSON.stringify(data),

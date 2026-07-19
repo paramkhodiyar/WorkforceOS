@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { buildClientTrialEmailHtml, buildLeadEmailHtml } from "../utils/email.templates";
 import { authRouter } from "../modules/auth/auth.router";
 import { onboardingRouter } from "../modules/onboarding/onboarding.router";
 import { organizationRouter } from "../modules/organization/organization.router";
@@ -21,6 +22,33 @@ import { chatbotRouter } from "../modules/chatbot/chatbot.router";
 import { rateLimitByUser } from "../middleware/rateLimit.middleware";
 
 const router = Router();
+
+router.get("/email-preview", (req, res) => {
+  const dummyData = {
+    firstName: "Alice",
+    lastName: "Founder",
+    email: "alice@startup.com",
+    phone: "+1 555-1234",
+    companyName: "Acme Corp",
+    companySize: "11-50",
+    challenge: "Scaling operations securely",
+    submittedAt: new Date().toLocaleString(),
+    source: "Direct"
+  };
+
+  const clientHtml = buildClientTrialEmailHtml(dummyData);
+  const leadHtml = buildLeadEmailHtml(dummyData);
+
+  res.send(`
+    <html><body style="padding: 20px; font-family: sans-serif; background: #e2e8f0; margin: 0;">
+      <h2>Client Confirmation Email Preview</h2>
+      <iframe srcdoc='${clientHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 800px; border: none; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></iframe>
+      
+      <h2 style="margin-top: 40px;">Admin Lead Email Preview</h2>
+      <iframe srcdoc='${leadHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 800px; border: none; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></iframe>
+    </body></html>
+  `);
+});
 
 router.use("/auth", authRouter);
 router.use("/onboarding", onboardingRouter);

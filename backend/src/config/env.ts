@@ -22,7 +22,15 @@ const envSchema = z.object({
    CORS_ORIGINS: z.string().default("*"),
   ENCRYPTION_KEY: z.string().default("df06bc5258e72753ffc1ab1f0cdcdbfb876a3f0190a424e8d35759ef62cdab12"),
   GEMINI_API_KEY: z.string().optional(),
-  GROQ_API_KEY: z.string().optional()
+  GROQ_API_KEY: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_SECURE: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+  SMTP_FROM_NAME: z.string().optional(),
+  LEAD_NOTIFY_EMAIL: z.string().email().optional()
 }).superRefine((data, ctx) => {
   if (data.NODE_ENV === "production") {
     if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY === "df06bc5258e72753ffc1ab1f0cdcdbfb876a3f0190a424e8d35759ef62cdab12") {
@@ -44,5 +52,6 @@ if (!parsed.success) {
 
 export const config = {
   ...parsed.data,
-  CORS_ORIGINS: parsed.data.CORS_ORIGINS === "*" ? ["*"] : parsed.data.CORS_ORIGINS.split(",")
+  CORS_ORIGINS: parsed.data.CORS_ORIGINS === "*" ? ["*"] : parsed.data.CORS_ORIGINS.split(","),
+  SMTP_SECURE: parsed.data.SMTP_SECURE === "true"
 };

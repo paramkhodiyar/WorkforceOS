@@ -78,9 +78,15 @@ export default function HomepageClient() {
 
   // Trial Registration Modal States
   const [showTrialModal, setShowTrialModal] = useState(false);
-  const [trialOrgName, setTrialOrgName] = useState('');
-  const [trialAdminName, setTrialAdminName] = useState('');
-  const [trialAdminEmail, setTrialAdminEmail] = useState('');
+  const [trialForm, setTrialForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    companyName: '',
+    companySize: '',
+    challenge: ''
+  });
   const [trialLoading, setTrialLoading] = useState(false);
   const [trialError, setTrialError] = useState('');
 
@@ -229,9 +235,14 @@ export default function HomepageClient() {
 
     try {
       const res = await api.auth.registerTrial({
-        organizationName: trialOrgName,
-        adminName: trialAdminName,
-        adminEmail: trialAdminEmail,
+        firstName: trialForm.firstName.trim(),
+        lastName: trialForm.lastName.trim(),
+        email: trialForm.email.trim(),
+        phone: trialForm.phone.trim(),
+        companyName: trialForm.companyName.trim(),
+        companySize: trialForm.companySize,
+        challenge: trialForm.challenge.trim(),
+        source: 'homepage trial modal'
       });
 
       if (res.data?.tokens) {
@@ -1948,6 +1959,70 @@ export default function HomepageClient() {
             </div>
 
             <form onSubmit={handleRegisterTrial} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. David"
+                    value={trialForm.firstName}
+                    onChange={(e) => setTrialForm((prev) => ({ ...prev, firstName: e.target.value }))}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                    required
+                    disabled={trialLoading}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Wallace"
+                    value={trialForm.lastName}
+                    onChange={(e) => setTrialForm((prev) => ({ ...prev, lastName: e.target.value }))}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                    required
+                    disabled={trialLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                    Work Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="e.g. david@dundermifflin.com"
+                    value={trialForm.email}
+                    onChange={(e) => setTrialForm((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                    required
+                    disabled={trialLoading}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. +91 98765 43210"
+                    value={trialForm.phone}
+                    onChange={(e) => setTrialForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                    required
+                    disabled={trialLoading}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1">
                 <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
                   Organization Name
@@ -1955,8 +2030,8 @@ export default function HomepageClient() {
                 <input
                   type="text"
                   placeholder="e.g. Dunder Mifflin Paper"
-                  value={trialOrgName}
-                  onChange={(e) => setTrialOrgName(e.target.value)}
+                  value={trialForm.companyName}
+                  onChange={(e) => setTrialForm((prev) => ({ ...prev, companyName: e.target.value }))}
                   className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
                   required
                   disabled={trialLoading}
@@ -1965,30 +2040,34 @@ export default function HomepageClient() {
 
               <div className="space-y-1">
                 <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
-                  Admin Name
+                  Company Size
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. David Wallace"
-                  value={trialAdminName}
-                  onChange={(e) => setTrialAdminName(e.target.value)}
+                <select
+                  value={trialForm.companySize}
+                  onChange={(e) => setTrialForm((prev) => ({ ...prev, companySize: e.target.value }))}
                   className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
                   required
                   disabled={trialLoading}
-                />
+                >
+                  <option value="">Select size...</option>
+                  <option value="1-20">1–20 employees</option>
+                  <option value="21-50">21–50 employees</option>
+                  <option value="51-200">51–200 employees</option>
+                  <option value="201-500">201–500 employees</option>
+                  <option value="500+">500+ employees</option>
+                </select>
               </div>
 
               <div className="space-y-1">
                 <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
-                  Work Email Address
+                  Biggest HR Challenge
                 </label>
-                <input
-                  type="email"
-                  placeholder="e.g. david@dundermifflin.com"
-                  value={trialAdminEmail}
-                  onChange={(e) => setTrialAdminEmail(e.target.value)}
+                <textarea
+                  value={trialForm.challenge}
+                  onChange={(e) => setTrialForm((prev) => ({ ...prev, challenge: e.target.value }))}
+                  rows={4}
+                  placeholder="Tell us what you want to fix first."
                   className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
-                  required
                   disabled={trialLoading}
                 />
               </div>

@@ -38,6 +38,7 @@ export default function AttendancePage() {
   const [proposedStatus, setProposedStatus] = useState('PRESENT');
   const [adjustmentNotes, setAdjustmentNotes] = useState('');
   const [submittingAdjustment, setSubmittingAdjustment] = useState(false);
+  const [actioningAdjustmentId, setActioningAdjustmentId] = useState<string | null>(null);
 
   const itemsPerPage = 8;
 
@@ -220,12 +221,15 @@ export default function AttendancePage() {
       confirmLabel: 'Approve',
     });
     if (!ok) return;
+    setActioningAdjustmentId(id);
     try {
       await api.attendance.approveAdjustment(id);
       toast.success('Adjustment approved successfully!');
       await loadData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to approve adjustment');
+    } finally {
+      setActioningAdjustmentId(null);
     }
   }
 
@@ -237,12 +241,15 @@ export default function AttendancePage() {
       confirmLabel: 'Reject',
     });
     if (!ok) return;
+    setActioningAdjustmentId(id);
     try {
       await api.attendance.rejectAdjustment(id);
       toast.success('Adjustment rejected successfully!');
       await loadData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to reject adjustment');
+    } finally {
+      setActioningAdjustmentId(null);
     }
   }
 
@@ -889,10 +896,11 @@ export default function AttendancePage() {
                         <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
                           <button
                             type="button"
+                            disabled={actioningAdjustmentId !== null}
                             onClick={() => handleRejectAdjustment(req.id)}
-                            className="px-3 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                            className="px-3 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
                           >
-                            Reject
+                            {actioningAdjustmentId === req.id ? 'Rejecting...' : 'Reject'}
                           </button>
                           {isOwnRequest ? (
                             <span className="px-3 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[11px] font-bold border border-slate-200 select-none cursor-not-allowed" title="Two-person rule: Cannot approve own request">
@@ -901,10 +909,11 @@ export default function AttendancePage() {
                           ) : (
                             <button
                               type="button"
+                              disabled={actioningAdjustmentId !== null}
                               onClick={() => handleApproveAdjustment(req.id)}
-                              className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm"
+                              className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
                             >
-                              Approve
+                              {actioningAdjustmentId === req.id ? 'Approving...' : 'Approve'}
                             </button>
                           )}
                         </div>
@@ -956,10 +965,11 @@ export default function AttendancePage() {
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-2">
                                 <button
+                                  disabled={actioningAdjustmentId !== null}
                                   onClick={() => handleRejectAdjustment(req.id)}
-                                  className="px-2.5 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                                  className="px-2.5 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
                                 >
-                                  Reject
+                                  {actioningAdjustmentId === req.id ? 'Rejecting...' : 'Reject'}
                                 </button>
                                 {isOwnRequest ? (
                                   <span className="px-2.5 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[11px] font-bold border border-slate-200 select-none cursor-not-allowed" title="Two-person rule: Cannot approve own request">
@@ -967,10 +977,11 @@ export default function AttendancePage() {
                                   </span>
                                 ) : (
                                   <button
+                                    disabled={actioningAdjustmentId !== null}
                                     onClick={() => handleApproveAdjustment(req.id)}
-                                    className="px-2.5 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm"
+                                    className="px-2.5 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
                                   >
-                                    Approve
+                                    {actioningAdjustmentId === req.id ? 'Approving...' : 'Approve'}
                                   </button>
                                 )}
                               </div>

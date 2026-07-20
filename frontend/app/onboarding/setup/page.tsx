@@ -89,16 +89,7 @@ export default function OnboardingSetupPage() {
       formData.append('file', selectedFile);
 
       try {
-        const res = await fetch(`http://localhost:4000/api/v1/onboarding/upload-employees`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: formData,
-        });
-
-        if (!res.ok) throw new Error('Failed to parse employee sheet');
-        const resData = await res.json();
+        const resData = await api.onboarding.uploadEmployees(formData);
         setEmployees(resData.data || []);
         setStep(3); // Advance to tabular preview
       } catch (err: any) {

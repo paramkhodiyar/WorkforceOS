@@ -21,6 +21,8 @@ export default function TasksPage() {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [actioningTaskId, setActioningTaskId] = useState<string | null>(null);
+  const [commenting, setCommenting] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -178,6 +180,17 @@ export default function TasksPage() {
   }
 
   async function handleMoveStatus(task: any, action: 'START' | 'SUBMIT' | 'RESUBMIT' | 'CLOSE' | 'APPROVE' | 'REQUEST_CHANGES') {
+    if (action === 'APPROVE') {
+      setReviewAction('APPROVED');
+      setReviewingTaskId(task.id);
+      return;
+    } else if (action === 'REQUEST_CHANGES') {
+      setReviewAction('CHANGES_REQUESTED');
+      setReviewingTaskId(task.id);
+      return;
+    }
+
+    setActioningTaskId(task.id);
     try {
       if (action === 'START') {
         await api.tasks.accept(task.id);
@@ -191,18 +204,12 @@ export default function TasksPage() {
       } else if (action === 'CLOSE') {
         await api.tasks.close(task.id);
         toast.success('Task closed successfully');
-      } else if (action === 'APPROVE') {
-        setReviewAction('APPROVED');
-        setReviewingTaskId(task.id);
-        return; // Opens CommentDialog
-      } else if (action === 'REQUEST_CHANGES') {
-        setReviewAction('CHANGES_REQUESTED');
-        setReviewingTaskId(task.id);
-        return; // Opens CommentDialog
       }
       loadTasks();
     } catch (err: any) {
       toast.error(err.message || 'Failed to update task');
+    } finally {
+      setActioningTaskId(null);
     }
   }
 
@@ -279,6 +286,7 @@ export default function TasksPage() {
   async function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedTask || !commentInput.trim()) return;
+    setCommenting(true);
     try {
       await api.tasks.addComment(selectedTask.id, commentInput.trim());
       setCommentInput('');
@@ -288,6 +296,8 @@ export default function TasksPage() {
       loadTasks();
     } catch (err: any) {
       toast.error(err.message || 'Failed to add comment');
+    } finally {
+      setCommenting(false);
     }
   }
 
@@ -513,13 +523,14 @@ export default function TasksPage() {
                           <div className="flex gap-1.5 flex-wrap">
                             {statusKey === 'TODO' && task.assigneeId === user?.id && (
                               <button
+                                disabled={actioningTaskId !== null}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleMoveStatus(task, 'START');
                                 }}
-                                className="px-2.5 py-1 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                                className="px-2.5 py-1 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer disabled:opacity-50"
                               >
-                                Start
+                                {actioningTaskId === task.id ? 'Starting...' : 'Start'}
                               </button>
                             )}
                             {statusKey === 'IN_PROGRESS' && (
@@ -529,24 +540,26 @@ export default function TasksPage() {
                                   <>
                                     {(task.status === 'ACCEPTED' || task.status === 'IN_PROGRESS') && (
                                       <button
+                                        disabled={actioningTaskId !== null}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleMoveStatus(task, 'SUBMIT');
                                         }}
-                                        className="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                                        className="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer disabled:opacity-50"
                                       >
-                                        Complete
+                                        {actioningTaskId === task.id ? 'Completing...' : 'Complete'}
                                       </button>
                                     )}
                                     {task.status === 'CHANGES_REQUESTED' && (
                                       <button
+                                        disabled={actioningTaskId !== null}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleMoveStatus(task, 'RESUBMIT');
                                         }}
-                                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-on-primary rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer disabled:opacity-50"
                                       >
-                                        Resubmit
+                                        {actioningTaskId === task.id ? 'Resubmitting...' : 'Resubmit'}
                                       </button>
                                     )}
                                     {(task.status === 'SUBMITTED' || task.status === 'RESUBMITTED' || task.status === 'IN_REVIEW') && (
@@ -1160,19 +1173,21 @@ export default function TasksPage() {
                   <div className="space-y-2">
                     {selectedTask.status === 'ASSIGNED' && (
                       <button
+                        disabled={actioningTaskId !== null}
                         onClick={() => handleMoveStatus(selectedTask, 'START')}
-                        className="w-full py-2.5 bg-primary hover:bg-blue-700 text-white rounded-xl text-label-sm font-bold transition-all active:scale-[0.98]"
+                        className="w-full py-2.5 bg-primary hover:bg-blue-700 text-white rounded-xl text-label-sm font-bold transition-all active:scale-[0.98] disabled:opacity-50"
                       >
-                        Accept & Start Work
+                        {actioningTaskId === selectedTask.id ? 'Starting...' : 'Accept & Start Work'}
                       </button>
                     )}
                     {(selectedTask.status === 'ACCEPTED' || selectedTask.status === 'IN_PROGRESS' || selectedTask.status === 'CHANGES_REQUESTED') && (
                       <>
                         <button
+                          disabled={actioningTaskId !== null}
                           onClick={() => handleMoveStatus(selectedTask, 'SUBMIT')}
-                          className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-label-sm font-bold transition-all active:scale-[0.98]"
+                          className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-label-sm font-bold transition-all active:scale-[0.98] disabled:opacity-50"
                         >
-                          {selectedTask.assigneeId === selectedTask.creatorId ? 'Mark Task as Completed' : 'Submit for Review'}
+                          {actioningTaskId === selectedTask.id ? 'Submitting...' : (selectedTask.assigneeId === selectedTask.creatorId ? 'Mark Task as Completed' : 'Submit for Review')}
                         </button>
                         {!selectedTask.isBlocked && (
                           <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
@@ -1304,9 +1319,10 @@ export default function TasksPage() {
                   />
                   <button
                     type="submit"
-                    className="px-3.5 bg-primary hover:bg-blue-700 text-white rounded-xl text-body-xs font-bold transition-all"
+                    disabled={commenting}
+                    className="px-3.5 bg-primary hover:bg-blue-700 text-white rounded-xl text-body-xs font-bold transition-all disabled:opacity-50"
                   >
-                    Send
+                    {commenting ? 'Sending...' : 'Send'}
                   </button>
                 </form>
               </div>

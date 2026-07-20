@@ -14,9 +14,6 @@ export default function TopNavBar() {
   if (!user) return null;
 
   async function fetchNotifications() {
-    if (typeof window !== 'undefined' && !localStorage.getItem('token')) {
-      return;
-    }
     try {
       const res = await api.notifications.list();
       setNotifications(res.data || []);

@@ -7,11 +7,10 @@ import { redis } from "../config/redis";
 
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const token = req.cookies.accessToken;
+    if (!token) {
       throw AppError.unauthorized("Authentication token required");
     }
-    const token = authHeader.split(" ")[1];
     let decoded;
     try {
       decoded = verifyToken(token, config.JWT_ACCESS_SECRET);

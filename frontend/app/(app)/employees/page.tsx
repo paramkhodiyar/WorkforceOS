@@ -21,6 +21,7 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [enrollResult, setEnrollResult] = useState<any>(null);
+  const [enrollSubmitting, setEnrollSubmitting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -146,6 +147,7 @@ export default function EmployeesPage() {
   async function handleEnroll(e: React.FormEvent) {
     e.preventDefault();
     setEnrollResult(null);
+    setEnrollSubmitting(true);
     try {
       const address = addressLine1 || addressCity || addressState || addressPincode ? {
         line1: addressLine1,
@@ -267,6 +269,8 @@ export default function EmployeesPage() {
       setActiveStep(0);
     } catch (err: any) {
       toast.error(err.message || 'Failed to process employee request');
+    } finally {
+      setEnrollSubmitting(false);
     }
   }
 
@@ -1482,9 +1486,10 @@ export default function EmployeesPage() {
                   ) : (
                     <button
                       type="submit"
-                      className="px-6 py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-md font-bold transition-all active:scale-[0.98] cursor-pointer"
+                      disabled={enrollSubmitting}
+                      className="px-6 py-3 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-md font-bold transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
                     >
-                      {editingEmployee ? 'Save Changes' : 'Enroll'}
+                      {enrollSubmitting ? (editingEmployee ? 'Saving...' : 'Enrolling...') : (editingEmployee ? 'Save Changes' : 'Enroll')}
                     </button>
                   )}
                 </div>

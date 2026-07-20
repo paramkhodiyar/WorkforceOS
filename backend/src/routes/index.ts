@@ -19,11 +19,11 @@ import { teamsRouter } from "../modules/teams/teams.router";
 import { calendarRouter } from "../modules/calendar/calendar.router";
 import { statsRouter } from "../modules/stats/stats.router";
 import { chatbotRouter } from "../modules/chatbot/chatbot.router";
-import { rateLimitByUser } from "../middleware/rateLimit.middleware";
+import { rateLimitByUser, rateLimit } from "../middleware/rateLimit.middleware";
 
 const router = Router();
 
-router.get("/email-preview", (req, res) => {
+router.get("/email-preview", rateLimit(10, 60), (req, res) => {
   const dummyData = {
     firstName: "Alice",
     lastName: "Founder",

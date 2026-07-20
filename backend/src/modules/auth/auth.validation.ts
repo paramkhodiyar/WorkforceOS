@@ -6,7 +6,7 @@ export const loginSchema = z.object({
 });
 
 export const refreshSchema = z.object({
-  refreshToken: z.string().min(1)
+  refreshToken: z.string().optional()
 });
 
 export const changePasswordSchema = z.object({
@@ -23,6 +23,7 @@ export const registerTrialSchema = z.union([
     companyName: z.string().min(1),
     companySize: z.string().min(1),
     challenge: z.string().optional(),
+    nickname: z.string().optional(),
     source: z.string().optional(),
     password: z.string().min(6).optional()
   }),
@@ -33,6 +34,7 @@ export const registerTrialSchema = z.union([
     phone: z.string().min(5),
     companySize: z.string().min(1),
     challenge: z.string().optional(),
+    nickname: z.string().optional(),
     source: z.string().optional(),
     password: z.string().min(6).optional()
   })

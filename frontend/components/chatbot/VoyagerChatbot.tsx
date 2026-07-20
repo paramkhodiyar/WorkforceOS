@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../lib/api/client';
+import { sanitizeHtml } from '../../lib/utils/sanitize';
 
 export default function VoyagerChatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -123,7 +124,7 @@ export default function VoyagerChatbot() {
                       ? 'bg-slate-900 text-white rounded-tr-none'
                       : 'bg-white border border-slate-200 text-slate-850 rounded-tl-none'
                   }`}
-                  dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.text) }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(parseMarkdown(msg.text)) }}
                 />
               </div>
             ))}

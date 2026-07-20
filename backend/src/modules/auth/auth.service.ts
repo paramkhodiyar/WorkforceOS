@@ -6,12 +6,16 @@ import { AppError } from "../../utils/errors.util";
 import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "@prisma/client";
 import { redis } from "../../config/redis";
+import { logger } from "../../config/logger";
 
 import { OnboardingService } from "../onboarding/onboarding.service";
 import { sendTrialLeadEmails } from "../../utils/email.util";
 
 export class AuthService {
   static async registerTrial(data: any, req?: any) {
+    if (data.nickname && data.nickname.trim().length > 0) {
+      throw AppError.badRequest("Spam detected");
+    }
     const adminName = (data.adminName || `${data.firstName || ""} ${data.lastName || ""}`).trim();
     const [derivedFirstName, ...derivedLastNameParts] = adminName.split(/\s+/);
     const firstName = data.firstName || derivedFirstName || "Admin";
@@ -224,11 +228,13 @@ export class AuthService {
     });
 
     if (!user || user.status !== "ACTIVE") {
+      logger.warn(`Security Event: Failed login attempt for email '${email}' - user not found or inactive`);
       throw AppError.unauthorized("Invalid credentials");
     }
 
     const matches = await comparePassword(password, user.passwordHash);
     if (!matches) {
+      logger.warn(`Security Event: Failed login attempt for email '${email}' - incorrect password`);
       throw AppError.unauthorized("Invalid credentials");
     }
 

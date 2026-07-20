@@ -8,6 +8,7 @@ import { LandingHeader } from '../../components/layout/LandingHeader';
 import { LandingFooter } from '../../components/layout/LandingFooter';
 import { AmbientGrid } from '../../components/ui/AmbientGrid';
 import { api } from '../../lib/api/client';
+import { sanitizeHtml } from '../../lib/utils/sanitize';
 
 interface EmployeeData {
   firstName: string;
@@ -376,7 +377,7 @@ export default function OnboardingPage() {
       <title>Quick Onboard Company & Import Excel | WorkforceOS</title>
       
       {/* Dynamic Keyframes for Apple Spring Success Checkmark */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{ __html: sanitizeHtml(`
         @keyframes springCheck {
           0% { transform: scale(0.3); opacity: 0; }
           50% { transform: scale(1.1); }
@@ -394,7 +395,7 @@ export default function OnboardingPage() {
           stroke-dashoffset: 50;
           animation: drawStroke 0.4s ease-out 0.3s forwards;
         }
-      ` }} />
+      `) }} />
 
       <LandingHeader />
 

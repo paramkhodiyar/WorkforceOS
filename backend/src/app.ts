@@ -2,13 +2,19 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import { config } from "./config/env";
 import { requestLogger } from "./middleware/requestLogger.middleware";
 import { notFound } from "./middleware/notFound.middleware";
 import { errorHandler } from "./middleware/errorHandler.middleware";
+import { csrfProtection } from "./middleware/csrf.middleware";
 import routes from "./routes";
 
 const app = express();
+
+app.disable("x-powered-by");
+app.use(cookieParser());
+app.use(csrfProtection);
 
 app.use(
   helmet({
@@ -16,6 +22,9 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "http://localhost:4000", "http://localhost:4001", "https:"],
         objectSrc: ["'none'"],
       },
     },

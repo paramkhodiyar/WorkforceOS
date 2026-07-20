@@ -43,9 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       setUser(null);
       setOrganization(null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
     } finally {
       setLoading(false);
     }
@@ -53,10 +50,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (token) {
-      loadUser();
+    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+    if (token && refreshToken) {
+      // Injected by mobile app bridge, exchange for cookies!
+      api.auth.cookieExchange(token, refreshToken)
+        .then(() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          loadUser();
+        })
+        .catch((err) => {
+          console.error("Biometric cookie exchange failed:", err);
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          setLoading(false);
+        });
     } else {
-      setLoading(false);
+      loadUser();
     }
   }, []);
 
@@ -64,18 +74,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const response = await api.auth.login(email, password);
-      const token = response.data.tokens.accessToken;
-      localStorage.setItem('token', token);
-      localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
-      setUser(response.data.user);
-      // Notify native Flutter app to save both tokens for biometric bypass
-      if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
-        (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
-          type: 'save_token',
-          token,
-          refreshToken: response.data.tokens.refreshToken,
-        }));
+      
+      // Sync with Flutter bridge if running inside mobile WebView
+      const tokens = response.data?.tokens;
+      if (tokens) {
+        if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
+          (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
+            type: 'save_token',
+            token: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+          }));
+        }
       }
+
+      setUser(response.data.user);
       try {
         const orgRes = await api.organization.get();
         setOrganization(orgRes.data);
@@ -96,8 +108,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   function logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    // Clear cookies on backend
+    api.auth.logout().catch(console.error);
+
     setUser(null);
     setOrganization(null);
     setFeatures([]);
@@ -112,19 +125,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const response = await api.auth.switchRole(role);
-      const token = response.data.tokens.accessToken;
-      localStorage.setItem('token', token);
-      localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
-      setUser(response.data.user);
       
-      if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
-        (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
-          type: 'save_token',
-          token,
-          refreshToken: response.data.tokens.refreshToken,
-        }));
+      const tokens = response.data?.tokens;
+      if (tokens) {
+        if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
+          (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
+            type: 'save_token',
+            token: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+          }));
+        }
       }
 
+      setUser(response.data.user);
+      
       try {
         const orgRes = await api.organization.get();
         setOrganization(orgRes.data);

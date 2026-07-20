@@ -6,22 +6,23 @@ const getApiBase = (): string => {
 
 const API_BASE = getApiBase();
 
-function getAuthToken(): string | null {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
-  }
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
   return null;
 }
 
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshSubscribers: (() => void)[] = [];
 
-function subscribeTokenRefresh(cb: (token: string) => void) {
+function subscribeTokenRefresh(cb: () => void) {
   refreshSubscribers.push(cb);
 }
 
-function onRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
+function onRefreshed() {
+  refreshSubscribers.forEach((cb) => cb());
   refreshSubscribers = [];
 }
 
@@ -48,107 +49,102 @@ function getErrorMessage(status: number, errorData: any, defaultPrefix = "Reques
 }
 
 async function request(path: string, options: RequestInit = {}): Promise<any> {
-  const token = getAuthToken();
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  // Attach CSRF Token for state-changing requests
+  const csrfToken = getCookie('csrfToken');
+  if (csrfToken && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method || 'GET')) {
+    headers['x-csrf-token'] = csrfToken;
+  }
+
+  // Detect and flag if running in Flutter WebView
+  const isBridge = typeof window !== 'undefined' && (window as any).WorkforceOSBridge;
+  if (isBridge) {
+    headers['x-workforceos-bridge'] = 'true';
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   if (!response.ok) {
     if (response.status === 401 && path !== '/auth/refresh' && path !== '/auth/login') {
-      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
-      if (refreshToken) {
-        if (!isRefreshing) {
-          isRefreshing = true;
-          try {
-            const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ refreshToken }),
-            });
-            if (refreshRes.ok) {
-              const refreshData = await refreshRes.json();
-              const newAccessToken = refreshData.data.accessToken;
-              const newRefreshToken = refreshData.data.refreshToken;
-              
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('token', newAccessToken);
-                localStorage.setItem('refreshToken', newRefreshToken);
-                // Keep Flutter's stored token in sync after a silent refresh
-                // so that biometric injection on next cold start uses a valid token.
-                if ((window as any).WorkforceOSBridge) {
-                  (window as any).WorkforceOSBridge.postMessage(
-                    JSON.stringify({
-                      type: 'save_token',
-                      token: newAccessToken,
-                      refreshToken: newRefreshToken,
-                    })
-                  );
-                }
-              }
-              
-              isRefreshing = false;
-              onRefreshed(newAccessToken);
-            } else {
-              isRefreshing = false;
-              if (typeof window !== 'undefined') {
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                window.location.href = '/login';
-              }
-              const errorData = await refreshRes.json().catch(() => ({}));
-              throw new Error(getErrorMessage(refreshRes.status, errorData, "Refresh failed"));
+      if (!isRefreshing) {
+        isRefreshing = true;
+        try {
+          const refreshHeaders: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+          if (isBridge) {
+            refreshHeaders['x-workforceos-bridge'] = 'true';
+          }
+          const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+            method: 'POST',
+            headers: refreshHeaders,
+            credentials: 'include',
+          });
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            
+            // Sync with Flutter bridge if applicable
+            if (isBridge && refreshData.data?.accessToken && refreshData.data?.refreshToken) {
+              (window as any).WorkforceOSBridge.postMessage(
+                JSON.stringify({
+                  type: 'save_token',
+                  token: refreshData.data.accessToken,
+                  refreshToken: refreshData.data.refreshToken,
+                })
+              );
             }
-          } catch (refreshErr) {
+            
+            isRefreshing = false;
+            onRefreshed();
+          } else {
             isRefreshing = false;
             if (typeof window !== 'undefined') {
-              localStorage.removeItem('token');
-              localStorage.removeItem('refreshToken');
               window.location.href = '/login';
             }
-            throw refreshErr;
+            const errorData = await refreshRes.json().catch(() => ({}));
+            throw new Error(getErrorMessage(refreshRes.status, errorData, "Refresh failed"));
           }
-        }
-
-        // Wait for the token to be refreshed
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((newToken) => {
-            headers['Authorization'] = `Bearer ${newToken}`;
-            resolve(
-              fetch(`${API_BASE}${path}`, {
-                ...options,
-                headers,
-              }).then((res) => {
-                if (!res.ok) {
-                  return res.json().catch(() => ({})).then((errorData) => {
-                    throw new Error(getErrorMessage(res.status, errorData, "Retry request failed"));
-                  });
-                }
-                return res.json();
-              })
-            );
-          });
-        });
-      } else {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
+        } catch (refreshErr) {
+          isRefreshing = false;
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+          throw refreshErr;
         }
       }
+
+      // Wait for the token to be refreshed
+      return new Promise((resolve) => {
+        subscribeTokenRefresh(() => {
+          resolve(
+            fetch(`${API_BASE}${path}`, {
+              ...options,
+              headers,
+              credentials: 'include',
+            }).then((res) => {
+              if (!res.ok) {
+                return res.json().catch(() => ({})).then((errorData) => {
+                  throw new Error(getErrorMessage(res.status, errorData, "Retry request failed"));
+                });
+              }
+              return res.json();
+            })
+          );
+        });
+      });
     } else if (response.status === 401 && path !== '/auth/login') {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
         window.location.href = '/login';
       }
     }
@@ -166,6 +162,11 @@ export const api = {
       request('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
+      }),
+    cookieExchange: (accessToken: string, refreshToken: string): Promise<any> =>
+      request('/auth/cookie-exchange', {
+        method: 'POST',
+        body: JSON.stringify({ accessToken, refreshToken }),
       }),
     masterBypass: (data: { pin: string }): Promise<any> =>
       request('/auth/master-bypass', {
@@ -194,6 +195,7 @@ export const api = {
       phone: string;
       companySize: string;
       challenge?: string;
+      nickname?: string;
       source?: string;
     }): Promise<any> =>
       request('/auth/register-trial', {
@@ -201,6 +203,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
     getAdminContact: (): Promise<any> => request('/auth/admin-contact'),
+    logout: (): Promise<any> => request('/auth/logout', { method: 'POST' }),
   },
   employees: {
     resetPassword: (employeeId: string, data: any): Promise<any> =>
@@ -576,6 +579,11 @@ export const api = {
       request('/onboarding/setup', {
         method: 'POST',
         body: JSON.stringify(data),
+      }),
+    uploadEmployees: (formData: FormData): Promise<any> =>
+      request('/onboarding/upload-employees', {
+        method: 'POST',
+        body: formData,
       }),
   },
   stats: {

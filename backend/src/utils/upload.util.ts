@@ -47,7 +47,23 @@ if (config.AWS_ACCESS_KEY_ID === "awsaccesskeyplaceholder") {
   });
 }
 
-export const upload = multer({ storage });
+const fileFilter = (req: any, file: any, cb: any) => {
+  const allowedMimeTypes = ["image/png", "image/jpeg", "application/pdf"];
+  const allowedExtensions = [".png", ".jpg", ".jpeg", ".pdf"];
+  const ext = path.extname(file.originalname).toLowerCase();
+  
+  if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error("File type not allowed. Only PNG, JPEG, and PDF are permitted."));
+  }
+};
+
+export const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter
+});
 
 export function getFileUrl(file: any): string {
   if (file.location) {

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/auth.middleware";
 import { validate } from "../../middleware/validate.middleware";
-import { login, registerTrial, refresh, logout, getMe, changePassword, getAdminContact, switchRole } from "./auth.controller";
+import { login, registerTrial, refresh, logout, getMe, changePassword, getAdminContact, switchRole, cookieExchange } from "./auth.controller";
 import { loginSchema, refreshSchema, changePasswordSchema, registerTrialSchema } from "./auth.validation";
 import { rateLimit } from "../../middleware/rateLimit.middleware";
 
@@ -11,6 +11,7 @@ router.post("/login", rateLimit(10, 60), validate(loginSchema), login);
 router.post("/register-trial", rateLimit(10, 60), validate(registerTrialSchema), registerTrial);
 router.get("/admin-contact", rateLimit(10, 60), getAdminContact);
 router.post("/refresh", rateLimit(20, 60), validate(refreshSchema), refresh);
+router.post("/cookie-exchange", rateLimit(10, 60), cookieExchange);
 
 router.post("/logout", authenticate, validate(refreshSchema), logout);
 router.post("/switch-role", authenticate, switchRole);

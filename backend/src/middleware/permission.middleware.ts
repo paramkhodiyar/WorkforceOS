@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { redis } from "../config/redis";
 import { prisma } from "../config/database";
 import { AppError } from "../utils/errors.util";
+import { logger } from "../config/logger";
 
 export function requirePermission(resource: string, action: string | string[]) {
   const actions = Array.isArray(action) ? action : [action];
@@ -137,6 +138,7 @@ export function requirePermission(resource: string, action: string | string[]) {
       }
 
       if (!hasPermission) {
+        logger.warn(`Security Event: Permission denied. User ${req.user.id} (${req.user.email}) attempted to access resource '${resource}' with action(s) '${actions.join(",")}' but has insufficient permissions.`);
         throw AppError.forbidden("Access denied: insufficient permissions");
       }
 

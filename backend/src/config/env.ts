@@ -40,6 +40,29 @@ const envSchema = z.object({
         path: ["ENCRYPTION_KEY"]
       });
     }
+    const defaultAccessSecret = "183cede7f56eb8c445b28eb2b6d027f3c8f019f743c144e69b226eff0cd33849d5df86eaa14f3c1971b37fef230cabc67807cd0fa132d7e357e28d1df6a0adf7";
+    if (!data.JWT_ACCESS_SECRET || data.JWT_ACCESS_SECRET === defaultAccessSecret) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "In production, JWT_ACCESS_SECRET must be defined explicitly and cannot use the default developer fallback key.",
+        path: ["JWT_ACCESS_SECRET"]
+      });
+    }
+    const defaultRefreshSecret = "894b433eef9d456e37d844a258d0490f8aa43e0fa29fc9dc432399f9e7aa41e5f6eca60ada9846777409bb6a48db811c69bec7fc848c7f5d96c79a6190aa9529";
+    if (!data.JWT_REFRESH_SECRET || data.JWT_REFRESH_SECRET === defaultRefreshSecret) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "In production, JWT_REFRESH_SECRET must be defined explicitly and cannot use the default developer fallback key.",
+        path: ["JWT_REFRESH_SECRET"]
+      });
+    }
+    if (!data.CORS_ORIGINS || data.CORS_ORIGINS === "*") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "In production, CORS_ORIGINS must be defined explicitly and cannot be '*'.",
+        path: ["CORS_ORIGINS"]
+      });
+    }
   }
 });
 

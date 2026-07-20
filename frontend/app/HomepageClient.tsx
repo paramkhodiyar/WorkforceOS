@@ -9,6 +9,7 @@ import { useAuth } from '../lib/auth/AuthProvider';
 import { api } from '../lib/api/client';
 import VoyagerChatbot from '../components/chatbot/VoyagerChatbot';
 import Image from 'next/image';
+import { sanitizeHtml } from '../lib/utils/sanitize';
 
 export default function HomepageClient() {
   const { user } = useAuth();
@@ -85,7 +86,8 @@ export default function HomepageClient() {
     phone: '',
     companyName: '',
     companySize: '',
-    challenge: ''
+    challenge: '',
+    nickname: ''
   });
   const [trialLoading, setTrialLoading] = useState(false);
   const [trialError, setTrialError] = useState('');
@@ -242,23 +244,21 @@ export default function HomepageClient() {
         companyName: trialForm.companyName.trim(),
         companySize: trialForm.companySize,
         challenge: trialForm.challenge.trim(),
+        nickname: trialForm.nickname.trim(),
         source: 'homepage trial modal'
       });
 
-      if (res.data?.tokens) {
-        localStorage.setItem('token', res.data.tokens.accessToken);
-        localStorage.setItem('refreshToken', res.data.tokens.refreshToken);
-
+      const tokens = res.data?.tokens;
+      if (tokens) {
         if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
           (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
             type: 'save_token',
-            token: res.data.tokens.accessToken,
-            refreshToken: res.data.tokens.refreshToken,
+            token: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
           }));
         }
-
-        window.location.href = '/dashboard';
       }
+      window.location.href = '/dashboard';
     } catch (err: any) {
       setTrialError(err.message || 'Trial registration failed. Please try again.');
     } finally {
@@ -477,14 +477,14 @@ export default function HomepageClient() {
       {/* SECTION 2.5: DRAG AND DROP ONBOARDING SIMULATOR */}
       <section className="py-20 md:py-24 bg-slate-50 border-b border-slate-200">
         <style dangerouslySetInnerHTML={{
-          __html: `
+          __html: sanitizeHtml(`
           @keyframes scaleUp {
             0% { transform: scale(0.3); opacity: 0; }
             50% { transform: scale(1.1); }
             70% { transform: scale(0.9); }
             100% { transform: scale(1); opacity: 1; }
           }
-        ` }} />
+        `) }} />
         <div className="max-w-[1000px] mx-auto px-6 text-center">
           <span
             className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-6"
@@ -2069,6 +2069,18 @@ export default function HomepageClient() {
                   placeholder="Tell us what you want to fix first."
                   className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
                   disabled={trialLoading}
+                />
+              </div>
+
+              {/* Honeypot field (hidden from human view to catch bots) */}
+              <div style={{ display: 'none' }} aria-hidden="true">
+                <label>Leave this field blank</label>
+                <input
+                  type="text"
+                  name="nickname"
+                  value={trialForm.nickname}
+                  onChange={(e) => setTrialForm((prev) => ({ ...prev, nickname: e.target.value }))}
+                  autoComplete="off"
                 />
               </div>
 

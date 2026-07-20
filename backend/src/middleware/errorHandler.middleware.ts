@@ -42,7 +42,7 @@ export function errorHandler(
       code = `DATABASE_ERROR_${err.code}`;
       message = "Database operation failed";
     }
-    details = err.meta;
+    details = process.env.NODE_ENV === "production" ? undefined : err.meta;
   } else {
     logger.error("Unhandled error: " + err.message, { stack: err.stack });
     if (process.env.NODE_ENV === "development") {

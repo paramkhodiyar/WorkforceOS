@@ -4,37 +4,182 @@ import { sendSuccess } from "../../utils/response.util";
 import { prisma } from "../../config/database";
 import { asyncHandler } from "../../utils/asyncHandler.util";
 import { AppError } from "../../utils/errors.util";
+import { verifyToken } from "../../utils/token.util";
+import { config } from "../../config/env";
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const result = await AuthService.login(email, password, req);
-  return sendSuccess(res, result);
+
+  const { accessToken, refreshToken } = result.tokens;
+  const isProd = config.NODE_ENV === "production" || process.env.NODE_ENV === "production";
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 15 * 60 * 1000
+  });
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+
+  const responseBody = { ...result };
+  const isBridge = req.headers["x-workforceos-bridge"] === "true";
+  if (!isBridge) {
+    delete (responseBody as any).tokens;
+  }
+
+  return sendSuccess(res, responseBody);
 });
 
 export const registerTrial = asyncHandler(async (req: Request, res: Response) => {
   const result = await AuthService.registerTrial(req.body, req);
-  return sendSuccess(res, result, "Trial account registered and initialized successfully");
+  
+  // Set cookies for immediate auto-login
+  const { accessToken, refreshToken } = result.tokens;
+  const isProd = config.NODE_ENV === "production" || process.env.NODE_ENV === "production";
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 15 * 60 * 1000
+  });
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+
+  const responseBody = { ...result };
+  const isBridge = req.headers["x-workforceos-bridge"] === "true";
+  if (!isBridge) {
+    delete (responseBody as any).tokens;
+  }
+
+  return sendSuccess(res, responseBody, "Trial account registered and initialized successfully");
 });
 
 export const switchRole = asyncHandler(async (req: Request, res: Response) => {
   const { role } = req.body;
   const userId = req.user!.id;
   const result = await AuthService.switchRole(userId, role, req.user!);
-  return sendSuccess(res, result, "Role simulated successfully");
+
+  const { accessToken, refreshToken } = result.tokens;
+  const isProd = config.NODE_ENV === "production" || process.env.NODE_ENV === "production";
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 15 * 60 * 1000
+  });
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+
+  const responseBody = { ...result };
+  const isBridge = req.headers["x-workforceos-bridge"] === "true";
+  if (!isBridge) {
+    delete (responseBody as any).tokens;
+  }
+
+  return sendSuccess(res, responseBody, "Role simulated successfully");
 });
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+  if (!refreshToken) {
+    throw AppError.unauthorized("Refresh token required");
+  }
+
   const result = await AuthService.refresh(refreshToken);
-  return sendSuccess(res, result);
+  const { accessToken: newAccessToken, refreshToken: newRefreshToken } = result;
+  const isProd = config.NODE_ENV === "production" || process.env.NODE_ENV === "production";
+
+  res.cookie("accessToken", newAccessToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 15 * 60 * 1000
+  });
+  res.cookie("refreshToken", newRefreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+
+  const responseBody = { ...result };
+  const isBridge = req.headers["x-workforceos-bridge"] === "true";
+  if (!isBridge) {
+    delete (responseBody as any).accessToken;
+    delete (responseBody as any).refreshToken;
+  }
+
+  return sendSuccess(res, responseBody);
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
   const userId = req.user!.id;
   const orgId = req.org!.id;
-  await AuthService.logout(refreshToken, userId, orgId, req);
+  
+  if (refreshToken) {
+    await AuthService.logout(refreshToken, userId, orgId, req);
+  }
+
+  const isProd = config.NODE_ENV === "production" || process.env.NODE_ENV === "production";
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax"
+  });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax"
+  });
+
   return sendSuccess(res, null, "Logged out successfully");
+});
+
+export const cookieExchange = asyncHandler(async (req: Request, res: Response) => {
+  const { accessToken, refreshToken } = req.body;
+  if (!accessToken || !refreshToken) {
+    throw AppError.badRequest("Access token and refresh token are required");
+  }
+
+  try {
+    verifyToken(refreshToken, config.JWT_REFRESH_SECRET);
+  } catch (err) {
+    throw AppError.unauthorized("Invalid refresh token");
+  }
+
+  const isProd = config.NODE_ENV === "production" || process.env.NODE_ENV === "production";
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 15 * 60 * 1000
+  });
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+
+  return sendSuccess(res, null, "Cookies set successfully");
 });
 
 export const getMe = asyncHandler(async (req: Request, res: Response) => {

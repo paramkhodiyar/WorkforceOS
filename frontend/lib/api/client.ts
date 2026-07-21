@@ -122,6 +122,13 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
           const refreshHeaders: Record<string, string> = {
             'Content-Type': 'application/json',
           };
+          let csrfToken = getCookie('csrfToken');
+          if (!csrfToken && typeof window !== 'undefined') {
+            csrfToken = localStorage.getItem('csrfToken');
+          }
+          if (csrfToken) {
+            refreshHeaders['x-csrf-token'] = csrfToken;
+          }
           if (isBridge) {
             refreshHeaders['x-workforceos-bridge'] = 'true';
           }

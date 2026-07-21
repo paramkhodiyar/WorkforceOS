@@ -14,7 +14,24 @@ const app = express();
 
 app.disable("x-powered-by");
 app.use(cookieParser());
-app.use(csrfProtection);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, server-to-server)
+      if (!origin) return callback(null, true);
+      // Wildcard mode – allow everything (dev convenience)
+      if (config.CORS_ORIGINS.includes("*")) return callback(null, true);
+      // Strict allow-list check
+      if (config.CORS_ORIGINS.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin '${origin}' is not allowed`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'x-workforceos-bridge'],
+    exposedHeaders: ['x-csrf-token'],
+  })
+);
 
 app.use(
   helmet({
@@ -33,23 +50,8 @@ app.use(
     frameguard: { action: 'deny' },
   })
 );
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (curl, server-to-server)
-      if (!origin) return callback(null, true);
-      // Wildcard mode – allow everything (dev convenience)
-      if (config.CORS_ORIGINS.includes("*")) return callback(null, true);
-      // Strict allow-list check
-      if (config.CORS_ORIGINS.includes(origin)) return callback(null, true);
-      callback(new Error(`CORS: origin '${origin}' is not allowed`));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'x-workforceos-bridge'],
-    exposedHeaders: ['x-csrf-token'],
-  })
-);
+
+app.use(csrfProtection);
 app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));

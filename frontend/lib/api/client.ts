@@ -143,7 +143,9 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
               if (typeof window !== 'undefined') {
                 localStorage.removeItem('token');
                 localStorage.removeItem('refreshToken');
-                window.location.href = '/login';
+                if (isProtectedPath()) {
+                  window.location.href = '/login';
+                }
               }
               const errorData = await refreshRes.json().catch(() => ({}));
               const refreshError = new Error(getErrorMessage(refreshRes.status, errorData, "Refresh failed"));
@@ -155,7 +157,9 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
             if (typeof window !== 'undefined') {
               localStorage.removeItem('token');
               localStorage.removeItem('refreshToken');
-              window.location.href = '/login';
+              if (isProtectedPath()) {
+                window.location.href = '/login';
+              }
             }
             onRefreshFailed(refreshErr);
             throw refreshErr;
@@ -190,7 +194,9 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
+          if (isProtectedPath()) {
+            window.location.href = '/login';
+          }
         }
       }
     } else if (response.status === 401 && path !== '/auth/login') {

@@ -139,6 +139,10 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
           });
           if (refreshRes.ok) {
             const refreshData = await refreshRes.json();
+            const refreshCsrf = refreshRes.headers.get('x-csrf-token');
+            if (refreshCsrf && typeof window !== 'undefined') {
+              localStorage.setItem('csrfToken', refreshCsrf);
+            }
             
             // Sync with Flutter bridge if applicable
             if (isBridge && refreshData.data?.accessToken && refreshData.data?.refreshToken) {
@@ -156,6 +160,10 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
           } else {
             isRefreshing = false;
             const errorData = await refreshRes.json().catch(() => ({}));
+            const refreshCsrf = refreshRes.headers.get('x-csrf-token');
+            if (refreshCsrf && typeof window !== 'undefined') {
+              localStorage.setItem('csrfToken', refreshCsrf);
+            }
             const refreshError = new Error(getErrorMessage(refreshRes.status, errorData, "Refresh failed"));
             onRefreshFailed(refreshError);
             if (isProtectedPath()) {

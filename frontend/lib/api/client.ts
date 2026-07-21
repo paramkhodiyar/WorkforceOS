@@ -15,15 +15,45 @@ function getCookie(name: string): string | null {
 }
 
 let isRefreshing = false;
-let refreshSubscribers: (() => void)[] = [];
+let refreshSubscribers: { resolve: () => void; reject: (err: any) => void }[] = [];
 
-function subscribeTokenRefresh(cb: () => void) {
-  refreshSubscribers.push(cb);
+function subscribeTokenRefresh(resolve: () => void, reject: (err: any) => void) {
+  refreshSubscribers.push({ resolve, reject });
 }
 
 function onRefreshed() {
-  refreshSubscribers.forEach((cb) => cb());
+  refreshSubscribers.forEach(({ resolve }) => resolve());
   refreshSubscribers = [];
+}
+
+function onRefreshFailed(err: any) {
+  refreshSubscribers.forEach(({ reject }) => reject(err));
+  refreshSubscribers = [];
+}
+
+function isProtectedPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname;
+  const protectedPrefixes = [
+    '/dashboard',
+    '/employees',
+    '/tasks',
+    '/attendance',
+    '/leave',
+    '/performance',
+    '/payroll',
+    '/assets',
+    '/audit',
+    '/calendar',
+    '/settings',
+    '/profile',
+    '/select-role',
+    '/my-team',
+    '/ops-stats',
+    '/paywall',
+    '/onboarding/setup'
+  ];
+  return protectedPrefixes.some(prefix => path === prefix || path.startsWith(prefix + '/'));
 }
 
 function getErrorMessage(status: number, errorData: any, defaultPrefix = "Request failed"): string {
@@ -109,15 +139,18 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
             onRefreshed();
           } else {
             isRefreshing = false;
-            if (typeof window !== 'undefined') {
+            const errorData = await refreshRes.json().catch(() => ({}));
+            const refreshError = new Error(getErrorMessage(refreshRes.status, errorData, "Refresh failed"));
+            onRefreshFailed(refreshError);
+            if (isProtectedPath()) {
               window.location.href = '/login';
             }
-            const errorData = await refreshRes.json().catch(() => ({}));
-            throw new Error(getErrorMessage(refreshRes.status, errorData, "Refresh failed"));
+            throw refreshError;
           }
-        } catch (refreshErr) {
+        } catch (refreshErr: any) {
           isRefreshing = false;
-          if (typeof window !== 'undefined') {
+          onRefreshFailed(refreshErr);
+          if (isProtectedPath()) {
             window.location.href = '/login';
           }
           throw refreshErr;
@@ -125,26 +158,31 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
       }
 
       // Wait for the token to be refreshed
-      return new Promise((resolve) => {
-        subscribeTokenRefresh(() => {
-          resolve(
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh(
+          () => {
             fetch(`${API_BASE}${path}`, {
               ...options,
               headers,
               credentials: 'include',
-            }).then((res) => {
-              if (!res.ok) {
-                return res.json().catch(() => ({})).then((errorData) => {
-                  throw new Error(getErrorMessage(res.status, errorData, "Retry request failed"));
-                });
-              }
-              return res.json();
             })
-          );
-        });
+              .then((res) => {
+                if (!res.ok) {
+                  return res.json().catch(() => ({})).then((errorData) => {
+                    reject(new Error(getErrorMessage(res.status, errorData, "Retry request failed")));
+                  });
+                }
+                resolve(res.json());
+              })
+              .catch((err) => reject(err));
+          },
+          (err) => {
+            reject(err);
+          }
+        );
       });
     } else if (response.status === 401 && path !== '/auth/login') {
-      if (typeof window !== 'undefined') {
+      if (isProtectedPath()) {
         window.location.href = '/login';
       }
     }

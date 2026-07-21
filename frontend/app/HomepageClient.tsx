@@ -91,6 +91,7 @@ export default function HomepageClient() {
   });
   const [trialLoading, setTrialLoading] = useState(false);
   const [trialError, setTrialError] = useState('');
+  const [trialSuccessData, setTrialSuccessData] = useState<{ email: string } | null>(null);
 
   useEffect(() => {
     let timer1: NodeJS.Timeout;
@@ -258,7 +259,11 @@ export default function HomepageClient() {
           }));
         }
       }
-      window.location.href = '/dashboard';
+      
+      setTrialSuccessData({ email: trialForm.email.trim() });
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 5000);
     } catch (err: any) {
       setTrialError(err.message || 'Trial registration failed. Please try again.');
     } finally {
@@ -1941,6 +1946,7 @@ export default function HomepageClient() {
                 onClick={() => {
                   setShowTrialModal(false);
                   setTrialError('');
+                  setTrialSuccessData(null);
                 }}
                 className="text-slate-400 hover:text-slate-650 cursor-pointer"
               >
@@ -1948,163 +1954,205 @@ export default function HomepageClient() {
               </button>
             </div>
 
-            <div className="space-y-2">
-              <h3 className="text-xl font-black text-slate-900 leading-tight">Start Your 7-Day Trial</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-sans">
-                Set up a sandboxed organization workspace instantly. No credit card required, unlock all premium operational features.
-              </p>
-              <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-                Trial workspaces use <span className="font-mono font-bold text-slate-600">Workforce123!</span> as the temporary admin password.
-              </p>
-            </div>
+            {trialSuccessData ? (
+              <div className="space-y-6 text-center">
+                <div className="mx-auto h-12 w-12 rounded-full bg-green-50 border border-green-200 flex items-center justify-center animate-bounce">
+                  <span className="material-symbols-outlined text-[28px] text-green-600">check_circle</span>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-slate-900 leading-tight">Workspace Ready!</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed font-sans">
+                    Your 7-day sandbox organization has been successfully created.
+                  </p>
+                </div>
+                
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3 text-left font-sans">
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Your Login Credentials</p>
+                  <div>
+                    <p className="text-[10px] text-slate-500 font-semibold">Email Address</p>
+                    <p className="text-xs font-mono font-bold text-slate-800 break-all">{trialSuccessData.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-500 font-semibold">Default Password</p>
+                    <p className="text-xs font-mono font-bold text-slate-800">Workforce123!</p>
+                  </div>
+                </div>
 
-            <form onSubmit={handleRegisterTrial} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. David"
-                    value={trialForm.firstName}
-                    onChange={(e) => setTrialForm((prev) => ({ ...prev, firstName: e.target.value }))}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
-                    required
+                <div className="space-y-3 font-sans">
+                  <button
+                    onClick={() => {
+                      window.location.href = '/dashboard';
+                    }}
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    Go to Dashboard
+                  </button>
+                  <p className="text-[10px] text-slate-400 animate-pulse">
+                    You will be redirected automatically in a few seconds...
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-slate-900 leading-tight">Start Your 7-Day Trial</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed font-sans">
+                    Set up a sandboxed organization workspace instantly. No credit card required, unlock all premium operational features.
+                  </p>
+                  <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                    Trial workspaces use <span className="font-mono font-bold text-slate-600">Workforce123!</span> as the temporary admin password.
+                  </p>
+                </div>
+
+                <form onSubmit={handleRegisterTrial} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. David"
+                        value={trialForm.firstName}
+                        onChange={(e) => setTrialForm((prev) => ({ ...prev, firstName: e.target.value }))}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                        required
+                        disabled={trialLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Wallace"
+                        value={trialForm.lastName}
+                        onChange={(e) => setTrialForm((prev) => ({ ...prev, lastName: e.target.value }))}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                        required
+                        disabled={trialLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                        Work Email Address
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="e.g. david@dundermifflin.com"
+                        value={trialForm.email}
+                        onChange={(e) => setTrialForm((prev) => ({ ...prev, email: e.target.value }))}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                        required
+                        disabled={trialLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="e.g. +91 98765 43210"
+                        value={trialForm.phone}
+                        onChange={(e) => setTrialForm((prev) => ({ ...prev, phone: e.target.value }))}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                        required
+                        disabled={trialLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                      Organization Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dunder Mifflin Paper"
+                      value={trialForm.companyName}
+                      onChange={(e) => setTrialForm((prev) => ({ ...prev, companyName: e.target.value }))}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                      required
+                      disabled={trialLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                      Company Size
+                    </label>
+                    <select
+                      value={trialForm.companySize}
+                      onChange={(e) => setTrialForm((prev) => ({ ...prev, companySize: e.target.value }))}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                      required
+                      disabled={trialLoading}
+                    >
+                      <option value="">Select size...</option>
+                      <option value="1-20">1–20 employees</option>
+                      <option value="21-50">21–50 employees</option>
+                      <option value="51-200">51–200 employees</option>
+                      <option value="201-500">201–500 employees</option>
+                      <option value="500+">500+ employees</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
+                      Biggest HR Challenge
+                    </label>
+                    <textarea
+                      value={trialForm.challenge}
+                      onChange={(e) => setTrialForm((prev) => ({ ...prev, challenge: e.target.value }))}
+                      rows={4}
+                      placeholder="Tell us what you want to fix first."
+                      className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
+                      disabled={trialLoading}
+                    />
+                  </div>
+
+                  {/* Honeypot field (hidden from human view to catch bots) */}
+                  <div style={{ display: 'none' }} aria-hidden="true">
+                    <label>Leave this field blank</label>
+                    <input
+                      type="text"
+                      name="nickname"
+                      value={trialForm.nickname}
+                      onChange={(e) => setTrialForm((prev) => ({ ...prev, nickname: e.target.value }))}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  {trialError && (
+                    <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-semibold text-center font-sans">
+                      {trialError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
                     disabled={trialLoading}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Wallace"
-                    value={trialForm.lastName}
-                    onChange={(e) => setTrialForm((prev) => ({ ...prev, lastName: e.target.value }))}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
-                    required
-                    disabled={trialLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
-                    Work Email Address
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="e.g. david@dundermifflin.com"
-                    value={trialForm.email}
-                    onChange={(e) => setTrialForm((prev) => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
-                    required
-                    disabled={trialLoading}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="e.g. +91 98765 43210"
-                    value={trialForm.phone}
-                    onChange={(e) => setTrialForm((prev) => ({ ...prev, phone: e.target.value }))}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
-                    required
-                    disabled={trialLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
-                  Organization Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Dunder Mifflin Paper"
-                  value={trialForm.companyName}
-                  onChange={(e) => setTrialForm((prev) => ({ ...prev, companyName: e.target.value }))}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
-                  required
-                  disabled={trialLoading}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
-                  Company Size
-                </label>
-                <select
-                  value={trialForm.companySize}
-                  onChange={(e) => setTrialForm((prev) => ({ ...prev, companySize: e.target.value }))}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
-                  required
-                  disabled={trialLoading}
-                >
-                  <option value="">Select size...</option>
-                  <option value="1-20">1–20 employees</option>
-                  <option value="21-50">21–50 employees</option>
-                  <option value="51-200">51–200 employees</option>
-                  <option value="201-500">201–500 employees</option>
-                  <option value="500+">500+ employees</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold font-sans">
-                  Biggest HR Challenge
-                </label>
-                <textarea
-                  value={trialForm.challenge}
-                  onChange={(e) => setTrialForm((prev) => ({ ...prev, challenge: e.target.value }))}
-                  rows={4}
-                  placeholder="Tell us what you want to fix first."
-                  className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-600 rounded-xl text-xs text-slate-800 font-sans outline-none"
-                  disabled={trialLoading}
-                />
-              </div>
-
-              {/* Honeypot field (hidden from human view to catch bots) */}
-              <div style={{ display: 'none' }} aria-hidden="true">
-                <label>Leave this field blank</label>
-                <input
-                  type="text"
-                  name="nickname"
-                  value={trialForm.nickname}
-                  onChange={(e) => setTrialForm((prev) => ({ ...prev, nickname: e.target.value }))}
-                  autoComplete="off"
-                />
-              </div>
-
-              {trialError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-semibold text-center font-sans">
-                  {trialError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={trialLoading}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer font-sans"
-              >
-                {trialLoading ? (
-                  <>
-                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Launching Workspace...
-                  </>
-                ) : (
-                  'Launch Sandbox Workspace'
-                )}
-              </button>
-            </form>
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer font-sans"
+                  >
+                    {trialLoading ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Launching Workspace...
+                      </>
+                    ) : (
+                      'Launch Sandbox Workspace'
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

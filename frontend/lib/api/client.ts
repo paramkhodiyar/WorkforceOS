@@ -88,7 +88,10 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
   }
 
   // Attach CSRF Token for state-changing requests
-  const csrfToken = getCookie('csrfToken');
+  let csrfToken = getCookie('csrfToken');
+  if (!csrfToken && typeof window !== 'undefined') {
+    csrfToken = localStorage.getItem('csrfToken');
+  }
   if (csrfToken && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method || 'GET')) {
     headers['x-csrf-token'] = csrfToken;
   }
@@ -104,6 +107,12 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
     headers,
     credentials: 'include',
   });
+
+  // Extract and store CSRF token from response headers if present
+  const respCsrf = response.headers.get('x-csrf-token');
+  if (respCsrf && typeof window !== 'undefined') {
+    localStorage.setItem('csrfToken', respCsrf);
+  }
 
   if (!response.ok) {
     if (response.status === 401 && path !== '/auth/refresh' && path !== '/auth/login') {
@@ -171,6 +180,10 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
                   return res.json().catch(() => ({})).then((errorData) => {
                     reject(new Error(getErrorMessage(res.status, errorData, "Retry request failed")));
                   });
+                }
+                const retryCsrf = res.headers.get('x-csrf-token');
+                if (retryCsrf && typeof window !== 'undefined') {
+                  localStorage.setItem('csrfToken', retryCsrf);
                 }
                 resolve(res.json());
               })

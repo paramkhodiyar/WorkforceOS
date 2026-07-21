@@ -47,6 +47,7 @@ app.use(
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'x-workforceos-bridge'],
+    exposedHeaders: ['x-csrf-token'],
   })
 );
 app.use(compression());

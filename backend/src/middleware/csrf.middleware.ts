@@ -17,6 +17,9 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     });
   }
 
+  // Set the token in response header so cross-origin frontends can read it
+  res.setHeader("x-csrf-token", csrfToken);
+
   // 2. Verify CSRF token for state-changing requests
   const stateChangingMethods = ["POST", "PUT", "PATCH", "DELETE"];
   if (stateChangingMethods.includes(req.method)) {

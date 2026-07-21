@@ -251,6 +251,8 @@ export default function HomepageClient() {
 
       const tokens = res.data?.tokens;
       if (tokens) {
+        localStorage.setItem('token', tokens.accessToken);
+        localStorage.setItem('refreshToken', tokens.refreshToken);
         if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
           (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
             type: 'save_token',

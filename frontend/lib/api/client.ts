@@ -15,14 +15,14 @@ function getCookie(name: string): string | null {
 }
 
 let isRefreshing = false;
-let refreshSubscribers: { resolve: () => void; reject: (err: any) => void }[] = [];
+let refreshSubscribers: { resolve: (token: string) => void; reject: (err: any) => void }[] = [];
 
-function subscribeTokenRefresh(resolve: () => void, reject: (err: any) => void) {
+function subscribeTokenRefresh(resolve: (token: string) => void, reject: (err: any) => void) {
   refreshSubscribers.push({ resolve, reject });
 }
 
-function onRefreshed() {
-  refreshSubscribers.forEach(({ resolve }) => resolve());
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach(({ resolve }) => resolve(token));
   refreshSubscribers = [];
 }
 
@@ -87,13 +87,10 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
     headers['Content-Type'] = 'application/json';
   }
 
-  // Attach CSRF Token for state-changing requests
-  let csrfToken = getCookie('csrfToken');
-  if (!csrfToken && typeof window !== 'undefined') {
-    csrfToken = localStorage.getItem('csrfToken');
-  }
-  if (csrfToken && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method || 'GET')) {
-    headers['x-csrf-token'] = csrfToken;
+  // Attach access token if present
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   // Detect and flag if running in Flutter WebView
@@ -105,110 +102,97 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
-    credentials: 'include',
   });
-
-  // Extract and store CSRF token from response headers if present
-  const respCsrf = response.headers.get('x-csrf-token');
-  if (respCsrf && typeof window !== 'undefined') {
-    localStorage.setItem('csrfToken', respCsrf);
-  }
 
   if (!response.ok) {
     if (response.status === 401 && path !== '/auth/refresh' && path !== '/auth/login') {
-      if (!isRefreshing) {
-        isRefreshing = true;
-        try {
-          const refreshHeaders: Record<string, string> = {
-            'Content-Type': 'application/json',
-          };
-          let csrfToken = getCookie('csrfToken');
-          if (!csrfToken && typeof window !== 'undefined') {
-            csrfToken = localStorage.getItem('csrfToken');
-          }
-          if (csrfToken) {
-            refreshHeaders['x-csrf-token'] = csrfToken;
-          }
-          if (isBridge) {
-            refreshHeaders['x-workforceos-bridge'] = 'true';
-          }
-          const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
-            method: 'POST',
-            headers: refreshHeaders,
-            credentials: 'include',
-          });
-          if (refreshRes.ok) {
-            const refreshData = await refreshRes.json();
-            const refreshCsrf = refreshRes.headers.get('x-csrf-token');
-            if (refreshCsrf && typeof window !== 'undefined') {
-              localStorage.setItem('csrfToken', refreshCsrf);
+      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+      if (refreshToken) {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          try {
+            const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken }),
+            });
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json();
+              const newAccessToken = refreshData.data.accessToken;
+              const newRefreshToken = refreshData.data.refreshToken;
+              
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('token', newAccessToken);
+                localStorage.setItem('refreshToken', newRefreshToken);
+                // Keep Flutter's stored token in sync after a silent refresh
+                if ((window as any).WorkforceOSBridge) {
+                  (window as any).WorkforceOSBridge.postMessage(
+                    JSON.stringify({
+                      type: 'save_token',
+                      token: newAccessToken,
+                      refreshToken: newRefreshToken,
+                    })
+                  );
+                }
+              }
+              
+              isRefreshing = false;
+              onRefreshed(newAccessToken);
+            } else {
+              isRefreshing = false;
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                window.location.href = '/login';
+              }
+              const errorData = await refreshRes.json().catch(() => ({}));
+              const refreshError = new Error(getErrorMessage(refreshRes.status, errorData, "Refresh failed"));
+              onRefreshFailed(refreshError);
+              throw refreshError;
             }
-            
-            // Sync with Flutter bridge if applicable
-            if (isBridge && refreshData.data?.accessToken && refreshData.data?.refreshToken) {
-              (window as any).WorkforceOSBridge.postMessage(
-                JSON.stringify({
-                  type: 'save_token',
-                  token: refreshData.data.accessToken,
-                  refreshToken: refreshData.data.refreshToken,
-                })
-              );
-            }
-            
+          } catch (refreshErr: any) {
             isRefreshing = false;
-            onRefreshed();
-          } else {
-            isRefreshing = false;
-            const errorData = await refreshRes.json().catch(() => ({}));
-            const refreshCsrf = refreshRes.headers.get('x-csrf-token');
-            if (refreshCsrf && typeof window !== 'undefined') {
-              localStorage.setItem('csrfToken', refreshCsrf);
-            }
-            const refreshError = new Error(getErrorMessage(refreshRes.status, errorData, "Refresh failed"));
-            onRefreshFailed(refreshError);
-            if (isProtectedPath()) {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('token');
+              localStorage.removeItem('refreshToken');
               window.location.href = '/login';
             }
-            throw refreshError;
+            onRefreshFailed(refreshErr);
+            throw refreshErr;
           }
-        } catch (refreshErr: any) {
-          isRefreshing = false;
-          onRefreshFailed(refreshErr);
-          if (isProtectedPath()) {
-            window.location.href = '/login';
-          }
-          throw refreshErr;
+        }
+
+        // Wait for the token to be refreshed
+        return new Promise((resolve, reject) => {
+          subscribeTokenRefresh(
+            (newToken) => {
+              headers['Authorization'] = `Bearer ${newToken}`;
+              fetch(`${API_BASE}${path}`, {
+                ...options,
+                headers,
+              })
+                .then((res) => {
+                  if (!res.ok) {
+                    return res.json().catch(() => ({})).then((errorData) => {
+                      reject(new Error(getErrorMessage(res.status, errorData, "Retry request failed")));
+                    });
+                  }
+                  resolve(res.json());
+                })
+                .catch((err) => reject(err));
+            },
+            (err) => {
+              reject(err);
+            }
+          );
+        });
+      } else {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          window.location.href = '/login';
         }
       }
-
-      // Wait for the token to be refreshed
-      return new Promise((resolve, reject) => {
-        subscribeTokenRefresh(
-          () => {
-            fetch(`${API_BASE}${path}`, {
-              ...options,
-              headers,
-              credentials: 'include',
-            })
-              .then((res) => {
-                if (!res.ok) {
-                  return res.json().catch(() => ({})).then((errorData) => {
-                    reject(new Error(getErrorMessage(res.status, errorData, "Retry request failed")));
-                  });
-                }
-                const retryCsrf = res.headers.get('x-csrf-token');
-                if (retryCsrf && typeof window !== 'undefined') {
-                  localStorage.setItem('csrfToken', retryCsrf);
-                }
-                resolve(res.json());
-              })
-              .catch((err) => reject(err));
-          },
-          (err) => {
-            reject(err);
-          }
-        );
-      });
     } else if (response.status === 401 && path !== '/auth/login') {
       if (isProtectedPath()) {
         window.location.href = '/login';
@@ -269,7 +253,11 @@ export const api = {
         body: JSON.stringify(data),
       }),
     getAdminContact: (): Promise<any> => request('/auth/admin-contact'),
-    logout: (): Promise<any> => request('/auth/logout', { method: 'POST' }),
+    logout: (refreshToken: string | null): Promise<any> =>
+      request('/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+      }),
   },
   employees: {
     resetPassword: (employeeId: string, data: any): Promise<any> =>

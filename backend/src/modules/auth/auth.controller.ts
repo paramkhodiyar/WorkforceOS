@@ -28,10 +28,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   });
 
   const responseBody = { ...result };
-  const isBridge = req.headers["x-workforceos-bridge"] === "true";
-  if (!isBridge) {
-    delete (responseBody as any).tokens;
-  }
 
   return sendSuccess(res, responseBody);
 });
@@ -57,10 +53,6 @@ export const registerTrial = asyncHandler(async (req: Request, res: Response) =>
   });
 
   const responseBody = { ...result };
-  const isBridge = req.headers["x-workforceos-bridge"] === "true";
-  if (!isBridge) {
-    delete (responseBody as any).tokens;
-  }
 
   return sendSuccess(res, responseBody, "Trial account registered and initialized successfully");
 });
@@ -87,10 +79,6 @@ export const switchRole = asyncHandler(async (req: Request, res: Response) => {
   });
 
   const responseBody = { ...result };
-  const isBridge = req.headers["x-workforceos-bridge"] === "true";
-  if (!isBridge) {
-    delete (responseBody as any).tokens;
-  }
 
   return sendSuccess(res, responseBody, "Role simulated successfully");
 });
@@ -119,11 +107,6 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   });
 
   const responseBody = { ...result };
-  const isBridge = req.headers["x-workforceos-bridge"] === "true";
-  if (!isBridge) {
-    delete (responseBody as any).accessToken;
-    delete (responseBody as any).refreshToken;
-  }
 
   return sendSuccess(res, responseBody);
 });

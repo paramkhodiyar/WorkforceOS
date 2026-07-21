@@ -49,25 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
-    if (token && refreshToken) {
-      // Injected by mobile app bridge, exchange for cookies!
-      api.auth.cookieExchange(token, refreshToken)
-        .then(() => {
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          loadUser();
-        })
-        .catch((err) => {
-          console.error("Biometric cookie exchange failed:", err);
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          setLoading(false);
-        });
-    } else {
-      loadUser();
-    }
+    loadUser();
   }, []);
 
   async function login(email: string, password: string): Promise<void> {
@@ -75,9 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await api.auth.login(email, password);
       
-      // Sync with Flutter bridge if running inside mobile WebView
       const tokens = response.data?.tokens;
       if (tokens) {
+        localStorage.setItem('token', tokens.accessToken);
+        localStorage.setItem('refreshToken', tokens.refreshToken);
         if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
           (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
             type: 'save_token',
@@ -108,8 +91,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   function logout(): void {
-    // Clear cookies on backend
-    api.auth.logout().catch(console.error);
+    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+    api.auth.logout(refreshToken).catch(console.error);
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    }
 
     setUser(null);
     setOrganization(null);
@@ -128,6 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const tokens = response.data?.tokens;
       if (tokens) {
+        localStorage.setItem('token', tokens.accessToken);
+        localStorage.setItem('refreshToken', tokens.refreshToken);
         if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
           (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
             type: 'save_token',

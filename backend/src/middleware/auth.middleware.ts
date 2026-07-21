@@ -7,7 +7,14 @@ import { redis } from "../config/redis";
 
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = req.cookies.accessToken;
+    let token = req.cookies.accessToken;
+    if (!token && req.headers.authorization) {
+      const parts = req.headers.authorization.split(" ");
+      if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
+        token = parts[1];
+      }
+    }
+
     if (!token) {
       throw AppError.unauthorized("Authentication token required");
     }

@@ -78,7 +78,7 @@ function getErrorMessage(status: number, errorData: any, defaultPrefix = "Reques
   }
 }
 
-async function request(path: string, options: RequestInit = {}): Promise<any> {
+async function request(path: string, options: RequestInit = {}, signal?: AbortSignal): Promise<any> {
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> || {}),
   };
@@ -102,6 +102,7 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
+    ...(signal ? { signal } : {}),
   });
 
   if (!response.ok) {

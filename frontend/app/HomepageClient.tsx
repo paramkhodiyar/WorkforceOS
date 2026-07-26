@@ -1767,7 +1767,7 @@ export default function HomepageClient() {
             {/* Founder Note */}
             <div className="pt-4 border-t border-slate-200">
               <span className="text-xs text-slate-400 block font-medium">Founder's Direct Email:</span>
-              <a href="mailto:param@workforceos.com" className="text-sm font-semibold text-blue-600 hover:underline">
+              <a href="mailto:paramkhodiyar1008@gmail.com" className="text-sm font-semibold text-blue-600 hover:underline">
                 paramkhodiyar1008@gmail.com
               </a>
             </div>

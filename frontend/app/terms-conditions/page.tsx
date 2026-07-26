@@ -166,8 +166,8 @@ export default function TermsOfServicePage() {
 
           <Section id="contact" title="12. Contact">
             <ul className="list-disc pl-5 space-y-1.5 text-slate-600">
-              <li><strong className="text-slate-900 font-bold">Email:</strong> legal@workforceos.com</li>
-              <li><strong className="text-slate-900 font-bold">Grievance Officer (Privacy):</strong> privacy@workforceos.com</li>
+              <li><strong className="text-slate-900 font-bold">Email:</strong> paramkhodiyar1008@gmail.com</li>
+              <li><strong className="text-slate-900 font-bold">Grievance Officer (Privacy):</strong> paramkhodiyar1008@gmail.com</li>
             </ul>
           </Section>
 

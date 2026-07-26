@@ -126,7 +126,7 @@ export default function ContactPageClient() {
 
           {/* Bottom links */}
           <div className="relative z-10 border-t border-slate-200/80 pt-6 flex flex-col md:flex-row gap-4 justify-between items-center text-xs text-slate-500">
-            <a href="mailto:param@workforceos.com" className="hover:text-blue-600 font-bold transition-colors">
+            <a href="mailto:paramkhodiyar1008@gmail.com" className="hover:text-blue-600 font-bold transition-colors">
               paramkhodiyar1008@gmail.com
             </a>
             <a

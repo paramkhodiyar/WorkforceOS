@@ -192,7 +192,7 @@ export default function PaywallPage() {
               <div className="pt-6">
                 {plan.enterprise ? (
                   <a
-                    href={`mailto:support@workforceos.com?subject=Enterprise perpetual license request&body=Hi, I am interested in purchasing the WorkforceOS Perpetual Enterprise License for my organization.`}
+                    href={`mailto:paramkhodiyar1008@gmail.com?subject=Enterprise perpetual license request&body=Hi, I am interested in purchasing the WorkforceOS Perpetual Enterprise License for my organization.`}
                     className="w-full py-2.5 text-center text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all inline-block"
                   >
                     {plan.cta}

@@ -235,7 +235,7 @@ export default function SideNavBar() {
           </Link>
         )}
         <a
-          href="mailto:support@workforceos.com"
+          href="mailto:paramkhodiyar1008@gmail.com"
           className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-slate-50 transition-colors"
         >
           <span className="material-symbols-outlined text-[20px]">help</span>

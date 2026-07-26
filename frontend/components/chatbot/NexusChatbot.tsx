@@ -56,12 +56,12 @@ export default function NexusChatbot() {
       if (data?.success && data?.data?.response) {
         botResponse = data.data.response;
       } else {
-        botResponse = 'I encountered an operational issue. If this persists, please contact HR at **superadmin@workforceos.com**.';
+        botResponse = 'I encountered an operational issue. If this persists, please contact HR at **paramkhodiyar1008@gmail.com**.';
       }
 
       setMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);
     } catch {
-      setMessages(prev => [...prev, { sender: 'bot', text: 'I am unable to reach the core systems. Please check your connection or contact HR at **superadmin@workforceos.com**.' }]);
+      setMessages(prev => [...prev, { sender: 'bot', text: 'I am unable to reach the core systems. Please check your connection or contact HR at **paramkhodiyar1008@gmail.com**.' }]);
     } finally {
       setLoading(false);
     }

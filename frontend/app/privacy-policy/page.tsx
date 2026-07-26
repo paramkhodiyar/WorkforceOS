@@ -194,7 +194,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-slate-600">
               <li><strong className="text-slate-900 font-bold">Name:</strong> Param Khodiyar</li>
-              <li><strong className="text-slate-900 font-bold">Email:</strong> privacy@workforceos.com</li>
+              <li><strong className="text-slate-900 font-bold">Email:</strong> paramkhodiyar1008@gmail.com</li>
               <li><strong className="text-slate-900 font-bold">Response Time:</strong> Within 30 days of receipt</li>
             </ul>
           </Section>

@@ -7,9 +7,32 @@ import { AuditService } from "../audit/audit.service";
 import { AuditAction } from "@prisma/client";
 import { redis } from "../../config/redis";
 import { logger } from "../../config/logger";
+import { randomBytes } from "crypto";
 
 import { OnboardingService } from "../onboarding/onboarding.service";
 import { sendTrialLeadEmails } from "../../utils/email.util";
+
+/**
+ * Generates a random, policy-compliant password for trial accounts.
+ * Format: 1 uppercase + 2 digits + 8 random mixed-case alphanum + 1 special char.
+ */
+function generateTrialPassword(): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const special = "!@#$%";
+  const pool = upper + lower + digits;
+  const bytes = randomBytes(12);
+  let pwd =
+    upper[bytes[0] % upper.length] +
+    digits[bytes[1] % digits.length] +
+    digits[bytes[2] % digits.length];
+  for (let i = 3; i < 11; i++) {
+    pwd += pool[bytes[i] % pool.length];
+  }
+  pwd += special[bytes[11] % special.length];
+  return pwd;
+}
 
 export class AuthService {
   static async registerTrial(data: any, req?: any) {
@@ -21,7 +44,7 @@ export class AuthService {
     const firstName = data.firstName || derivedFirstName || "Admin";
     const lastName = data.lastName || derivedLastNameParts.join(" ") || "User";
     const email = data.email || data.adminEmail;
-    const password = data.password || "Workforce123!";
+    const password = data.password || generateTrialPassword();
     const companyName = data.companyName || data.organizationName;
     const companySize = data.companySize || "Not provided";
     const phone = data.phone || "Not provided";

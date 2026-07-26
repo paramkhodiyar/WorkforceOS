@@ -19,7 +19,7 @@ export default function DashboardPage() {
   const [myTasks, setMyTasks] = useState<any[]>([]);
 
   const [checking, setChecking] = useState(false);
-  const [workMode, setWorkMode] = useState<'WFO' | 'WFH' | 'FIELD'>('WFO');
+  const [workMode, setWorkMode] = useState<'WFO' | 'WFH'>('WFO');
   const [elapsed, setElapsed] = useState('');
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export default function DashboardPage() {
     const performCheckIn = async (gpsLat?: number, gpsLng?: number) => {
       try {
         await api.attendance.checkIn({
-          workMode: workMode === 'WFO' ? 'WFO' : 'WFH',
+          workMode,
           gpsLat,
           gpsLng
         });
@@ -109,6 +109,7 @@ export default function DashboardPage() {
       const orgRes = await api.organization.get();
       setFeatures(orgRes.data.enabledFeatures || []);
 
+      // Fetch attendance status once, shared by both admin and employee branches
       try {
         const attStatus = await api.attendance.getCurrentStatus();
         setAttendanceStatus(attStatus.data);
@@ -149,7 +150,6 @@ export default function DashboardPage() {
         setMetrics({
           employeeCount: employeesCount,
           pendingLeaves: pendingLeavesCount,
-          absentCount: Math.floor(employeesCount * 0.08),
           onLeaveCount: pendingLeavesCount,
         });
 
@@ -158,7 +158,6 @@ export default function DashboardPage() {
       } else {
         let balances: any[] = [];
         let openTasksCount = 0;
-        let status: any = null;
         let tasksList: any[] = [];
 
         try {
@@ -176,19 +175,11 @@ export default function DashboardPage() {
           console.error(e);
         }
 
-        try {
-          const attStatus = await api.attendance.getCurrentStatus();
-          status = attStatus.data;
-        } catch (e) {
-          console.error(e);
-        }
-
         setMetrics({
           leaveBalance: balances,
           openTasks: openTasksCount,
         });
 
-        setAttendanceStatus(status);
         setMyTasks(tasksList);
       }
     } catch (err) {
@@ -234,7 +225,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-2xl bg-white/20 flex items-center justify-center font-extrabold text-headline-sm text-white select-none">
-                {user.firstName[0]}{user.lastName[0]}
+                {user.firstName?.[0] ?? '?'}{user.lastName?.[0] ?? ''}
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold tracking-wider text-blue-100">Welcome Back</p>
@@ -364,8 +355,8 @@ export default function DashboardPage() {
 
             {!isShiftCompleted && !isClockedIn ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
-                  {(['WFO', 'WFH', 'FIELD'] as const).map(mode => (
+                <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl">
+                  {(['WFO', 'WFH'] as const).map(mode => (
                     <button
                       key={mode}
                       type="button"
@@ -374,7 +365,7 @@ export default function DashboardPage() {
                         workMode === mode ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      {mode}
+                      {mode === 'WFO' ? 'In Office' : 'Remote'}
                     </button>
                   ))}
                 </div>

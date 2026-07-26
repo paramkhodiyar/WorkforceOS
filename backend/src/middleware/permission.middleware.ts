@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import { redis } from "../config/redis";
-import { prisma } from "../config/database";
 import { AppError } from "../utils/errors.util";
 import { logger } from "../config/logger";
 
@@ -47,20 +46,14 @@ export function requirePermission(resource: string, action: string | string[]) {
           return next();
         }
 
-        // Check if user is a department head or team lead in the DB
-        const [headedDept, ledTeam] = await Promise.all([
-          prisma.department.findFirst({
-            where: { headId: req.user.id, isDeleted: false },
-            select: { id: true }
-          }),
-          prisma.team.findFirst({
-            where: { leadId: req.user.id, isDeleted: false },
-            select: { id: true }
-          })
-        ]);
-        if (headedDept || ledTeam) {
-          return next();
-        }
+      // Check if user is a department head or team lead using data already
+      // available on req.user (populated by auth middleware) — no extra DB calls.
+      const isLeader =
+        (req.user.departmentHead && (req.user.departmentHead as any[]).length > 0) ||
+        (req.user.teamLead && (req.user.teamLead as any[]).length > 0);
+      if (isLeader) {
+        return next();
+      }
       }
 
       if (roles.length === 0) {

@@ -10,7 +10,46 @@ interface SeedUser {
   role: string;
 }
 
-const AuthContext = createContext<any>(null);
+interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  systemRole: string;
+  originalRole?: string;
+  designation?: string | null;
+  avatarUrl?: string | null;
+  organizationId: string;
+  organization?: any;
+  homeLatitude?: number | null;
+  homeLongitude?: number | null;
+  homeAddressLocked?: boolean;
+  forcePasswordChange?: boolean;
+  departmentId?: string | null;
+  departmentHead?: { id: string }[];
+  teamLead?: { id: string }[];
+  teams?: { id: string; name: string }[];
+  roles: Array<{ roleId: string; roleName: string; scopeType: string; scopeId: string }>;
+  [key: string]: any;
+}
+
+interface AuthContextValue {
+  user: AuthUser | null;
+  organization: any | null;
+  loading: boolean;
+  features: string[];
+  setFeatures: (features: string[]) => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  switchRole: (role: string) => Promise<void>;
+  refetchUser: () => Promise<void>;
+  /** Only available in development builds */
+  quickLogin?: (email: string) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+const isDev = process.env.NODE_ENV === 'development';
 
 export const SEED_USERS: SeedUser[] = [
   { email: 'superadmin@workforceos.com', label: 'Super Admin', role: 'SUPER_ADMIN' },
@@ -23,7 +62,7 @@ export const SEED_USERS: SeedUser[] = [
 ];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [organization, setOrganization] = useState<any>(null);
   const [features, setFeatures] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,7 +125,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  /** quickLogin is a dev-only helper — not exposed in production builds */
   async function quickLogin(email: string): Promise<void> {
+    if (!isDev) return;
     return login(email, 'Password123!');
   }
 
@@ -153,18 +194,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         features,
         setFeatures,
         login,
-        quickLogin,
+        ...(isDev ? { quickLogin } : {}),
         logout,
         switchRole,
         refetchUser: loadUser,
-      }}
+      } satisfies AuthContextValue}
     >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');

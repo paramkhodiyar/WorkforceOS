@@ -31,10 +31,18 @@ export default function SideNavBar() {
 
     checkPending();
 
+    // Refresh badge every 60 seconds so admins see new requests without a page reload
+    const interval = setInterval(checkPending, 60000);
+
     if (typeof window !== 'undefined') {
       window.addEventListener('profile-requests-updated', checkPending);
-      return () => window.removeEventListener('profile-requests-updated', checkPending);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('profile-requests-updated', checkPending);
+      };
     }
+
+    return () => clearInterval(interval);
   }, [user]);
 
   if (!user) return null;
@@ -226,13 +234,13 @@ export default function SideNavBar() {
             <span className="text-label-md">Settings</span>
           </Link>
         )}
-        <Link 
-          href="/unauthorized"
+        <a
+          href="mailto:support@workforceos.com"
           className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-slate-50 transition-colors"
         >
           <span className="material-symbols-outlined text-[20px]">help</span>
           <span className="text-label-md">Support</span>
-        </Link>
+        </a>
       </div>
     </aside>
   );

@@ -43,7 +43,17 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
               role: true
             }
           },
-          organization: true
+          organization: true,
+          // Include leadership relationships so permission middleware can
+          // use req.user directly instead of issuing extra DB queries.
+          departmentHead: {
+            where: { isDeleted: false },
+            select: { id: true }
+          },
+          teamLead: {
+            where: { isDeleted: false },
+            select: { id: true }
+          }
         }
       });
 

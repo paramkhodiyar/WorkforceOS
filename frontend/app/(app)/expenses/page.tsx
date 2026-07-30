@@ -114,6 +114,8 @@ export default function ExpensesPage() {
     );
   }
 
+  if (!user) return null;
+
   const filteredClaims = expenses.filter(exp => exp.userId === user.id).filter(exp => {
     const category = exp.category?.toLowerCase() || '';
     const description = exp.description?.toLowerCase() || '';

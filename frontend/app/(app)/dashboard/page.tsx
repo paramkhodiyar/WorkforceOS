@@ -194,6 +194,7 @@ export default function DashboardPage() {
   }, [isAdmin, isHR, isFinance, isManager]);
 
   async function handleToggleFeature(featureName: string) {
+    if (!user) return;
     const nextFeatures = features.includes(featureName)
       ? features.filter(f => f !== featureName)
       : [...features, featureName];
@@ -213,6 +214,8 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  if (!user) return null;
 
   return (
     <div className="space-y-6 font-sans">

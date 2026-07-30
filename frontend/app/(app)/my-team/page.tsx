@@ -58,6 +58,7 @@ export default function MyTeamPage() {
   }, [user]);
 
   async function initializeScopes() {
+    if (!user) return;
     try {
       setLoading(true);
       let list: any[] = [];

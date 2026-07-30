@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authenticate } from "../../middleware/auth.middleware";
 import { requirePermission } from "../../middleware/permission.middleware";
 import { validate } from "../../middleware/validate.middleware";
+import { upload } from "../../utils/upload.util";
 import {
   getRuns,
   generateRun,
@@ -10,7 +11,9 @@ import {
   markPaid,
   getMyPayslips,
   getPayslip,
-  exportRun
+  exportRun,
+  editPayslip,
+  disbursePayslip
 } from "./payroll.controller";
 import { getRunsSchema, generateRunSchema, myPayslipsSchema } from "./payroll.validation";
 
@@ -25,6 +28,8 @@ router.get("/runs", requirePermission("payroll", "read"), validate(getRunsSchema
 router.post("/runs", requirePermission("payroll", "generate"), validate(generateRunSchema), generateRun);
 router.get("/my-payslips", validate(myPayslipsSchema, "query"), getMyPayslips);
 router.get("/payslips/:recordId", getPayslip);
+router.post("/payslips/:recordId/edit", requirePermission("payroll", "generate"), editPayslip);
+router.post("/payslips/:recordId/disburse", requirePermission("payroll", "mark_paid"), upload.single("receipt"), disbursePayslip);
 router.get("/runs/:runId", requirePermission("payroll", "read"), getRun);
 router.post("/runs/:runId/approve", requirePermission("payroll", "approve"), approveRun);
 router.post("/runs/:runId/mark-paid", requirePermission("payroll", "mark_paid"), markPaid);

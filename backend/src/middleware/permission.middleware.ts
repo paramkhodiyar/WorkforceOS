@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { redis } from "../config/redis";
 import { AppError } from "../utils/errors.util";
 import { logger } from "../config/logger";
+import { prisma } from "../config/database";
 
 export function requirePermission(resource: string, action: string | string[]) {
   const actions = Array.isArray(action) ? action : [action];
@@ -48,9 +49,10 @@ export function requirePermission(resource: string, action: string | string[]) {
 
       // Check if user is a department head or team lead using data already
       // available on req.user (populated by auth middleware) — no extra DB calls.
+      const userAny = req.user as any;
       const isLeader =
-        (req.user.departmentHead && (req.user.departmentHead as any[]).length > 0) ||
-        (req.user.teamLead && (req.user.teamLead as any[]).length > 0);
+        (userAny.departmentHead && userAny.departmentHead.length > 0) ||
+        (userAny.teamLead && userAny.teamLead.length > 0);
       if (isLeader) {
         return next();
       }

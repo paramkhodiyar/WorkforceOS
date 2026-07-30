@@ -4,6 +4,7 @@ import { sendSuccess, sendPaginated } from "../../utils/response.util";
 import { parsePagination } from "../../utils/pagination.util";
 import { asyncHandler } from "../../utils/asyncHandler.util";
 import { getPermissionScopes } from "../../utils/permission.util";
+import { getFileUrl } from "../../utils/upload.util";
 
 export const getRuns = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
@@ -50,13 +51,20 @@ export const getMyPayslips = asyncHandler(async (req: Request, res: Response) =>
   const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
 
   let hasAllAccess = false;
-  try {
-    const scopes = await getPermissionScopes(req.user!, orgId, "payroll", "read");
-    if (scopes.isGlobal) {
-      hasAllAccess = true;
+  const isSystemOwner = req.user!.systemRole === "SYS_OWNER" || req.user!.originalRole === "SYS_OWNER";
+  const isAdmin = req.user!.systemRole === "SUPER_ADMIN" || req.user!.systemRole === "ORG_ADMIN";
+
+  if (isSystemOwner || isAdmin) {
+    hasAllAccess = true;
+  } else {
+    try {
+      const scopes = await getPermissionScopes(req.user!, orgId, "payroll", "read");
+      if (scopes.isGlobal) {
+        hasAllAccess = true;
+      }
+    } catch (err) {
+      // Fall back to only listing their own payslips
     }
-  } catch (err) {
-    // Fall back to only listing their own payslips
   }
 
   const result = await PayrollService.getEmployeePayslips(userId, year, page, limit, orgId, hasAllAccess);
@@ -72,13 +80,24 @@ export const getMyPayslips = asyncHandler(async (req: Request, res: Response) =>
 export const getPayslip = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const orgId = req.org!.id;
-  const readScopes = await getPermissionScopes(req.user!, orgId, "payroll", "read");
-  const isSuperAdmin = req.user!.systemRole === "SUPER_ADMIN";
-  const hasGlobalRead = readScopes.isGlobal;
+  const isSystemOwner = req.user!.systemRole === "SYS_OWNER" || req.user!.originalRole === "SYS_OWNER";
+  const isAdmin = req.user!.systemRole === "SUPER_ADMIN" || req.user!.systemRole === "ORG_ADMIN";
+  
+  let hasGlobalRead = false;
+  if (isSystemOwner || isAdmin) {
+    hasGlobalRead = true;
+  } else {
+    try {
+      const readScopes = await getPermissionScopes(req.user!, orgId, "payroll", "read");
+      hasGlobalRead = readScopes.isGlobal;
+    } catch (err) {
+      // Keep false
+    }
+  }
  
   const payslip = await PayrollService.getPayslipById(
     req.params.recordId,
-    isSuperAdmin ? undefined : orgId,
+    (isSystemOwner || isAdmin) ? undefined : orgId,
     hasGlobalRead ? undefined : userId
   );
   return sendSuccess(res, payslip);
@@ -88,4 +107,27 @@ export const exportRun = asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.org!.id;
   const data = await PayrollService.exportRun(req.params.runId, orgId);
   return sendSuccess(res, data);
+});
+
+export const editPayslip = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const actorId = req.user!.id;
+  const recordId = req.params.recordId;
+  const updated = await PayrollService.editPayslip(recordId, orgId, req.body, actorId, req);
+  return sendSuccess(res, updated, "Payslip updated successfully");
+});
+
+export const disbursePayslip = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const actorId = req.user!.id;
+  const recordId = req.params.recordId;
+  const { remarks } = req.body;
+  
+  let paymentSlipUrl: string | undefined;
+  if (req.file) {
+    paymentSlipUrl = getFileUrl(req.file);
+  }
+
+  const updated = await PayrollService.disbursePayslip(recordId, orgId, paymentSlipUrl, remarks, actorId, req);
+  return sendSuccess(res, updated, "Payslip marked as paid successfully");
 });

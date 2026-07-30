@@ -76,31 +76,6 @@ export class PayrollService {
         else if (emp.salaryBand === "BAND_E") basic = 18000;
       }
 
-      // ── Interns: simple stipend, no statutory deductions ──────────────────
-      if (emp.employeeType === "INTERN" || emp.systemRole === "INTERN") {
-        await prisma.payrollRecord.create({
-          data: {
-            payrollRunId: run.id,
-            userId: emp.id,
-            basicSalary: basic,
-            hra: 0,
-            allowances: 0,
-            bonus: 0,
-            grossSalary: basic,
-            pf: 0,
-            pfEmployerContribution: 0,
-            esic: 0,
-            tax: 0,
-            lopDays: 0,
-            lopDeduction: 0,
-            otherDeductions: 0,
-            totalDeductions: 0,
-            netSalary: basic
-          }
-        });
-        continue;
-      }
-
       // ── LOP days from attendance ────────────────────────────────────────────
       const { lopDays, workingDays } = await computeLopDays(emp.id, month, year, orgId);
 
@@ -111,7 +86,13 @@ export class PayrollService {
         pfApplicable: emp.pfApplicable ?? true,
         taxRegime: (emp.taxRegime as "OLD" | "NEW") ?? "NEW",
         lopDays,
-        workingDaysInMonth: workingDays
+        workingDaysInMonth: workingDays,
+        salaryCalculationType: emp.salaryCalculationType,
+        customHra: emp.customHra,
+        customAllowance: emp.customAllowance,
+        customPf: emp.customPf,
+        customTds: emp.customTds,
+        employeeType: emp.employeeType
       });
 
       await prisma.payrollRecord.create({
@@ -130,9 +111,11 @@ export class PayrollService {
           tax: breakdown.tax,
           lopDays: breakdown.lopDays,
           lopDeduction: breakdown.lopDeduction,
+          lateDeduction: breakdown.lateDeduction,
           otherDeductions: breakdown.otherDeductions,
           totalDeductions: breakdown.totalDeductions,
-          netSalary: breakdown.netSalary
+          netSalary: breakdown.netSalary,
+          status: "DRAFT"
         }
       });
     }
@@ -287,7 +270,7 @@ export class PayrollService {
       where,
       include: {
         payrollRun: true,
-        user: { select: { id: true, firstName: true, lastName: true, email: true, employeeId: true, designation: true } }
+        user: { select: { id: true, firstName: true, lastName: true, email: true, employeeId: true, designation: true, employeeType: true } }
       }
     });
 
@@ -295,7 +278,222 @@ export class PayrollService {
       throw AppError.notFound("Payslip record not found");
     }
 
-    return record;
+    const month = record.payrollRun.month;
+    const year = record.payrollRun.year;
+    const recordUserId = record.userId;
+    const recordOrgId = record.payrollRun.organizationId;
+
+    // Get telemetry
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+
+    // 1. Attendance stats
+    const attendanceRecords = await prisma.attendance.findMany({
+      where: {
+        userId: recordUserId,
+        date: { gte: startDate, lte: endDate },
+        isDeleted: false
+      }
+    });
+
+    const presentDays = attendanceRecords.filter(a => ["PRESENT", "EARLY_DEP"].includes(a.status)).length;
+    const lateDays = attendanceRecords.filter(a => a.status === "LATE").length;
+    const absentDays = attendanceRecords.filter(a => a.status === "ABSENT").length;
+    const halfDays = attendanceRecords.filter(a => a.status === "HALF_DAY").length;
+    const leaveDays = attendanceRecords.filter(a => a.status === "ON_LEAVE").length;
+    const totalDaysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+    // 2. Approved leaves
+    const approvedLeavesCount = await prisma.leaveRequest.count({
+      where: {
+        userId: recordUserId,
+        status: "HR_APPROVED",
+        startDate: { lte: endDate },
+        endDate: { gte: startDate }
+      }
+    });
+
+    // 3. Tasks
+    const assignedTasksCount = await prisma.task.count({
+      where: {
+        assigneeId: recordUserId,
+        createdAt: { gte: startDate, lte: endDate },
+        isDeleted: false
+      }
+    });
+
+    const completedTasksCount = await prisma.task.count({
+      where: {
+        assigneeId: recordUserId,
+        status: { in: ["APPROVED", "CLOSED"] },
+        updatedAt: { gte: startDate, lte: endDate },
+        isDeleted: false
+      }
+    });
+
+    // 4. Pending Expense Claims
+    const pendingExpenses = await prisma.expenseClaim.findMany({
+      where: {
+        userId: recordUserId,
+        status: "FINANCE_APPROVED",
+        isDeleted: false
+      }
+    });
+
+    return {
+      ...record,
+      telemetry: {
+        attendance: {
+          presentDays,
+          lateDays,
+          absentDays,
+          halfDays,
+          leaveDays,
+          totalDaysInMonth
+        },
+        leaves: {
+          approvedLeavesCount
+        },
+        tasks: {
+          assignedTasksCount,
+          completedTasksCount,
+          productivityRate: assignedTasksCount > 0 ? Math.round((completedTasksCount / assignedTasksCount) * 100) : 0
+        },
+        expenses: pendingExpenses
+      }
+    };
+  }
+
+  static async editPayslip(recordId: string, orgId: string, data: any, actorId: string, req?: any) {
+    const record = await prisma.payrollRecord.findFirst({
+      where: { id: recordId, isDeleted: false, payrollRun: { organizationId: orgId } },
+      include: { payrollRun: true, user: true }
+    });
+
+    if (!record) {
+      throw AppError.notFound("Payslip record not found");
+    }
+
+    if (record.status === "PAID" || record.payrollRun.status === "PAID") {
+      throw AppError.badRequest("Cannot edit a disbursed payslip");
+    }
+
+    // Capture inputs
+    const basicSalary = data.basicSalary !== undefined ? parseFloat(data.basicSalary) : record.basicSalary;
+    const hra = data.hra !== undefined ? parseFloat(data.hra) : record.hra;
+    const allowances = data.allowances !== undefined ? parseFloat(data.allowances) : record.allowances;
+    const bonus = data.bonus !== undefined ? parseFloat(data.bonus) : record.bonus;
+    const pf = data.pf !== undefined ? parseFloat(data.pf) : record.pf;
+    const tax = data.tax !== undefined ? parseFloat(data.tax) : record.tax;
+    const lopDays = data.lopDays !== undefined ? parseFloat(data.lopDays) : record.lopDays;
+    
+    const dailyWage = basicSalary / 30.0;
+    const lopDeduction = data.lopDeduction !== undefined 
+      ? parseFloat(data.lopDeduction) 
+      : (data.lopDays !== undefined ? Math.round(lopDays * dailyWage * 100) / 100 : record.lopDeduction);
+      
+    const lateDeduction = data.lateDeduction !== undefined ? parseFloat(data.lateDeduction) : record.lateDeduction;
+    const otherDeductions = data.otherDeductions !== undefined ? parseFloat(data.otherDeductions) : record.otherDeductions;
+    const comments = data.comments !== undefined ? data.comments : record.comments;
+
+    // Recalculate
+    const grossSalary = basicSalary + hra + allowances + bonus;
+    const professionalTax = (record.user.employeeType === "INTERN") ? 0 : 200;
+    const esic = (record.user.employeeType === "INTERN" || grossSalary > 21000) ? 0 : Math.round(grossSalary * 0.0075 * 100) / 100;
+    
+    const totalDeductions = pf + tax + professionalTax + esic + lopDeduction + lateDeduction + otherDeductions;
+    const netSalary = Math.max(grossSalary - totalDeductions, 0);
+
+    const updated = await prisma.payrollRecord.update({
+      where: { id: recordId },
+      data: {
+        basicSalary,
+        hra,
+        allowances,
+        bonus,
+        pf,
+        tax,
+        lopDays,
+        lopDeduction,
+        lateDeduction,
+        otherDeductions,
+        grossSalary,
+        professionalTax,
+        esic,
+        totalDeductions,
+        netSalary,
+        comments
+      },
+      include: {
+        payrollRun: true,
+        user: { select: { id: true, firstName: true, lastName: true, email: true, employeeId: true, designation: true } }
+      }
+    });
+
+    await AuditService.log({
+      organizationId: orgId,
+      actorId,
+      action: AuditAction.UPDATED,
+      module: "payroll",
+      targetId: recordId,
+      targetType: "PayrollRecord",
+      req
+    });
+
+    return updated;
+  }
+
+  static async disbursePayslip(recordId: string, orgId: string, paymentSlipUrl: string | undefined, remarks: string | undefined, actorId: string, req?: any) {
+    const record = await prisma.payrollRecord.findFirst({
+      where: { id: recordId, isDeleted: false, payrollRun: { organizationId: orgId } },
+      include: { payrollRun: true }
+    });
+
+    if (!record) {
+      throw AppError.notFound("Payslip record not found");
+    }
+
+    if (record.status === "PAID") {
+      throw AppError.badRequest("Payslip is already marked as paid");
+    }
+
+    const updatedComments = remarks 
+      ? (record.comments ? `${record.comments}\n\nDisbursement Notes: ${remarks}` : `Disbursement Notes: ${remarks}`)
+      : record.comments;
+
+    const updated = await prisma.payrollRecord.update({
+      where: { id: recordId },
+      data: {
+        status: "PAID",
+        paymentSlipUrl,
+        comments: updatedComments
+      },
+      include: {
+        payrollRun: true,
+        user: { select: { id: true, firstName: true, lastName: true, email: true, employeeId: true, designation: true } }
+      }
+    });
+
+    await NotificationService.notify(
+      record.userId,
+      NotificationType.SALARY_GENERATED,
+      "Salary Disbursed",
+      `Your salary payslip for ${record.payrollRun.month}/${record.payrollRun.year} has been disbursed. Net Take Home: INR ${record.netSalary}`,
+      { payrollRecordId: record.id }
+    );
+
+    await AuditService.log({
+      organizationId: orgId,
+      actorId,
+      action: AuditAction.STATUS_CHANGED,
+      module: "payroll",
+      targetId: recordId,
+      targetType: "PayrollRecord",
+      newValue: { status: "PAID" },
+      req
+    });
+
+    return updated;
   }
 
   static async exportRun(runId: string, orgId: string) {

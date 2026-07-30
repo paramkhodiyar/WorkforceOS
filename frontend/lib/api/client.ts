@@ -382,6 +382,16 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    editPayslip: (id: string, data: any): Promise<any> =>
+      request(`/payroll/payslips/${id}/edit`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    disbursePayslip: (id: string, formData: FormData): Promise<any> =>
+      request(`/payroll/payslips/${id}/disburse`, {
+        method: 'POST',
+        body: formData,
+      }),
   },
   tasks: {
     list: (filters?: any): Promise<any> => {

@@ -89,6 +89,11 @@ enum WorkMode {
   WFH
 }
 
+enum SalaryCalculationType {
+  AUTO
+  CUSTOM
+}
+
 enum PayrollStatus {
   DRAFT
   GENERATED
@@ -287,6 +292,11 @@ model User {
   probationEndDate DateTime?
   ctcAnnual        Float?
   forcePasswordChange Boolean    @default(false)
+  salaryCalculationType SalaryCalculationType @default(AUTO)
+  customHra             Float?
+  customAllowance       Float?
+  customPf              Float?
+  customTds             Float?
 
   organization       Organization     @relation(fields: [organizationId], references: [id])
   department         Department?      @relation("DepartmentMembers", fields: [departmentId], references: [id])
@@ -744,6 +754,10 @@ model PayrollRecord {
   pfEmployerContribution Float      @default(0)
   esic                   Float      @default(0)
   professionalTax        Float      @default(0)
+  lateDeduction          Float      @default(0)
+  comments               String?
+  paymentSlipUrl         String?
+  status                 PayrollStatus @default(DRAFT)
 
   payrollRun    PayrollRun @relation(fields: [payrollRunId], references: [id])
   user          User       @relation(fields: [userId], references: [id])

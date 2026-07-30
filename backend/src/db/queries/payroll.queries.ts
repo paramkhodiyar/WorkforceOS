@@ -13,6 +13,7 @@ export interface SalaryBreakdown {
   tax: number;
   lopDays: number;
   lopDeduction: number;
+  lateDeduction: number;
   otherDeductions: number;
   totalDeductions: number;
   netSalary: number;
@@ -84,14 +85,6 @@ function calcMonthlyTds(annualGross: number): number {
 
 /**
  * Compute a full salary breakdown for a given employee.
- *
- * @param basicSalary       - employee's monthly basic salary
- * @param options.bonus     - any performance / festival bonus this month
- * @param options.otherDeductions - other misc deductions
- * @param options.pfApplicable   - whether PF is applicable
- * @param options.taxRegime      - 'OLD' | 'NEW' (NEW regime is used; OLD regime TDS calc to be added later)
- * @param options.lopDays        - number of Loss of Pay days this month
- * @param options.workingDaysInMonth - total working days in the month (default 26)
  */
 export function computeSalaryBreakdown(
   basicSalary: number,
@@ -102,37 +95,79 @@ export function computeSalaryBreakdown(
     taxRegime?: "OLD" | "NEW";
     lopDays?: number;
     workingDaysInMonth?: number;
+    salaryCalculationType?: "AUTO" | "CUSTOM";
+    customHra?: number | null;
+    customAllowance?: number | null;
+    customPf?: number | null;
+    customTds?: number | null;
+    employeeType?: string;
+    lateDeduction?: number;
   } = {}
 ): SalaryBreakdown {
   const {
     bonus = 0,
     otherDeductions = 0,
-    pfApplicable = true,
     lopDays = 0,
-    workingDaysInMonth = 26
+    salaryCalculationType = "AUTO",
+    customHra = 0,
+    customAllowance = 0,
+    customPf = 0,
+    customTds = 0,
+    employeeType = "FULL_TIME",
+    lateDeduction = 0
   } = options;
 
-  // ── LOP deduction ─────────────────────────────────────────────────────────
-  // Per-day salary = CTC monthly / working days
-  const totalMonthlyCTC = basicSalary * 1.5; // basic + HRA(40%) + allowances(10%) = 1.5x
-  const perDaySalary = workingDaysInMonth > 0 ? totalMonthlyCTC / workingDaysInMonth : 0;
-  const lopDeduction = Math.round(lopDays * perDaySalary * 100) / 100;
+  // ── Standard Daily Wage & LOP Deduction ──────────────────────────────────
+  const dailyWage = basicSalary / 30.0;
+  const lopDeduction = Math.round(lopDays * dailyWage * 100) / 100;
 
-  // ── Gross computation (before LOP) ────────────────────────────────────────
-  const hra = basicSalary * 0.40;
-  const allowances = basicSalary * 0.10;
-  const grossBeforeLop = basicSalary + hra + allowances + bonus;
-  const grossSalary = Math.max(grossBeforeLop - lopDeduction, 0);
+  // ── Earnings computation ────────────────────────────────────────────────
+  let hra = 0;
+  let allowances = 0;
+  let pfEmployee = 0;
+  let pfEmployer = 0;
+  let tax = 0;
 
-  // ── Statutory deductions ──────────────────────────────────────────────────
-  const { employee: pfEmployee, employer: pfEmployer } = calcPf(basicSalary, pfApplicable);
-  const { employee: esicEmployee } = calcEsic(grossSalary);
-  const professionalTax = calcProfessionalTax(grossSalary);
-  const tax = calcMonthlyTds(grossSalary * 12);
+  if (salaryCalculationType === "CUSTOM") {
+    hra = customHra ?? 0;
+    allowances = customAllowance ?? 0;
+    pfEmployee = customPf ?? 0;
+    pfEmployer = (employeeType === "INTERN") ? 0 : pfEmployee;
+    tax = customTds ?? 0;
+  } else {
+    // AUTO Mode
+    hra = Math.round(basicSalary * 0.40 * 100) / 100;
+    allowances = Math.round(basicSalary * 0.20 * 100) / 100;
 
-  // ── Totals ─────────────────────────────────────────────────────────────────
+    if (employeeType === "INTERN") {
+      pfEmployee = 0;
+      pfEmployer = 0;
+    } else {
+      pfEmployee = Math.min(1800.00, Math.round(basicSalary * 0.12 * 100) / 100);
+      pfEmployer = pfEmployee;
+    }
+
+    const grossEst = basicSalary + hra + allowances;
+    if (grossEst > 50000) {
+      tax = Math.round(grossEst * 0.05 * 100) / 100;
+    } else {
+      tax = 0.00;
+    }
+  }
+
+  // ── Gross salary (basic + HRA + allowance + performance/bonus adjustment) ─
+  const grossSalary = basicSalary + hra + allowances + bonus;
+
+  // ── Professional Tax (PT) ────────────────────────────────────────────────
+  const professionalTax = (employeeType === "INTERN") ? 0 : 200;
+
+  // ── ESIC (Only applicable if gross <= 21000 and not intern) ──────────────
+  const esicEmployee = (employeeType === "INTERN" || grossSalary > 21000) ? 0 : Math.round(grossSalary * 0.0075 * 100) / 100;
+  const esicEmployer = (employeeType === "INTERN" || grossSalary > 21000) ? 0 : Math.round(grossSalary * 0.0325 * 100) / 100;
+
+  // ── Totals ───────────────────────────────────────────────────────────────
   const totalDeductions =
-    pfEmployee + esicEmployee + professionalTax + tax + otherDeductions;
+    pfEmployee + tax + professionalTax + esicEmployee + lopDeduction + lateDeduction + otherDeductions;
   const netSalary = Math.max(grossSalary - totalDeductions, 0);
 
   return {
@@ -148,6 +183,7 @@ export function computeSalaryBreakdown(
     tax: Math.round(tax * 100) / 100,
     lopDays,
     lopDeduction: Math.round(lopDeduction * 100) / 100,
+    lateDeduction: Math.round(lateDeduction * 100) / 100,
     otherDeductions: Math.round(otherDeductions * 100) / 100,
     totalDeductions: Math.round(totalDeductions * 100) / 100,
     netSalary: Math.round(netSalary * 100) / 100
@@ -173,7 +209,12 @@ export async function fetchActiveEmployeesForPayroll(orgId: string) {
       basicSalary: true,
       pfApplicable: true,
       taxRegime: true,
-      employeeType: true
+      employeeType: true,
+      salaryCalculationType: true,
+      customHra: true,
+      customAllowance: true,
+      customPf: true,
+      customTds: true
     }
   });
 }

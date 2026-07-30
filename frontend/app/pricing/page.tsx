@@ -55,10 +55,10 @@ const plans = [
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-white text-slate-900 font-sans flex flex-col relative overflow-hidden">
       <LandingHeader />
 
-      <main className="flex-1">
+      <main className="flex-1 filter blur-md select-none pointer-events-none">
         <section className="pt-28 pb-16 md:pt-36 md:pb-20 bg-slate-50 border-b border-slate-200">
           <div className="max-w-[900px] mx-auto px-6 text-center">
             <span className="inline-block px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-full mb-6">
@@ -118,6 +118,31 @@ export default function PricingPage() {
       </main>
 
       <LandingFooter />
+
+      {/* Quirky Permanent Welcome Overlay Popup */}
+      <div className="fixed inset-0 bg-slate-950/25 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div className="bg-white border border-slate-200 w-full max-w-md rounded-3xl p-8 space-y-6 text-center">
+          <div className="space-y-3">
+            <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest block">WorkforceOS Lab</span>
+            <h2 className="text-headline-sm font-black text-slate-905 leading-tight">
+              I am still exploring this part...
+            </h2>
+            <p className="text-body-sm text-slate-550 leading-relaxed font-medium">
+              Figuring out the pricing of serious operations is a serious operation in itself. I am actively tuning this model.
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100">
+            <Link
+              href="/"
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-label-md py-3.5 rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              Go back home
+              <span className="material-symbols-outlined text-[18px]">home</span>
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

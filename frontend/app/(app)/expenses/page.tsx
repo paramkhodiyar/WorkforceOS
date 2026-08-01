@@ -142,11 +142,48 @@ export default function ExpensesPage() {
     currentPageApproval * itemsPerPage
   );
 
+  function exportExpensesCSV() {
+    if (!expenses || expenses.length === 0) {
+      toast.error('No expense records available to export.');
+      return;
+    }
+    const headers = ['Claim ID', 'Employee', 'Category', 'Title', 'Amount', 'Date Incurred', 'Status', 'Description'];
+    const rows = expenses.map(e => [
+      `"${e.claimId || e.id}"`,
+      `"${e.user ? `${e.user.firstName} ${e.user.lastName}` : 'N/A'}"`,
+      `"${e.category}"`,
+      `"${(e.title || '').replace(/"/g, '""')}"`,
+      `"${e.amount}"`,
+      `"${new Date(e.incurredOn).toLocaleDateString()}"`,
+      `"${e.status}"`,
+      `"${(e.description || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `expenses_report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Expense claims exported to CSV');
+  }
+
   return (
     <div className="space-y-6 font-sans">
-      <div>
-        <h1 className="text-headline-md font-bold text-on-surface">Reimbursement & Expenses</h1>
-        <p className="text-body-sm text-outline">File reimbursement requests and review team expenses claims</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-headline-md font-bold text-on-surface">Reimbursement & Expenses</h1>
+          <p className="text-body-sm text-outline">File reimbursement requests and review team expenses claims</p>
+        </div>
+        <button
+          onClick={exportExpensesCSV}
+          className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-label-md font-bold transition-all flex items-center gap-1.5 cursor-pointer w-fit"
+        >
+          <span className="material-symbols-outlined text-[18px]">download</span>
+          Export CSV
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

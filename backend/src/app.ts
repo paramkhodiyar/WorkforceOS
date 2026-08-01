@@ -9,6 +9,7 @@ import { notFound } from "./middleware/notFound.middleware";
 import { errorHandler } from "./middleware/errorHandler.middleware";
 import { csrfProtection } from "./middleware/csrf.middleware";
 import routes from "./routes";
+import { healthRouter } from "./modules/health/health.router";
 
 const app = express();
 
@@ -58,6 +59,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(requestLogger);
 
+app.use("/health", healthRouter);
 app.use("/api/v1", routes);
 
 app.use(notFound);

@@ -19,6 +19,7 @@ import { teamsRouter } from "../modules/teams/teams.router";
 import { calendarRouter } from "../modules/calendar/calendar.router";
 import { statsRouter } from "../modules/stats/stats.router";
 import { chatbotRouter } from "../modules/chatbot/chatbot.router";
+import { healthRouter } from "../modules/health/health.router";
 import { rateLimitByUser, rateLimit } from "../middleware/rateLimit.middleware";
 
 const router = Router();
@@ -53,6 +54,7 @@ router.get("/email-preview", rateLimit(10, 60), (req, res) => {
 router.use("/auth", authRouter);
 router.use("/onboarding", onboardingRouter);
 router.use("/chatbot", chatbotRouter);
+router.use("/health", healthRouter);
 
 // Apply user-scoped rate limiting to all authenticated api endpoints
 router.use(rateLimitByUser(200, 60));

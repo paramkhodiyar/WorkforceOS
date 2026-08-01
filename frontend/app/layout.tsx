@@ -7,6 +7,7 @@ import "./globals.css";
 
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://workforceos1.vercel.app"),
   title: "WorkforceOS | Next-Gen Enterprise HRMS & Operations Platform",
   description: "WorkforceOS is the ultimate Human Resource Management System (HRMS) for modern teams. Streamline shift attendance, double-approval leaves, task state machines, composite performance reviews, and automated payroll with PF, ESIC, and PT calculations.",
   keywords: [

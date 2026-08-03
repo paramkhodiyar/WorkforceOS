@@ -48,8 +48,8 @@ export default function BottomNavBar() {
 
   return (
     <nav className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-[90] md:hidden select-none">
-      {/* Light Translucent Apple Glassmorphic Pill Container */}
-      <div className="bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-full p-1.5 flex items-center justify-between">
+      {/* Translucent Flat Glassmorphic Container (Zero Shadows, Zero Gradients) */}
+      <div className="bg-white/90 backdrop-blur-2xl border border-slate-300 rounded-full p-1.5 flex items-center justify-between">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href;
 
@@ -62,8 +62,8 @@ export default function BottomNavBar() {
               }}
               className={`relative flex items-center justify-center py-2 px-3.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90 ${
                 isActive
-                  ? 'bg-blue-600 text-white font-extrabold shadow-lg shadow-blue-500/25 scale-[1.04]'
-                  : 'text-slate-600 hover:text-slate-900 font-semibold'
+                  ? 'bg-blue-600 text-white font-extrabold scale-[1.03]'
+                  : 'text-slate-700 hover:text-slate-900 font-bold'
               }`}
             >
               <div className="flex items-center gap-2">

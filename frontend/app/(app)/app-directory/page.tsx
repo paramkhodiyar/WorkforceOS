@@ -70,11 +70,11 @@ export default function AppDirectoryPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 pb-28 pt-4 px-4 font-sans select-none md:hidden">
       
-      {/* ── TOP HEADER CARD (LIGHT FROSTED GLASS) ── */}
-      <div className="bg-white/80 border border-slate-200/80 rounded-3xl p-5 shadow-sm backdrop-blur-xl space-y-4 mb-6">
+      {/* ── TOP HEADER CARD (FLAT LIGHT GLASS, ZERO SHADOWS) ── */}
+      <div className="bg-white/80 border border-slate-300 rounded-3xl p-5 backdrop-blur-xl space-y-4 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-blue-600 font-black text-white flex items-center justify-center text-lg shadow-sm">
+            <div className="h-12 w-12 rounded-2xl bg-blue-600 font-black text-white flex items-center justify-center text-lg">
               {user.firstName?.[0]}{user.lastName?.[0]}
             </div>
             <div>
@@ -104,7 +104,7 @@ export default function AppDirectoryPage() {
         </div>
       </div>
 
-      {/* ── DIRECTORY SECTIONS ── */}
+      {/* ── DIRECTORY SECTIONS (ZERO SHADOWS) ── */}
       <div className="space-y-6">
         {filteredSections.map((section, idx) => (
           <div key={idx} className="space-y-3">
@@ -119,10 +119,10 @@ export default function AppDirectoryPage() {
                   key={item.href}
                   href={item.href}
                   onClick={() => triggerHaptic(item.label === 'Attendance Terminal' ? 50 : 20)}
-                  className="bg-white/90 border border-slate-200/80 hover:border-blue-500/50 p-3.5 rounded-2xl flex items-center justify-between active:scale-[0.98] transition-all shadow-xs group"
+                  className="bg-white/90 border border-slate-200 p-3.5 rounded-2xl flex items-center justify-between active:scale-[0.98] transition-all group"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="h-10 w-10 rounded-xl bg-slate-100 border border-slate-200/80 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <div className="h-10 w-10 rounded-xl bg-slate-100 border border-slate-200 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                       <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
                     </div>
                     <div>
@@ -152,7 +152,7 @@ export default function AppDirectoryPage() {
         {isAdmin && (
           <Link
             href="/select-role"
-            className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 active:scale-98 shadow-xs"
+            className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 active:scale-98"
           >
             <span className="material-symbols-outlined text-[18px] text-blue-600">published_with_changes</span>
             Switch Admin Persona

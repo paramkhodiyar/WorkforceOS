@@ -48,8 +48,8 @@ export default function BottomNavBar() {
 
   return (
     <nav className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-[90] md:hidden select-none">
-      {/* Translucent Flat Glassmorphic Container (Zero Shadows, Zero Gradients) */}
-      <div className="bg-white/90 backdrop-blur-2xl border border-slate-300 rounded-full p-1.5 flex items-center justify-between">
+      {/* Flat Glassmorphic Container (Zero Shadows, Zero Gradients, Equal Grid Alignment) */}
+      <div className="bg-white/90 backdrop-blur-xl border border-slate-300 rounded-2xl p-1.5 grid grid-cols-4 gap-1 w-full items-center">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href;
 
@@ -60,30 +60,25 @@ export default function BottomNavBar() {
               onClick={() => {
                 if (tab.label === 'Attendance') triggerHaptic(50);
               }}
-              className={`relative flex items-center justify-center py-2 px-3.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90 ${
+              className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all duration-200 active:scale-95 ${
                 isActive
-                  ? 'bg-blue-600 text-white font-extrabold scale-[1.03]'
-                  : 'text-slate-700 hover:text-slate-900 font-bold'
+                  ? 'bg-blue-600 text-white font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900 font-bold'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <span className={`material-symbols-outlined text-[22px] transition-transform duration-300 ${
-                  isActive ? 'scale-110' : 'scale-100'
-                }`}>
-                  {tab.icon}
-                </span>
+              <span className={`material-symbols-outlined text-[20px] transition-transform duration-200 ${
+                isActive ? 'scale-105' : 'scale-100'
+              }`}>
+                {tab.icon}
+              </span>
 
-                {/* Animated active label */}
-                {isActive && (
-                  <span className="text-xs font-black tracking-tight whitespace-nowrap animate-fade-in">
-                    {tab.label}
-                  </span>
-                )}
-              </div>
+              <span className="text-[10px] tracking-tight font-extrabold mt-0.5 whitespace-nowrap">
+                {tab.label}
+              </span>
 
               {/* Notification Badge for Pending Requests */}
               {tab.badge && !isActive && (
-                <span className="absolute top-1.5 right-2.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
+                <span className="absolute top-1.5 right-3 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
               )}
             </Link>
           );

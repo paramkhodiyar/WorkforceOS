@@ -7,6 +7,7 @@ import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import LiveClock from '../../../components/dashboard/LiveClock';
 import LogoLoader from '../../../components/ui/LogoLoader';
+import { triggerHaptic } from '../../../lib/utils/haptics';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -372,7 +373,10 @@ export default function DashboardPage() {
 
                 <button
                   type="button"
-                  onClick={handleQuickCheckIn}
+                  onClick={() => {
+                    triggerHaptic([50, 50, 50]);
+                    handleQuickCheckIn();
+                  }}
                   disabled={checking}
                   className="w-full py-3.5 bg-primary hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm text-label-sm transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                 >
@@ -388,7 +392,10 @@ export default function DashboardPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={handleQuickCheckOut}
+                  onClick={() => {
+                    triggerHaptic([60, 40]);
+                    handleQuickCheckOut();
+                  }}
                   disabled={checking}
                   className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm text-label-sm transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
                 >

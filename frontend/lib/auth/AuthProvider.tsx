@@ -118,7 +118,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error(err);
       }
       setLoading(false);
-      router.push('/dashboard');
+      const userRole = response.data.user?.systemRole;
+      if (userRole === 'SYS_OWNER' || userRole === 'ORG_ADMIN') {
+        router.push('/select-role');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err) {
       setLoading(false);
       throw err;

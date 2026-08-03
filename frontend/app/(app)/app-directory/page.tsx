@@ -68,23 +68,23 @@ export default function AppDirectoryPage() {
     .filter((section) => section.items.length > 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-28 pt-4 px-4 font-sans select-none md:hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-800 pb-28 pt-4 px-4 font-sans select-none md:hidden">
       
-      {/* ── TOP HEADER CARD ── */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-2xl backdrop-blur-xl space-y-4 mb-6">
+      {/* ── TOP HEADER CARD (LIGHT FROSTED GLASS) ── */}
+      <div className="bg-white/80 border border-slate-200/80 rounded-3xl p-5 shadow-sm backdrop-blur-xl space-y-4 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-blue-600 border-2 border-blue-400 font-black text-white flex items-center justify-center text-lg shadow-md">
+            <div className="h-12 w-12 rounded-2xl bg-blue-600 font-black text-white flex items-center justify-center text-lg shadow-sm">
               {user.firstName?.[0]}{user.lastName?.[0]}
             </div>
             <div>
-              <h2 className="text-lg font-black text-white leading-tight">
+              <h2 className="text-base font-extrabold text-slate-900 leading-tight">
                 {user.firstName} {user.lastName}
               </h2>
-              <p className="text-xs text-slate-400 font-medium">{user.email}</p>
+              <p className="text-xs text-slate-500 font-medium">{user.email}</p>
             </div>
           </div>
-          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-3 py-1 rounded-full">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
             {systemRole}
           </span>
         </div>
@@ -99,7 +99,7 @@ export default function AppDirectoryPage() {
             placeholder="Search workspace directory..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full bg-slate-100/80 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
           />
         </div>
       </div>
@@ -110,7 +110,7 @@ export default function AppDirectoryPage() {
           <div key={idx} className="space-y-3">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-1 flex items-center justify-between">
               <span>{section.title}</span>
-              <span className="text-[10px] font-mono text-slate-500">({section.items.length})</span>
+              <span className="text-[10px] font-mono text-slate-400">({section.items.length})</span>
             </h3>
 
             <div className="grid grid-cols-1 gap-2.5">
@@ -119,25 +119,25 @@ export default function AppDirectoryPage() {
                   key={item.href}
                   href={item.href}
                   onClick={() => triggerHaptic(item.label === 'Attendance Terminal' ? 50 : 20)}
-                  className="bg-slate-900/80 border border-slate-800/80 hover:border-blue-500/50 p-3.5 rounded-2xl flex items-center justify-between active:scale-[0.98] transition-all group"
+                  className="bg-white/90 border border-slate-200/80 hover:border-blue-500/50 p-3.5 rounded-2xl flex items-center justify-between active:scale-[0.98] transition-all shadow-xs group"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="h-10 w-10 rounded-xl bg-slate-800/90 border border-slate-700/60 text-blue-400 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <div className="h-10 w-10 rounded-xl bg-slate-100 border border-slate-200/80 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                       <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white leading-tight">{item.label}</span>
+                        <span className="text-sm font-extrabold text-slate-900 leading-tight">{item.label}</span>
                         {item.badge && (
-                          <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-500/30 rounded-full">
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full">
                             {item.badge}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">{item.desc}</p>
+                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">{item.desc}</p>
                     </div>
                   </div>
-                  <span className="material-symbols-outlined text-slate-500 group-hover:text-white text-[18px] transition-colors">
+                  <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-700 text-[18px] transition-colors">
                     chevron_right
                   </span>
                 </Link>
@@ -148,20 +148,20 @@ export default function AppDirectoryPage() {
       </div>
 
       {/* ── QUICK ACTIONS (ROLE SWITCH / LOGOUT) ── */}
-      <div className="mt-8 pt-6 border-t border-slate-800/80 space-y-3">
+      <div className="mt-8 pt-6 border-t border-slate-200 space-y-3">
         {isAdmin && (
           <Link
             href="/select-role"
-            className="w-full py-3 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 rounded-2xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 active:scale-98"
+            className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 active:scale-98 shadow-xs"
           >
-            <span className="material-symbols-outlined text-[18px] text-blue-400">published_with_changes</span>
+            <span className="material-symbols-outlined text-[18px] text-blue-600">published_with_changes</span>
             Switch Admin Persona
           </Link>
         )}
 
         <button
           onClick={() => logout()}
-          className="w-full py-3.5 bg-red-950/60 text-red-400 border border-red-800/40 hover:bg-red-900/40 rounded-2xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 active:scale-98"
+          className="w-full py-3.5 bg-red-50 text-red-600 border border-red-200 rounded-2xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 active:scale-98"
         >
           <span className="material-symbols-outlined text-[18px]">logout</span>
           Sign Out of Workspace

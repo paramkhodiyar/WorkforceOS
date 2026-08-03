@@ -48,8 +48,8 @@ export default function BottomNavBar() {
 
   return (
     <nav className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-[90] md:hidden select-none">
-      {/* Floating Glassmorphic Pill Container */}
-      <div className="bg-slate-950/85 backdrop-blur-2xl border border-slate-800/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)] rounded-full p-1.5 flex items-center justify-between">
+      {/* Light Translucent Apple Glassmorphic Pill Container */}
+      <div className="bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-full p-1.5 flex items-center justify-between">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href;
 
@@ -60,10 +60,10 @@ export default function BottomNavBar() {
               onClick={() => {
                 if (tab.label === 'Attendance') triggerHaptic(50);
               }}
-              className={`relative flex items-center justify-center py-2 px-3.5 rounded-full transition-all duration-300 ease-out active:scale-95 ${
+              className={`relative flex items-center justify-center py-2 px-3.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90 ${
                 isActive
-                  ? 'bg-blue-600 text-white font-black shadow-lg shadow-blue-600/30 scale-[1.03]'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-blue-600 text-white font-extrabold shadow-lg shadow-blue-500/25 scale-[1.04]'
+                  : 'text-slate-600 hover:text-slate-900 font-semibold'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -75,7 +75,7 @@ export default function BottomNavBar() {
 
                 {/* Animated active label */}
                 {isActive && (
-                  <span className="text-xs font-black tracking-tight animate-fade-in whitespace-nowrap">
+                  <span className="text-xs font-black tracking-tight whitespace-nowrap animate-fade-in">
                     {tab.label}
                   </span>
                 )}
@@ -83,7 +83,7 @@ export default function BottomNavBar() {
 
               {/* Notification Badge for Pending Requests */}
               {tab.badge && !isActive && (
-                <span className="absolute top-1 right-2.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-slate-950 animate-pulse" />
+                <span className="absolute top-1.5 right-2.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
               )}
             </Link>
           );

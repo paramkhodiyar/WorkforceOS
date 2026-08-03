@@ -79,14 +79,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface font-sans">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-label-sm text-outline tracking-wider font-semibold uppercase">Loading Session...</p>
-        </div>
-      </div>
-    );
+    return <LogoLoader size={80} text="Loading Workspace Session..." fullScreen />;
   }
 
   if (!user) {

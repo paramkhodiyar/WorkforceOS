@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
+import LogoLoader from '../../../components/ui/LogoLoader';
 
 export default function PasswordManagerPage() {
   const { user } = useAuth();
@@ -88,12 +89,7 @@ export default function PasswordManagerPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-body-sm text-outline font-semibold uppercase">Loading Directory...</p>
-      </div>
-    );
+    return <LogoLoader size={72} text="Loading Directory..." />;
   }
 
   if (!isAdmin) {

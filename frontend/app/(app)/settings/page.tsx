@@ -8,6 +8,7 @@ import { useToast } from '../../../lib/toast/ToastProvider';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
+import LogoLoader from '../../../components/ui/LogoLoader';
 
 export default function SettingsPage() {
   const { user, features, setFeatures, refetchUser } = useAuth();
@@ -1616,8 +1617,7 @@ export default function SettingsPage() {
       {featureToggling && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900/50 backdrop-blur-md font-sans">
           <div className="bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-4 max-w-xs text-center border border-slate-200">
-            <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-bold text-slate-800">Updating Modules</p>
+            <LogoLoader size={64} text="Updating Modules..." />
             <p className="text-[11px] text-outline leading-relaxed">Applying organization configuration and updating user menus... Please wait.</p>
           </div>
         </div>

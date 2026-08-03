@@ -6,6 +6,7 @@ import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
+import LogoLoader from '../../../components/ui/LogoLoader';
 
 export default function OpsStatsPage() {
   const { user } = useAuth();
@@ -453,10 +454,7 @@ export default function OpsStatsPage() {
             </div>
 
             {empLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-body-xs text-slate-500 font-medium">Fetching stats...</p>
-              </div>
+              <LogoLoader size={60} text="Fetching stats..." />
             ) : empStats ? (
               <div className="space-y-6">
                 {/* Profile header */}

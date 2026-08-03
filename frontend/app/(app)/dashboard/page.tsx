@@ -6,6 +6,7 @@ import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import LiveClock from '../../../components/dashboard/LiveClock';
+import LogoLoader from '../../../components/ui/LogoLoader';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -208,11 +209,7 @@ export default function DashboardPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LogoLoader size={72} text="Loading Dashboard Data..." />;
   }
 
   if (!user) return null;

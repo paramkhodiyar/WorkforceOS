@@ -72,19 +72,19 @@ export default function AppDirectoryPage() {
       
       {/* ── TOP HEADER CARD (FLAT LIGHT GLASS, ZERO SHADOWS) ── */}
       <div className="bg-white/80 border border-slate-300 rounded-3xl p-5 backdrop-blur-xl space-y-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-blue-600 font-black text-white flex items-center justify-center text-lg">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="h-11 w-11 rounded-2xl bg-blue-600 font-black text-white flex items-center justify-center text-base shrink-0">
               {user.firstName?.[0]}{user.lastName?.[0]}
             </div>
-            <div>
-              <h2 className="text-base font-extrabold text-slate-900 leading-tight">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-extrabold text-slate-900 leading-tight truncate">
                 {user.firstName} {user.lastName}
               </h2>
-              <p className="text-xs text-slate-500 font-medium">{user.email}</p>
+              <p className="text-xs text-slate-500 font-medium truncate">{user.email}</p>
             </div>
           </div>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full shrink-0 mt-0.5">
             {systemRole}
           </span>
         </div>

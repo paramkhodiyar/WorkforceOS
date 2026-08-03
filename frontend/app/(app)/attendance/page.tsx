@@ -9,6 +9,7 @@ import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/u
 import { Button } from '../../../components/ui/Button';
 import { ReadMoreText } from '../../../components/ui/ReadMoreText';
 import { triggerHaptic } from '../../../lib/utils/haptics';
+import LogoLoader from '../../../components/ui/LogoLoader';
 
 export default function AttendancePage() {
   const { user } = useAuth();
@@ -30,6 +31,9 @@ export default function AttendancePage() {
   const [currentPageHistory, setCurrentPageHistory] = useState(1);
   const [searchTeam, setSearchTeam] = useState('');
   const [currentPageTeam, setCurrentPageTeam] = useState(1);
+  const [searchAdjustments, setSearchAdjustments] = useState('');
+  const [currentPageAdjustments, setCurrentPageAdjustments] = useState(1);
+  const [searchExceptions, setSearchExceptions] = useState('');
 
   // Adjustment modal state
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
@@ -258,6 +262,14 @@ export default function AttendancePage() {
     }
   }
 
+  async function handleActionAdjustment(id: string, status: 'APPROVED' | 'REJECTED') {
+    if (status === 'APPROVED') {
+      return handleApproveAdjustment(id);
+    } else {
+      return handleRejectAdjustment(id);
+    }
+  }
+
   const filteredHistory = history.filter(log => {
     const mode = log.workMode?.toLowerCase() || '';
     const locationStr = log.ipAddress?.toLowerCase() || '';
@@ -286,64 +298,83 @@ export default function AttendancePage() {
     currentPageTeam * itemsPerPage
   );
 
+  const filteredAdjustments = adjustmentRequests.filter(req => {
+    const emp = req.attendance?.user;
+    const name = `${emp?.firstName || ''} ${emp?.lastName || ''}`.toLowerCase();
+    const reason = req.reason?.toLowerCase() || '';
+    const status = req.status?.toLowerCase() || '';
+    const q = searchAdjustments.toLowerCase();
+    return name.includes(q) || reason.includes(q) || status.includes(q);
+  });
+  const totalPagesAdjustments = Math.ceil(filteredAdjustments.length / itemsPerPage);
+  const paginatedAdjustments = filteredAdjustments.slice(
+    (currentPageAdjustments - 1) * itemsPerPage,
+    currentPageAdjustments * itemsPerPage
+  );
+
+  const filteredExceptions = exceptions.filter(exc => {
+    const name = `${exc.firstName || ''} ${exc.lastName || ''}`.toLowerCase();
+    const email = exc.email?.toLowerCase() || '';
+    const status = exc.status?.toLowerCase() || '';
+    const q = searchExceptions.toLowerCase();
+    return name.includes(q) || email.includes(q) || status.includes(q);
+  });
+  const totalPagesExceptions = Math.ceil(filteredExceptions.length / itemsPerPage);
+  const paginatedExceptions = filteredExceptions.slice(
+    (currentPageExceptions - 1) * itemsPerPage,
+    currentPageExceptions * itemsPerPage
+  );
+
   if (loading) {
-    return (
-      <div className="space-y-6 font-sans">
-        <div>
-          <h1 className="text-headline-md font-bold text-on-surface">Attendance Tracker</h1>
-          <p className="text-body-sm text-outline">Record daily shifts and inspect check-in history</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1 space-y-6">
-            <FormSkeleton />
-          </div>
-          <div className="md:col-span-2 space-y-6">
-            <ListSkeleton count={2} />
-            <TableSkeleton rows={4} cols={5} />
-          </div>
-        </div>
-      </div>
-    );
+    return <LogoLoader size={72} text="Loading Attendance Data..." />;
   }
 
   return (
     <div className="space-y-6 font-sans">
       <div>
-        <h1 className="text-headline-md font-bold text-on-surface">Attendance Tracker</h1>
-        <p className="text-body-sm text-outline">Record daily shifts and inspect check-in history</p>
+        <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Attendance Tracker</h1>
+        <p className="text-xs text-slate-500 font-medium mt-0.5">Record daily shifts and inspect check-in history</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-outline-variant gap-4">
+      {/* Modern Segmented Control Tabs (Zero Shadows, Zero Gradients) */}
+      <div className="bg-slate-100/90 border border-slate-200 p-1.5 rounded-2xl grid grid-cols-2 md:grid-cols-3 gap-1.5 w-full max-w-2xl select-none">
         <button
           onClick={() => setActiveTab('my-attendance')}
-          className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${activeTab === 'my-attendance'
-            ? 'border-primary text-primary'
-            : 'border-transparent text-outline hover:text-on-surface'
-            }`}
+          className={`py-2.5 px-3 rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
+            activeTab === 'my-attendance'
+              ? 'bg-white text-blue-600 border border-slate-200/80 font-black'
+              : 'text-slate-600 hover:text-slate-900 font-bold'
+          }`}
         >
-          My Attendance
+          <span className="material-symbols-outlined text-[18px]">person</span>
+          <span>My Logs</span>
         </button>
+
         {showTeamAttendance && (
           <button
             onClick={() => setActiveTab('team-attendance')}
-            className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${activeTab === 'team-attendance'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-outline hover:text-on-surface'
-              }`}
+            className={`py-2.5 px-3 rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'team-attendance'
+                ? 'bg-white text-blue-600 border border-slate-200/80 font-black'
+                : 'text-slate-600 hover:text-slate-900 font-bold'
+            }`}
           >
-            Team Attendance
+            <span className="material-symbols-outlined text-[18px]">groups</span>
+            <span>Team Logs</span>
           </button>
         )}
+
         {(isAdmin || isHR) && (
           <button
             onClick={() => setActiveTab('adjustments')}
-            className={`pb-3 text-label-md font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${activeTab === 'adjustments'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-outline hover:text-on-surface'
-              }`}
+            className={`py-2.5 px-3 rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'adjustments'
+                ? 'bg-white text-blue-600 border border-slate-200/80 font-black'
+                : 'text-slate-600 hover:text-slate-900 font-bold'
+            }`}
           >
-            Adjustments & Exceptions
+            <span className="material-symbols-outlined text-[18px]">tune</span>
+            <span>Adjustments</span>
           </button>
         )}
       </div>
@@ -838,7 +869,7 @@ export default function AttendancePage() {
                       Next
                     </button>
                   </div>
-                </div>
+</div>
               )}
             </>
           )}
@@ -850,14 +881,30 @@ export default function AttendancePage() {
         <div className="space-y-6">
           {/* Pending Adjustments Section */}
           <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
-            <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-2">Pending Adjustment Requests</h2>
-            {adjustmentRequests.filter(req => req.status === 'PENDING').length === 0 ? (
-              <p className="text-body-sm text-outline py-4 text-center">No pending adjustment requests.</p>
+            <div className="flex justify-between items-center mb-2 flex-wrap gap-4">
+              <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Pending Adjustment Requests</h2>
+              <div className="relative w-48">
+                <input
+                  type="text"
+                  placeholder="Search requests..."
+                  value={searchAdjustments}
+                  onChange={(e) => {
+                    setSearchAdjustments(e.target.value);
+                    setCurrentPageAdjustments(1);
+                  }}
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-[11px] focus:ring-1 focus:ring-primary focus:border-primary transition-all text-on-surface font-medium"
+                />
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[14px]">search</span>
+              </div>
+            </div>
+
+            {filteredAdjustments.length === 0 ? (
+              <p className="text-body-sm text-outline py-4 text-center">No pending adjustment requests found.</p>
             ) : (
               <div>
                 {/* Mobile View - Cards List */}
                 <div className="block md:hidden space-y-4">
-                  {adjustmentRequests.filter(req => req.status === 'PENDING').map(req => {
+                  {paginatedAdjustments.map(req => {
                     const emp = req.attendance?.user;
                     const isOwnRequest = req.requestedBy === user?.id;
 
@@ -874,7 +921,7 @@ export default function AttendancePage() {
                             </p>
                           </div>
                           <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
-                            Pending Approval
+                            {req.status}
                           </span>
                         </div>
 
@@ -886,37 +933,35 @@ export default function AttendancePage() {
                             <span className="text-[9px] font-bold text-slate-500">Status: {req.attendance?.status}</span>
                           </div>
                           <div className="bg-blue-50/50 p-1.5 rounded-lg border border-blue-100/50">
-                            <span className="text-[9px] uppercase tracking-wider text-primary font-bold block">Proposed Times</span>
+                            <span className="text-[9px] uppercase tracking-wider text-blue-700 font-bold block">Proposed Times</span>
                             <span className="font-mono text-slate-950 block">In: {formatTime(req.proposedCheckIn)}</span>
                             <span className="font-mono text-slate-950 block">Out: {formatTime(req.proposedCheckOut)}</span>
-                            <span className="text-[9px] font-bold text-primary">Status: {req.proposedStatus || req.attendance?.status}</span>
+                            <span className="text-[9px] font-bold text-blue-700">New Status: {req.proposedStatus}</span>
                           </div>
                         </div>
 
-                        <div className="text-[11px] pt-1.5 border-t border-slate-150 text-slate-700">
-                          <span className="text-[9px] uppercase tracking-wider text-outline font-bold block">Reason</span>
-                          <ReadMoreText text={req.reason} title="Adjustment Reason" />
-                        </div>
+                        {req.reason && (
+                          <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600">
+                            <span className="font-bold text-slate-800">Reason: </span>
+                            <ReadMoreText text={req.reason} maxLength={60} />
+                          </div>
+                        )}
 
-                        <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+                        <div className="pt-2.5 border-t border-slate-100 flex justify-end gap-2">
                           <button
                             type="button"
-                            disabled={actioningAdjustmentId !== null}
-                            onClick={() => handleRejectAdjustment(req.id)}
-                            className="px-3 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
+                            disabled={actioningAdjustmentId === req.id}
+                            onClick={() => handleActionAdjustment(req.id, 'REJECTED')}
+                            className="px-3 py-1.5 border border-red-200 text-red-700 hover:bg-red-50 rounded-lg font-bold text-[11px] transition-all disabled:opacity-50 cursor-pointer"
                           >
-                            {actioningAdjustmentId === req.id ? 'Rejecting...' : 'Reject'}
+                            {actioningAdjustmentId === req.id ? 'Processing...' : 'Reject'}
                           </button>
-                          {isOwnRequest ? (
-                            <span className="px-3 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[11px] font-bold border border-slate-200 select-none cursor-not-allowed" title="Two-person rule: Cannot approve own request">
-                              Self-Request
-                            </span>
-                          ) : (
+                          {!isOwnRequest && (
                             <button
                               type="button"
-                              disabled={actioningAdjustmentId !== null}
-                              onClick={() => handleApproveAdjustment(req.id)}
-                              className="px-3 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                              disabled={actioningAdjustmentId === req.id}
+                              onClick={() => handleActionAdjustment(req.id, 'APPROVED')}
+                              className="px-3 py-1.5 bg-primary text-white hover:bg-blue-700 rounded-lg font-bold text-[11px] transition-all disabled:opacity-50 cursor-pointer"
                             >
                               {actioningAdjustmentId === req.id ? 'Approving...' : 'Approve'}
                             </button>
@@ -927,11 +972,11 @@ export default function AttendancePage() {
                   })}
                 </div>
 
-                {/* Desktop View - Structured Table */}
+                {/* Desktop View - Table */}
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-body-sm">
+                  <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50/50">
+                      <tr className="bg-surface-container-low/50">
                         <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Employee</th>
                         <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Date</th>
                         <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold">Original Times</th>
@@ -940,51 +985,49 @@ export default function AttendancePage() {
                         <th className="px-4 py-2.5 text-section-cap text-outline uppercase font-semibold text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {adjustmentRequests.filter(req => req.status === 'PENDING').map(req => {
+                    <tbody className="divide-y divide-outline-variant">
+                      {paginatedAdjustments.map(req => {
                         const emp = req.attendance?.user;
                         const isOwnRequest = req.requestedBy === user?.id;
 
                         return (
-                          <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+                          <tr key={req.id} className="hover:bg-surface-container-low transition-colors text-body-sm">
                             <td className="px-4 py-3">
-                              <p className="font-semibold text-on-surface">{emp?.firstName} {emp?.lastName}</p>
-                              <p className="text-[10px] text-outline">{emp?.employeeId}</p>
+                              <div className="font-bold text-slate-900">{emp?.firstName} {emp?.lastName}</div>
+                              <div className="text-[10px] text-outline">ID: {emp?.employeeId}</div>
                             </td>
-                            <td className="px-4 py-3 font-semibold text-on-surface">
-                              {new Date(req.attendance?.date).toLocaleDateString()}
+                            <td className="px-4 py-3 font-semibold text-slate-700">
+                              {new Date(req.attendance?.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </td>
-                            <td className="px-4 py-3 text-outline font-mono text-[11px]">
+                            <td className="px-4 py-3 text-[11px] font-mono">
                               In: {formatTime(req.attendance?.checkIn)}<br />
                               Out: {formatTime(req.attendance?.checkOut)}<br />
-                              Status: <span className="font-bold text-[10px]">{req.attendance?.status}</span>
+                              <span className="text-[9px] font-bold text-slate-500">Status: {req.attendance?.status}</span>
                             </td>
-                            <td className="px-4 py-3 text-primary font-mono text-[11px] bg-blue-50/30">
+                            <td className="px-4 py-3 text-[11px] font-mono text-blue-700 font-bold">
                               In: {formatTime(req.proposedCheckIn)}<br />
                               Out: {formatTime(req.proposedCheckOut)}<br />
-                              Status: <span className="font-bold text-[10px]">{req.proposedStatus || req.attendance?.status}</span>
+                              <span className="text-[9px] text-blue-800">New Status: {req.proposedStatus}</span>
                             </td>
-                            <td className="px-4 py-3 text-on-surface-variant max-w-xs">
-                              <ReadMoreText text={req.reason} title="Adjustment Reason" />
+                            <td className="px-4 py-3 max-w-xs text-xs">
+                              <ReadMoreText text={req.reason || 'No reason provided'} maxLength={45} />
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-2">
                                 <button
-                                  disabled={actioningAdjustmentId !== null}
-                                  onClick={() => handleRejectAdjustment(req.id)}
-                                  className="px-2.5 py-1.5 border border-error text-error hover:bg-error-container/10 rounded-lg text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
+                                  type="button"
+                                  disabled={actioningAdjustmentId === req.id}
+                                  onClick={() => handleActionAdjustment(req.id, 'REJECTED')}
+                                  className="px-2.5 py-1 border border-red-200 text-red-700 hover:bg-red-50 rounded-lg font-bold text-[11px] transition-all disabled:opacity-50 cursor-pointer"
                                 >
-                                  {actioningAdjustmentId === req.id ? 'Rejecting...' : 'Reject'}
+                                  {actioningAdjustmentId === req.id ? 'Processing...' : 'Reject'}
                                 </button>
-                                {isOwnRequest ? (
-                                  <span className="px-2.5 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[11px] font-bold border border-slate-200 select-none cursor-not-allowed" title="Two-person rule: Cannot approve own request">
-                                    Self-Request
-                                  </span>
-                                ) : (
+                                {!isOwnRequest && (
                                   <button
-                                    disabled={actioningAdjustmentId !== null}
-                                    onClick={() => handleApproveAdjustment(req.id)}
-                                    className="px-2.5 py-1.5 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                                    type="button"
+                                    disabled={actioningAdjustmentId === req.id}
+                                    onClick={() => handleActionAdjustment(req.id, 'APPROVED')}
+                                    className="px-2.5 py-1 bg-primary text-white hover:bg-blue-700 rounded-lg font-bold text-[11px] transition-all disabled:opacity-50 cursor-pointer"
                                   >
                                     {actioningAdjustmentId === req.id ? 'Approving...' : 'Approve'}
                                   </button>
@@ -997,6 +1040,30 @@ export default function AttendancePage() {
                     </tbody>
                   </table>
                 </div>
+
+                {totalPagesAdjustments > 1 && (
+                  <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
+                    <span className="text-[11px] text-outline">
+                      Showing {(currentPageAdjustments - 1) * itemsPerPage + 1} to {Math.min(currentPageAdjustments * itemsPerPage, filteredAdjustments.length)} of {filteredAdjustments.length} requests
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        disabled={currentPageAdjustments === 1}
+                        onClick={() => setCurrentPageAdjustments(currentPageAdjustments - 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        disabled={currentPageAdjustments === totalPagesAdjustments}
+                        onClick={() => setCurrentPageAdjustments(currentPageAdjustments + 1)}
+                        className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

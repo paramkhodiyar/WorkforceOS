@@ -1,10 +1,10 @@
 import React from 'react';
-import LogoLoader from '@/components/ui/LogoLoader';
+import LogoLoader from '../components/ui/LogoLoader';
 
 export default function Loading() {
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-slate-50">
-      <LogoLoader size={96} />
+    <div className="fixed inset-0 z-[9999] flex h-screen w-screen items-center justify-center bg-slate-50">
+      <LogoLoader size={80} text="Loading WorkforceOS..." />
     </div>
   );
 }

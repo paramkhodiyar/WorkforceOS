@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/AuthProvider';
 import AppShell from '../../components/layout/AppShell';
+import LogoLoader from '../../components/ui/LogoLoader';
 import { api } from '../../lib/api/client';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

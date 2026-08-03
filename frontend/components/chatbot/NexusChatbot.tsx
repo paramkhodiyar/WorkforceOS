@@ -70,7 +70,7 @@ export default function NexusChatbot() {
   const isDashboard = pathname === '/dashboard';
 
   return (
-    <div className={`fixed bottom-20 md:bottom-6 right-6 z-50 font-sans ${isDashboard ? 'block' : 'hidden md:block'}`}>
+    <div className={`fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[80] font-sans ${isDashboard ? 'block' : 'hidden md:block'}`}>
       {/* Floating Bubble */}
       {!isOpen && (
         <button

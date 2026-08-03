@@ -11,6 +11,8 @@ import { randomBytes } from "crypto";
 
 import { OnboardingService } from "../onboarding/onboarding.service";
 import { sendTrialLeadEmails } from "../../utils/email.util";
+import { generatePersonalizedLicenseKey } from "../license/license.util";
+import { LicenseType, LicenseStatus } from "@prisma/client";
 
 /**
  * Generates a random, policy-compliant password for trial accounts.
@@ -107,16 +109,39 @@ export class AuthService {
     const orgId = result.org.id;
     const adminUser = result.orgAdmin;
 
-    // Update organization with trial properties
+    // Update organization with trial properties & personalized license key
     const trialEndDate = new Date();
-    trialEndDate.setDate(trialEndDate.getDate() + 7);
+    trialEndDate.setDate(trialEndDate.getDate() + 14); // 14-day trial
+
+    const { key, companyShort } = generatePersonalizedLicenseKey(companyName, "TRIAL", LicenseType.TRIAL);
+
+    await prisma.licenseKey.create({
+      data: {
+        key,
+        companyShort,
+        tier: "STARTUP",
+        type: LicenseType.TRIAL,
+        status: LicenseStatus.ACTIVE,
+        maxEmployees: 15,
+        validityDays: 14,
+        activatedAt: new Date(),
+        activatedByOrgId: orgId,
+        expiresAt: trialEndDate,
+        notes: "Automated 14-day Trial License Key"
+      }
+    });
 
     await prisma.organization.update({
       where: { id: orgId },
       data: {
         subscriptionStatus: "TRIAL",
+        subscriptionTier: "STARTUP",
         trialStartDate: new Date(),
         trialEndDate,
+        licenseKey: key,
+        licenseStatus: LicenseStatus.ACTIVE,
+        licenseValidUntil: trialEndDate,
+        licenseMaxEmployees: 15,
         isSetupComplete: true // Trial organizations start out pre-setup
       }
     });

@@ -168,6 +168,24 @@ export class EmployeesService {
       throw AppError.conflict("Email is already in use");
     }
 
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { licenseMaxEmployees: true, licenseStatus: true }
+    });
+    if (org) {
+      if (org.licenseStatus === "INACTIVE" || org.licenseStatus === "REVOKED") {
+        throw AppError.forbidden("Organization license is inactive. Please reactivate your license to add new employees.");
+      }
+      const activeCount = await prisma.user.count({
+        where: { organizationId: orgId, status: "ACTIVE", isDeleted: false }
+      });
+      if (activeCount >= org.licenseMaxEmployees) {
+        throw AppError.badRequest(
+          `Employee capacity limit reached (${activeCount}/${org.licenseMaxEmployees} seats used). Please upgrade your License Key to add more employees.`
+        );
+      }
+    }
+
     const { bankDetail, emergencyContact, leaveAllocations, ...coreUserData } = data;
 
     const result = await prisma.$transaction(async (tx) => {

@@ -521,6 +521,39 @@ export const api = {
       request(`/organization/holidays/${id}`, {
         method: 'DELETE',
       }),
+    getLicense: (): Promise<any> => request('/organization/license'),
+    activateLicense: (data: { key: string }): Promise<any> =>
+      request('/organization/license/activate', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+  adminCms: {
+    listCustomers: (params?: { search?: string; page?: number; limit?: number }): Promise<any> => {
+      const q = new URLSearchParams();
+      if (params?.search) q.set('search', params.search);
+      if (params?.page) q.set('page', String(params.page));
+      if (params?.limit) q.set('limit', String(params.limit));
+      const str = q.toString();
+      return request(`/admin/cms/customers${str ? `?${str}` : ''}`);
+    },
+    mintKey: (data: { companyName: string; tier: string; type?: string; maxEmployees?: number; validityDays?: number; notes?: string; orgId?: string }): Promise<any> =>
+      request('/admin/cms/keys/mint', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    updateStatus: (orgId: string, status: string): Promise<any> =>
+      request(`/admin/cms/customers/${orgId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
+    listInvoices: (status?: string): Promise<any> =>
+      request(`/admin/cms/invoices${status ? `?status=${status}` : ''}`),
+    verifyInvoice: (invoiceId: string, isApproved: boolean, notes?: string): Promise<any> =>
+      request(`/admin/cms/invoices/${invoiceId}/verify`, {
+        method: 'POST',
+        body: JSON.stringify({ isApproved, notes }),
+      }),
   },
   notifications: {
     list: (): Promise<any> => request('/notifications'),

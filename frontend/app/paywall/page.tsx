@@ -56,10 +56,13 @@ const PLANS = [
 export default function PaywallPage() {
   const { organization, refetchUser, logout } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<any>(PLANS[1]); // Default to Growth
+  const [checkoutMode, setCheckoutMode] = useState<'LICENSE' | 'UPI'>('LICENSE');
+  const [licenseKeyInput, setLicenseKeyInput] = useState('');
   const [utr, setUtr] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('Thank you for subscribing. We are unlocking your workspace.');
 
   // Generate dynamic UPI payload link
   const payeeUPI = '9875413483@upi';
@@ -67,6 +70,32 @@ export default function PaywallPage() {
   const note = `WorkforceOS ${selectedPlan.name} Subscription`;
   const upiUrl = `upi://pay?pa=${payeeUPI}&pn=${encodeURIComponent(payeeName)}&am=${selectedPlan.price}&cu=INR&tn=${encodeURIComponent(note)}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiUrl)}`;
+
+  async function handleLicenseSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    if (!licenseKeyInput.trim()) {
+      setError('Please enter a valid License Key.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await api.organization.activateLicense({ key: licenseKeyInput.trim() });
+      setSuccessMessage('License Key activated successfully! Redirecting to your workspace...');
+      setSuccess(true);
+      setTimeout(async () => {
+        await refetchUser();
+        window.location.href = '/dashboard';
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message || 'License Key activation failed. Please verify the key and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -84,6 +113,7 @@ export default function PaywallPage() {
         utr: utr.trim(),
         tier: selectedPlan.id,
       });
+      setSuccessMessage('Payment UTR submitted! Unlocking your workspace...');
       setSuccess(true);
       // Wait 1.5 seconds for UX, then reload user details to unlock access
       setTimeout(async () => {
@@ -214,65 +244,149 @@ export default function PaywallPage() {
         </div>
       </div>
 
-      {/* Paywall QR Code Checkout */}
-      <div className="lg:w-1/3 bg-slate-50 p-8 lg:p-16 flex flex-col justify-center items-center">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Scan to Pay</h2>
-            <p className="text-slate-500 text-xs leading-relaxed">
-              Scan this QR code with any UPI app (GPay, PhonePe, Paytm) to transfer the amount instantly.
-            </p>
-          </div>
-
-          {/* QR code box */}
-          <div className="bg-white p-4 rounded-3xl w-64 h-64 flex items-center justify-center mx-auto border border-slate-200 relative overflow-hidden group">
-            <img src={qrCodeUrl} alt="UPI QR Code" className="w-full h-full object-contain" />
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center space-y-1">
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Payee UPI VPA</p>
-            <p className="text-sm font-bold text-slate-800 font-mono">{payeeUPI}</p>
-            <p className="text-xs text-blue-600 font-bold pt-1">Amount: ₹{selectedPlan.price.toLocaleString()}</p>
-          </div>
-
-          {/* UTR Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1.5">
-                12-Digit Transaction UTR
-              </label>
-              <input
-                type="text"
-                placeholder="Enter 12-digit transaction ID"
-                value={utr}
-                onChange={(e) => setUtr(e.target.value.replace(/\D/g, '').slice(0, 12))}
-                className="w-full p-3 bg-white border border-slate-200 focus:border-blue-600 rounded-xl text-sm transition-all text-slate-800 font-mono text-center outline-none"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-medium">
-                {error}
-              </div>
-            )}
-
+      {/* Paywall Checkout & License Activation Sidebar */}
+      <div className="lg:w-1/3 bg-slate-50 p-8 lg:p-12 flex flex-col justify-center items-center">
+        <div className="w-full max-w-sm space-y-6">
+          
+          {/* Mode Tabs */}
+          <div className="flex bg-slate-200/70 p-1 rounded-2xl">
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              type="button"
+              onClick={() => { setCheckoutMode('LICENSE'); setError(''); }}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${
+                checkoutMode === 'LICENSE'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
-              {loading ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Verifying Transaction...
-                </>
-              ) : (
-                'Confirm & Unlock Workspace'
-              )}
+              License Key
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => { setCheckoutMode('UPI'); setError(''); }}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${
+                checkoutMode === 'UPI'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              UPI QR Pay
+            </button>
+          </div>
+
+          {checkoutMode === 'LICENSE' ? (
+            <div className="space-y-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+              <div className="text-center space-y-2">
+                <div className="h-12 w-12 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-center mx-auto text-blue-600">
+                  <span className="material-symbols-outlined text-[24px]">key</span>
+                </div>
+                <h2 className="text-xl font-extrabold tracking-tight text-slate-900">Activate License Key</h2>
+                <p className="text-slate-500 text-xs leading-relaxed">
+                  Enter your personalized key (e.g. <span className="font-mono font-bold text-slate-700">WFOS-ACME-GWTH-9482</span>) to instantly unlock your workspace.
+                </p>
+              </div>
+
+              <form onSubmit={handleLicenseSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1.5">
+                    Personalized License Key
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="WFOS-XXXX-XXXX-XXXX"
+                    value={licenseKeyInput}
+                    onChange={(e) => setLicenseKeyInput(e.target.value.toUpperCase())}
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 focus:border-blue-600 focus:bg-white rounded-xl text-sm transition-all text-slate-900 font-mono tracking-wider text-center outline-none uppercase font-bold"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-medium">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {loading ? (
+                    <>
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Activating Key...
+                    </>
+                  ) : (
+                    <>
+                      <span>Activate Workspace</span>
+                      <span className="material-symbols-outlined text-[18px]">verified</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Scan to Pay</h2>
+                <p className="text-slate-500 text-xs leading-relaxed">
+                  Scan this QR code with any UPI app (GPay, PhonePe, Paytm) to transfer the amount instantly.
+                </p>
+              </div>
+
+              {/* QR code box */}
+              <div className="bg-white p-4 rounded-3xl w-60 h-60 flex items-center justify-center mx-auto border border-slate-200 relative overflow-hidden group">
+                <img src={qrCodeUrl} alt="UPI QR Code" className="w-full h-full object-contain" />
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center space-y-1">
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Payee UPI VPA</p>
+                <p className="text-sm font-bold text-slate-800 font-mono">{payeeUPI}</p>
+                <p className="text-xs text-blue-600 font-bold pt-1">Amount: ₹{selectedPlan.price.toLocaleString()}</p>
+              </div>
+
+              {/* UTR Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1.5">
+                    12-Digit Transaction UTR
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter 12-digit transaction ID"
+                    value={utr}
+                    onChange={(e) => setUtr(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                    className="w-full p-3 bg-white border border-slate-200 focus:border-blue-600 rounded-xl text-sm transition-all text-slate-800 font-mono text-center outline-none"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-medium">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {loading ? (
+                    <>
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Verifying Transaction...
+                    </>
+                  ) : (
+                    'Confirm & Unlock Workspace'
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>

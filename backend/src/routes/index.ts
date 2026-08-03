@@ -20,6 +20,8 @@ import { calendarRouter } from "../modules/calendar/calendar.router";
 import { statsRouter } from "../modules/stats/stats.router";
 import { chatbotRouter } from "../modules/chatbot/chatbot.router";
 import { healthRouter } from "../modules/health/health.router";
+import { licenseRouter } from "../modules/license/license.router";
+import { adminCmsRouter } from "../modules/admin/admin-cms.router";
 import { rateLimitByUser, rateLimit } from "../middleware/rateLimit.middleware";
 
 const router = Router();
@@ -75,5 +77,7 @@ router.use("/departments", departmentsRouter);
 router.use("/teams", teamsRouter);
 router.use("/calendar", calendarRouter);
 router.use("/stats", statsRouter);
+router.use("/organization/license", licenseRouter);
+router.use("/admin/cms", adminCmsRouter);
 
 export default router;

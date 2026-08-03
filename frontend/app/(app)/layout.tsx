@@ -36,15 +36,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Check Trial / Subscription Expiration
+      // Check License / Trial / Subscription Expiration
       if (organization) {
         const isTrial = organization.subscriptionStatus === 'TRIAL';
-        const isExpired = organization.subscriptionStatus === 'EXPIRED';
+        const isExpired = organization.subscriptionStatus === 'EXPIRED' || organization.licenseStatus === 'INACTIVE' || organization.licenseStatus === 'REVOKED' || organization.licenseStatus === 'EXPIRED';
         const trialEnded = organization.trialEndDate && new Date(organization.trialEndDate) < new Date();
 
         if (isExpired || (isTrial && trialEnded)) {
-          router.push('/paywall');
-          return;
+          if (pathname !== '/paywall') {
+            router.push('/paywall');
+            return;
+          }
         }
 
         // Check Onboarding status

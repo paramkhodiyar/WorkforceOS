@@ -26,6 +26,26 @@ enum SubscriptionTier {
   ENTERPRISE
 }
 
+enum LicenseStatus {
+  UNASSIGNED
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum LicenseType {
+  TRIAL
+  SUBSCRIPTION
+  PERPETUAL
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
 enum SystemRole {
   SYS_OWNER
   SUPER_ADMIN
@@ -202,6 +222,12 @@ model Organization {
   isSetupComplete Boolean @default(false)
   paymentRef String?
 
+  // License Key fields
+  licenseKey          String?
+  licenseStatus       LicenseStatus      @default(ACTIVE)
+  licenseValidUntil   DateTime?
+  licenseMaxEmployees Int                @default(15)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -217,6 +243,44 @@ model Organization {
   holidays     Holiday[]
   calendarEvents CalendarEvent[]
   profileUpdateRequests ProfileUpdateRequest[]
+  licenseKeys  LicenseKey[]
+  customerInvoices CustomerInvoice[]
+}
+
+model LicenseKey {
+  id               String           @id @default(cuid())
+  key              String           @unique
+  companyShort     String
+  tier             SubscriptionTier @default(STARTUP)
+  type             LicenseType      @default(SUBSCRIPTION)
+  status           LicenseStatus    @default(UNASSIGNED)
+  maxEmployees     Int              @default(15)
+  validityDays     Int              @default(30)
+  activatedAt      DateTime?
+  activatedByOrgId String?
+  expiresAt        DateTime?
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  organization     Organization?    @relation(fields: [activatedByOrgId], references: [id])
+}
+
+model CustomerInvoice {
+  id               String           @id @default(cuid())
+  invoiceNumber    String           @unique
+  organizationId   String
+  tier             SubscriptionTier
+  amount           Float
+  utr              String
+  status           PaymentStatus    @default(PENDING)
+  verifiedAt       DateTime?
+  verifiedByUserId String?
+  rejectionReason  String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  organization     Organization     @relation(fields: [organizationId], references: [id])
 }
 
 model Department {

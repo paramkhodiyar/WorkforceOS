@@ -10,9 +10,9 @@ import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function SettingsPage() {
-  const { user, features, setFeatures } = useAuth();
+  const { user, features, setFeatures, refetchUser } = useAuth();
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<'departments' | 'teams' | 'features' | 'location' | 'profile-requests'>('departments');
+  const [activeTab, setActiveTab] = useState<'departments' | 'teams' | 'features' | 'location' | 'profile-requests' | 'license'>('departments');
   const [departments, setDepartments] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -20,6 +20,11 @@ export default function SettingsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [featureToggling, setFeatureToggling] = useState(false);
+
+  // License State
+  const [licenseData, setLicenseData] = useState<any>(null);
+  const [licenseKeyInput, setLicenseKeyInput] = useState('');
+  const [activatingLicense, setActivatingLicense] = useState(false);
 
   const [officeLat, setOfficeLat] = useState<string>('');
   const [officeLng, setOfficeLng] = useState<string>('');
@@ -94,10 +99,40 @@ export default function SettingsPage() {
         setOfficeRadius(orgRes.data.officeRadius !== null ? String(orgRes.data.officeRadius) : '');
       }
       setErrorMessage('');
+      loadLicense();
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to load configuration data.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadLicense() {
+    try {
+      const res = await api.organization.getLicense();
+      setLicenseData(res.data);
+    } catch (err: any) {
+      console.error("Failed to load license details:", err);
+    }
+  }
+
+  async function handleActivateLicense(e: React.FormEvent) {
+    e.preventDefault();
+    if (!licenseKeyInput.trim()) {
+      toast.error('Please enter a valid License Key.');
+      return;
+    }
+    setActivatingLicense(true);
+    try {
+      await api.organization.activateLicense({ key: licenseKeyInput.trim() });
+      toast.success('License Key activated successfully!');
+      setLicenseKeyInput('');
+      await loadLicense();
+      await refetchUser();
+    } catch (err: any) {
+      toast.error(err.message || 'License activation failed.');
+    } finally {
+      setActivatingLicense(false);
     }
   }
 
@@ -481,6 +516,19 @@ export default function SettingsPage() {
             }`}
           >
             Office Location
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            onClick={() => {
+              setActiveTab('license');
+              loadLicense();
+            }}
+            className={`flex-1 sm:flex-none px-4 py-2.5 text-center text-label-sm font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'license' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            License & Subscription
           </button>
         )}
         {(isAdmin || isHR) && (
@@ -1179,6 +1227,84 @@ export default function SettingsPage() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+          )}
+          {activeTab === 'license' && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+              <div className="flex justify-between items-center flex-wrap gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider">License & Subscription</h2>
+                  <p className="text-body-xs text-outline mt-0.5">Manage your organization's active license key, subscription tier, and employee seat capacity.</p>
+                </div>
+                {licenseData && (
+                  <span className={`text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
+                    licenseData.licenseStatus === 'ACTIVE'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-red-50 text-red-700 border-red-200'
+                  }`}>
+                    License: {licenseData.licenseStatus || 'ACTIVE'}
+                  </span>
+                )}
+              </div>
+
+              {licenseData && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Active Key Box */}
+                  <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                    <span className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">Active License Key</span>
+                    <p className="font-mono text-base font-bold text-slate-900">{licenseData.maskedKey || 'No active key'}</p>
+                    <p className="text-xs text-slate-500 font-medium">Tier: <span className="font-bold text-blue-600 uppercase">{licenseData.subscriptionTier}</span></p>
+                  </div>
+
+                  {/* Seat Usage Bar */}
+                  <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">Employee Seat Capacity</span>
+                      <span className="text-xs font-bold text-slate-700">{licenseData.activeEmployeesCount} / {licenseData.licenseMaxEmployees} seats</span>
+                    </div>
+                    <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-blue-600 h-full transition-all"
+                        style={{ width: `${Math.min(100, (licenseData.activeEmployeesCount / (licenseData.licenseMaxEmployees || 1)) * 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-slate-500">{licenseData.seatsRemaining} seats remaining available</p>
+                  </div>
+
+                  {/* Validity Info */}
+                  <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                    <span className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">Expiration & Renewal</span>
+                    <p className="font-bold text-sm text-slate-900">
+                      {licenseData.licenseValidUntil ? new Date(licenseData.licenseValidUntil).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) : 'Lifetime / Perpetual'}
+                    </p>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Status: {licenseData.isExpired ? <span className="text-red-600 font-bold">EXPIRED</span> : <span className="text-emerald-600 font-bold">VALID & ACTIVE</span>}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Upgrade / Activate License Key Form */}
+              <div className="pt-4 border-t border-slate-100 space-y-4">
+                <h3 className="text-label-sm font-bold text-slate-800 uppercase tracking-wider">Activate or Upgrade License Key</h3>
+                <form onSubmit={handleActivateLicense} className="flex flex-col sm:flex-row gap-4 max-w-xl">
+                  <input
+                    type="text"
+                    placeholder="Enter personalized key e.g. WFOS-ACME-GWTH-9482"
+                    value={licenseKeyInput}
+                    onChange={(e) => setLicenseKeyInput(e.target.value.toUpperCase())}
+                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-600 focus:bg-white rounded-xl text-sm font-mono tracking-wider uppercase font-bold outline-none"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={activatingLicense}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap flex items-center justify-center gap-1.5"
+                  >
+                    {activatingLicense ? 'Activating...' : 'Submit License Key'}
+                  </button>
+                </form>
               </div>
             </div>
           )}

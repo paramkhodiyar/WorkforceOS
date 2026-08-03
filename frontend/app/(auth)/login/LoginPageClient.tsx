@@ -17,10 +17,11 @@ function sendBridge(msg: object) {
 }
 
 export default function LoginPageClient() {
-  const { login, loading } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // Forgot password flow
@@ -120,7 +121,9 @@ export default function LoginPageClient() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     setError('');
+    setSubmitting(true);
     try {
       await login(email, password);
     } catch (err: any) {
@@ -132,6 +135,8 @@ export default function LoginPageClient() {
       } else {
         setError(errMsg || 'An unexpected error occurred. Please try again.');
       }
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -206,7 +211,7 @@ export default function LoginPageClient() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
                 required
-                disabled={loading}
+                disabled={submitting}
               />
             </div>
             <div>
@@ -218,7 +223,7 @@ export default function LoginPageClient() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full p-3 pr-10 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white rounded-xl text-body-sm transition-all focus:ring-1 focus:ring-primary"
                   required
-                  disabled={loading}
+                  disabled={submitting}
                 />
                 <button
                   type="button"
@@ -242,10 +247,10 @@ export default function LoginPageClient() {
             </div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitting}
               className="w-full py-3.5 bg-primary hover:bg-blue-700 text-on-primary rounded-xl text-label-md font-bold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50 cursor-pointer block text-center"
             >
-              {loading ? 'Authenticating...' : 'Sign In'}
+              {submitting ? 'Authenticating...' : 'Sign In'}
             </button>
           </form>
 

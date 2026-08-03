@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '../../lib/auth/AuthProvider';
 
 const SIMULATION_ROLES = [
   {
     id: 'ORG_ADMIN',
     name: 'Administrator',
-    description: 'Simulate the Owner / Org Admin dashboard. Manage organization, payroll, and core settings.',
+    description: 'Simulate the Org Admin dashboard. Manage organization, payroll, employees, and core settings.',
     icon: 'admin_panel_settings',
     color: 'border-blue-200 hover:border-blue-600 text-blue-600',
     bg: 'bg-blue-50/20',
@@ -65,7 +66,7 @@ export default function SelectRolePage() {
       </header>
 
       {/* Main Choice Selector */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 md:px-6 md:py-12 flex flex-col justify-center text-center space-y-6 md:space-y-10">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 md:px-6 md:py-12 flex flex-col justify-center text-center space-y-6 md:space-y-10">
         <div className="space-y-2">
           <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">
             Select Simulator Persona
@@ -74,6 +75,32 @@ export default function SelectRolePage() {
             Choose which role simulation persona you would like to run inside the WorkforceOS workspace.
           </p>
         </div>
+
+        {/* ── Owner Platform Quick Access ── */}
+        <Link
+          href="/admin/customers"
+          className="group w-full max-w-2xl mx-auto flex items-center justify-between gap-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 rounded-2xl px-6 py-4 transition-all duration-200 active:scale-[0.99] cursor-pointer"
+        >
+          <div className="flex items-center gap-4">
+            <div className="h-11 w-11 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[22px] text-amber-400">verified_user</span>
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-extrabold text-white">Platform Owner</h3>
+                <span className="text-[9px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                  SYS_OWNER
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">
+                Access the master CMS — manage customer organizations, licenses, invoices, and platform keys.
+              </p>
+            </div>
+          </div>
+          <span className="material-symbols-outlined text-slate-400 group-hover:text-white text-[20px] transition-colors shrink-0">
+            arrow_forward
+          </span>
+        </Link>
 
         {/* Roles Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">

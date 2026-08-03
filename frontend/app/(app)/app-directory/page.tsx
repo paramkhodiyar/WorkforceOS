@@ -19,6 +19,7 @@ export default function AppDirectoryPage() {
   const isActualManager = isManager || isLeaderOrHead;
   const hasTeamsOrDepts = isLeaderOrHead || (user.teams && user.teams.length > 0) || user.departmentId !== null;
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+  const isSysOwner = systemRole === 'SYS_OWNER' || user.originalRole === 'SYS_OWNER';
 
   const directorySections = [
     {
@@ -50,6 +51,13 @@ export default function AppDirectoryPage() {
         { label: 'Password Vault', icon: 'vpn_key', href: '/password-manager', desc: 'Encrypted corporate credentials', show: isAdmin },
         { label: 'Audit Trail', icon: 'history', href: '/audit', desc: 'System security log history', show: isAdmin && features.includes('audit') },
         { label: 'Workspace Settings', icon: 'settings', href: '/settings', desc: 'Module features & organization', show: isAdmin || isHR },
+      ],
+    },
+    {
+      title: 'Platform Owner',
+      items: [
+        { label: 'Platform CMS', icon: 'verified_user', href: '/admin/customers', desc: 'Manage customer orgs, licenses & invoices', show: isSysOwner },
+        { label: 'Mint License Key', icon: 'key', href: '/admin/customers', desc: 'Generate new license activation keys', show: isSysOwner },
       ],
     },
   ];

@@ -79,25 +79,25 @@ export default function SelectRolePage() {
         {/* ── Owner Platform Quick Access ── */}
         <Link
           href="/admin/customers"
-          className="group w-full max-w-2xl mx-auto flex items-center justify-between gap-4 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 rounded-2xl px-6 py-4 transition-all duration-200 active:scale-[0.99] cursor-pointer"
+          className="group w-full max-w-2xl mx-auto flex items-center justify-between gap-4 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-400 rounded-2xl px-6 py-4 transition-all duration-200 active:scale-[0.99] cursor-pointer"
         >
           <div className="flex items-center gap-4">
-            <div className="h-11 w-11 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[22px] text-amber-400">verified_user</span>
+            <div className="h-11 w-11 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[22px] text-slate-700">verified_user</span>
             </div>
             <div className="text-left">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-extrabold text-white">Platform Owner</h3>
-                <span className="text-[9px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                <h3 className="text-sm font-extrabold text-slate-900">Platform Owner</h3>
+                <span className="text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full">
                   SYS_OWNER
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
                 Access the master CMS — manage customer organizations, licenses, invoices, and platform keys.
               </p>
             </div>
           </div>
-          <span className="material-symbols-outlined text-slate-400 group-hover:text-white text-[20px] transition-colors shrink-0">
+          <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-700 text-[20px] transition-colors shrink-0">
             arrow_forward
           </span>
         </Link>

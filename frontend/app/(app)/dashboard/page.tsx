@@ -573,12 +573,20 @@ export default function DashboardPage() {
 
       {/* ── 🖥️ DESKTOP DASHBOARD ── */}
       <div className="hidden md:block space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white px-7 py-6 rounded-3xl border border-slate-200">
           <div>
-            <h1 className="text-headline-lg font-black tracking-tight text-slate-900">Dashboard</h1>
-            <p className="text-body-sm text-outline mt-1">Welcome back, {user.firstName}. Here is your dashboard summary.</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-1">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900 leading-none">
+              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'},{' '}
+              <span className="text-slate-600">{user.firstName}.</span>
+            </h1>
+            <p className="text-sm text-slate-500 font-medium mt-1.5">
+              Here&apos;s what&apos;s happening across your workspace today.
+            </p>
           </div>
-          <LiveClock size="lg" className="w-80 shrink-0 shadow-sm" />
+          <LiveClock size="lg" className="w-80 shrink-0" />
         </div>
 
         {/* Home Address Warning Banner */}

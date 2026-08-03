@@ -241,6 +241,10 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ role }),
       }),
+    dismissWelcome: (): Promise<any> =>
+      request('/auth/dismiss-welcome', {
+        method: 'PATCH',
+      }),
     registerTrial: (data: {
       organizationName?: string;
       companyName?: string;

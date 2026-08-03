@@ -264,3 +264,9 @@ export const getAdminContact = asyncHandler(async (req: Request, res: Response) 
     email: adminUser?.email || "superadmin@workforceos.com"
   });
 });
+
+export const dismissWelcome = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const updated = await AuthService.dismissWelcome(userId);
+  return sendSuccess(res, updated, "Welcome popup dismissed permanently.");
+});

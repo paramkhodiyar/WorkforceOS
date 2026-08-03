@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/AuthProvider';
 import { api } from '../../lib/api/client';
+import { triggerHaptic } from '../../lib/utils/haptics';
 
 export default function BottomNavBar() {
   const pathname = usePathname();
@@ -82,6 +83,7 @@ export default function BottomNavBar() {
             <Link
               key={tab.href}
               href={tab.href}
+              onClick={() => triggerHaptic(tab.label === 'Attendance' ? 50 : 25)}
               className={`flex flex-col items-center justify-center w-20 h-full transition-colors active:scale-95 duration-100 ${
                 isActive ? 'text-primary' : 'text-on-surface-variant'
               }`}

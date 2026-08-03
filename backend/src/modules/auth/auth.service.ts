@@ -520,4 +520,13 @@ export class AuthService {
       }
     };
   }
+
+  static async dismissWelcome(userId: string) {
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { hasSeenWelcome: true }
+    });
+    await redis.del(`user:session:${userId}`).catch(() => {});
+    return updated;
+  }
 }

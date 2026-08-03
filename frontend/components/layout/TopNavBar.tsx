@@ -80,18 +80,17 @@ export default function TopNavBar() {
   }
 
   return (
-    <header className="fixed top-0 right-0 left-0 md:left-64 h-16 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between px-6 z-30">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 md:hidden">
+    <header className="fixed top-0 right-0 left-0 md:left-64 h-14 md:h-16 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between px-3.5 md:px-6 z-30">
+      <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+        <div className="flex items-center gap-1.5 md:hidden shrink-0">
           <img 
             src={user?.organization?.logoUrl || "/workforceoslogo.png"} 
             alt={user?.organization?.name || "Logo"} 
-            className="h-6 w-6 object-contain rounded bg-white border border-slate-200/50" 
+            className="h-5 w-5 object-contain rounded bg-white border border-slate-200/50" 
           />
-          <h2 className="text-[11px] font-bold text-slate-800 tracking-tight uppercase truncate max-w-[120px]">
+          <h2 className="text-[10px] font-black text-slate-800 tracking-tight uppercase truncate max-w-[100px]">
             {user?.organization?.name || "WorkforceOS"}
           </h2>
-          <span className="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">WOS</span>
         </div>
         <div className="relative hidden sm:flex items-center select-none">
           <style>{`
@@ -111,11 +110,15 @@ export default function TopNavBar() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         {user.originalRole === 'SYS_OWNER' && (
-          <Link href="/select-role" className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 hover:bg-blue-100 transition-all shrink-0">
+          <Link
+            href="/select-role"
+            className="text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl font-extrabold uppercase tracking-wider flex items-center gap-1 transition-all active:scale-95 shrink-0"
+          >
             <span className="material-symbols-outlined text-[14px]">sync_alt</span>
-            Switch ({user.systemRole})
+            <span className="hidden sm:inline">Switch ({user.systemRole})</span>
+            <span className="sm:hidden font-black">Switch</span>
           </Link>
         )}
         <div className="relative">

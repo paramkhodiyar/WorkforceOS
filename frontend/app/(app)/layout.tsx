@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/AuthProvider';
 import AppShell from '../../components/layout/AppShell';
+import { api } from '../../lib/api/client';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, organization, loading, features } = useAuth();
@@ -18,9 +19,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Check if welcome popup should be shown for first-time signee
-      const dismissed = localStorage.getItem(`wfos_welcome_dismissed_${user.id}`);
-      if (!dismissed) {
+      // Check if welcome popup should be shown for first-time signee in DB
+      const dismissedLocal = localStorage.getItem(`wfos_welcome_dismissed_${user.id}`);
+      if (!user.hasSeenWelcome && !dismissedLocal) {
         setShowWelcome(true);
       }
 
@@ -64,10 +65,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [user, organization, loading, router, pathname]);
 
-  const handleDismissWelcome = () => {
+  const handleDismissWelcome = async () => {
+    setShowWelcome(false);
     if (user) {
       localStorage.setItem(`wfos_welcome_dismissed_${user.id}`, 'true');
-      setShowWelcome(false);
+      try {
+        await api.auth.dismissWelcome();
+      } catch (err) {
+        console.error('Failed to dismiss welcome popup in DB:', err);
+      }
     }
   };
 

@@ -49,38 +49,39 @@ export default function SelectRolePage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src="/workforceoslogo.png" alt="Logo" className="h-8 w-8 object-contain rounded" />
-          <span className="text-lg font-bold tracking-wider uppercase text-slate-800">WorkforceOS Portal</span>
+      <header className="border-b border-slate-200 bg-white px-4 py-3.5 md:px-8 md:py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <img src="/workforceoslogo.png" alt="Logo" className="h-7 w-7 md:h-8 md:w-8 object-contain rounded" />
+          <span className="text-xs md:text-base font-black tracking-wider uppercase text-slate-800">
+            WorkforceOS
+          </span>
         </div>
         <button
           onClick={logout}
-          className="text-xs font-semibold text-slate-555 hover:text-slate-800 transition-colors"
+          className="text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors active:scale-95 cursor-pointer"
         >
           Logout
         </button>
       </header>
 
       {/* Main Choice Selector */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-6 py-12 flex flex-col justify-center text-center space-y-10">
-        <div className="space-y-3">
-          <span className="text-[10px] bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1 rounded-full font-bold uppercase tracking-widest">
-            System Owner Portal
-          </span>
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Select Simulator Persona</h1>
-          <p className="text-slate-500 text-sm max-w-md mx-auto leading-relaxed">
-            Welcome, System Owner. Please choose which role simulation persona you would like to run inside the WorkforceOS workspace.
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 md:px-6 md:py-12 flex flex-col justify-center text-center space-y-6 md:space-y-10">
+        <div className="space-y-2">
+          <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">
+            Select Simulator Persona
+          </h1>
+          <p className="text-slate-500 text-xs md:text-sm max-w-md mx-auto leading-relaxed font-medium">
+            Choose which role simulation persona you would like to run inside the WorkforceOS workspace.
           </p>
         </div>
 
         {/* Roles Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {SIMULATION_ROLES.map((role) => (
             <div
               key={role.id}
               onClick={() => !loading && handleSelect(role.id)}
-              className={`border rounded-[28px] p-8 text-center flex flex-col justify-between items-center transition-all duration-300 relative overflow-hidden group ${
+              className={`border rounded-2xl md:rounded-[28px] p-5 md:p-8 text-center flex flex-col justify-between items-center transition-all duration-200 relative overflow-hidden active:scale-[0.98] ${
                 loading && activeChoice === role.id
                   ? 'border-blue-600 bg-blue-50/20 scale-[0.98]'
                   : loading
@@ -88,20 +89,20 @@ export default function SelectRolePage() {
                   : `cursor-pointer bg-white ${role.color} ${role.bg} hover:scale-[1.02]`
               }`}
             >
-              <div className="space-y-4 flex flex-col items-center">
-                <div className="h-16 w-16 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-[32px]">{role.icon}</span>
+              <div className="space-y-3 md:space-y-4 flex flex-col items-center">
+                <div className="h-12 w-12 md:h-16 md:w-16 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[24px] md:text-[32px]">{role.icon}</span>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-bold text-slate-800">{role.name}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">{role.description}</p>
+                <div className="space-y-1 md:space-y-2">
+                  <h3 className="text-base md:text-lg font-bold text-slate-800">{role.name}</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed font-medium">{role.description}</p>
                 </div>
               </div>
 
-              <div className="pt-6 w-full">
+              <div className="pt-4 md:pt-6 w-full">
                 <button
                   disabled={loading}
-                  className={`w-full py-2.5 text-xs font-bold rounded-xl transition-all ${
+                  className={`w-full py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                     loading && activeChoice === role.id
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700'
@@ -116,7 +117,7 @@ export default function SelectRolePage() {
       </main>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-[10px] text-slate-400 border-t border-slate-200 bg-white">
+      <footer className="text-center py-4 text-[10px] text-slate-400 border-t border-slate-200 bg-white">
         WorkforceOS Management Platform. Locked and Secured.
       </footer>
     </div>

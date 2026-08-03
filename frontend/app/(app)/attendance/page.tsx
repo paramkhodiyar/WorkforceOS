@@ -8,6 +8,7 @@ import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { ReadMoreText } from '../../../components/ui/ReadMoreText';
+import { triggerHaptic } from '../../../lib/utils/haptics';
 
 export default function AttendancePage() {
   const { user } = useAuth();
@@ -118,6 +119,7 @@ export default function AttendancePage() {
 
   async function handleCheckIn() {
     if (checking) return;
+    triggerHaptic([50, 50, 50]);
     setChecking(true);
 
     const performCheckIn = async (gpsLat?: number, gpsLng?: number) => {
@@ -128,6 +130,7 @@ export default function AttendancePage() {
           gpsLat,
           gpsLng
         });
+        triggerHaptic([60, 100, 60]);
         toast.success('Successfully checked in!');
         await loadData();
       } catch (err: any) {
@@ -156,9 +159,11 @@ export default function AttendancePage() {
 
   async function handleCheckOut() {
     if (checking) return;
+    triggerHaptic([60, 40]);
     setChecking(true);
     try {
       await api.attendance.checkOut();
+      triggerHaptic([40, 40]);
       toast.success('Successfully checked out!');
       await loadData();
     } catch (err: any) {

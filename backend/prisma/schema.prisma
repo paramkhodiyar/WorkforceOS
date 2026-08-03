@@ -356,6 +356,7 @@ model User {
   probationEndDate DateTime?
   ctcAnnual        Float?
   forcePasswordChange Boolean    @default(false)
+  hasSeenWelcome      Boolean    @default(false)
   salaryCalculationType SalaryCalculationType @default(AUTO)
   customHra             Float?
   customAllowance       Float?

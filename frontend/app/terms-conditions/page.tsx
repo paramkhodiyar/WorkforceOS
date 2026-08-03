@@ -18,8 +18,8 @@ export default function TermsOfServicePage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-10 py-4 px-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="h-7 w-7 rounded bg-primary text-white flex items-center justify-center font-bold text-sm">W</span>
+        <div className="flex items-center gap-2.5">
+          <img src="/workforceoslogo.png" alt="WorkforceOS Logo" className="h-7 w-7 object-contain rounded" />
           <span className="font-extrabold text-lg tracking-wider text-slate-900">WorkforceOS</span>
         </div>
         <BackHomeButton />

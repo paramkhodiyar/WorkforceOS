@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../lib/auth/AuthProvider';
+import CorporateAttendanceHeroAnimation from '../../../components/auth/CorporateAttendanceHeroAnimation';
 
 function isInFlutterWebView(): boolean {
   if (typeof window === 'undefined') return false;
@@ -139,26 +140,8 @@ export default function LoginPageClient() {
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 font-sans bg-surface">
 
-      {/* Desktop hero */}
-      <div className="relative hidden md:flex flex-col justify-between p-12 bg-slate-950 text-white overflow-hidden select-none">
-        <img src="/login_hero.png" alt="Office" className="absolute inset-0 w-full h-full object-cover opacity-85" />
-        <div className="absolute inset-0 bg-slate-950/20" />
-        <div className="relative z-10 flex items-center gap-3">
-          <img src="/workforceoslogo.png" alt="Logo" className="h-8 w-8 object-contain rounded" />
-          <span className="text-lg font-bold tracking-wider uppercase">WorkforceOS</span>
-        </div>
-        <div className="relative z-10 max-w-md">
-          <h2 className="text-3xl font-extrabold tracking-tight leading-tight">
-            The modern operating system for your enterprise team.
-          </h2>
-          <p className="mt-4 text-slate-200 text-body-sm leading-relaxed">
-            Consolidate attendance, leaves, tasks, payroll, and assets into a single clean workspace.
-          </p>
-        </div>
-        <div className="relative z-10 text-[11px] text-slate-400 font-semibold tracking-wider uppercase">
-          WorkforceOS Management Platform
-        </div>
-      </div>
+      {/* Desktop hero with animated corporate attendance illustration & live biometric scanner */}
+      <CorporateAttendanceHeroAnimation />
 
       {/* Sign-in panel */}
       <div className="w-full flex items-center justify-center p-8 lg:p-16 bg-white overflow-y-auto">

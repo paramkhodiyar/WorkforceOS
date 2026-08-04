@@ -157,7 +157,7 @@ export default function AppDirectoryPage() {
 
       {/* ── QUICK ACTIONS (ROLE SWITCH / LOGOUT) ── */}
       <div className="mt-8 pt-6 border-t border-slate-200 space-y-3">
-        {isAdmin && (
+        {(user?.originalRole === 'SYS_OWNER' || user?.systemRole === 'SYS_OWNER') && (
           <Link
             href="/select-role"
             className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 active:scale-98"

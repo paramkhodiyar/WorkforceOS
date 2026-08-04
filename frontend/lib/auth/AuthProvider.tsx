@@ -119,7 +119,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setLoading(false);
       const userRole = response.data.user?.systemRole;
-      if (userRole === 'SYS_OWNER' || userRole === 'ORG_ADMIN') {
+      const origRole = response.data.user?.originalRole;
+      if (userRole === 'SYS_OWNER' || origRole === 'SYS_OWNER') {
         router.push('/select-role');
       } else {
         router.push('/dashboard');

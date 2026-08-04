@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth/AuthProvider';
 
 const SIMULATION_ROLES = [
@@ -32,9 +33,22 @@ const SIMULATION_ROLES = [
 ];
 
 export default function SelectRolePage() {
-  const { switchRole, logout } = useAuth();
+  const { user, switchRole, logout } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [activeChoice, setActiveChoice] = useState<string | null>(null);
+
+  const isPlatformOwner = user?.systemRole === 'SYS_OWNER' || user?.originalRole === 'SYS_OWNER';
+
+  useEffect(() => {
+    if (user && !isPlatformOwner) {
+      router.push('/dashboard');
+    }
+  }, [user, isPlatformOwner, router]);
+
+  if (!user || !isPlatformOwner) {
+    return null;
+  }
 
   async function handleSelect(role: string) {
     setActiveChoice(role);
@@ -77,30 +91,32 @@ export default function SelectRolePage() {
         </div>
 
         {/* ── Owner Platform Quick Access ── */}
-        <Link
-          href="/admin/customers"
-          className="group w-full max-w-2xl mx-auto flex items-center justify-between gap-4 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-400 rounded-2xl px-6 py-4 transition-all duration-200 active:scale-[0.99] cursor-pointer"
-        >
-          <div className="flex items-center gap-4">
-            <div className="h-11 w-11 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[22px] text-slate-700">verified_user</span>
-            </div>
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-extrabold text-slate-900">Platform Owner</h3>
-                <span className="text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full">
-                  SYS_OWNER
-                </span>
+        {isPlatformOwner && (
+          <Link
+            href="/admin/customers"
+            className="group w-full max-w-2xl mx-auto flex items-center justify-between gap-4 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-400 rounded-2xl px-6 py-4 transition-all duration-200 active:scale-[0.99] cursor-pointer"
+          >
+            <div className="flex items-center gap-4">
+              <div className="h-11 w-11 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[22px] text-slate-700">verified_user</span>
               </div>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Access the master CMS — manage customer organizations, licenses, invoices, and platform keys.
-              </p>
+              <div className="text-left">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-extrabold text-slate-900">Platform Owner</h3>
+                  <span className="text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full">
+                    SYS_OWNER
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Access the master CMS — manage customer organizations, licenses, invoices, and platform keys.
+                </p>
+              </div>
             </div>
-          </div>
-          <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-700 text-[20px] transition-colors shrink-0">
-            arrow_forward
-          </span>
-        </Link>
+            <span className="material-symbols-outlined text-slate-400 group-hover:text-slate-700 text-[20px] transition-colors shrink-0">
+              arrow_forward
+            </span>
+          </Link>
+        )}
 
         {/* Roles Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">

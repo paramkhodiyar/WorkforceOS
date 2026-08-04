@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
-import LogoLoader from '../../../components/ui/LogoLoader';
+import { TableSkeleton } from '../../../components/ui/Skeleton';
 
 export default function PasswordManagerPage() {
   const { user } = useAuth();
@@ -89,7 +89,11 @@ export default function PasswordManagerPage() {
   }
 
   if (loading) {
-    return <LogoLoader size={72} text="Loading Directory..." />;
+    return (
+      <div className="space-y-6 font-sans">
+        <TableSkeleton rows={5} cols={5} />
+      </div>
+    );
   }
 
   if (!isAdmin) {

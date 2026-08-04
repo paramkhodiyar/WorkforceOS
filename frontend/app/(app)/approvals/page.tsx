@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
-import LogoLoader from '../../../components/ui/LogoLoader';
+import { TableSkeleton } from '../../../components/ui/Skeleton';
 import PaginationControls from '../../../components/ui/PaginationControls';
 
 export default function ApprovalsPage() {
@@ -120,7 +120,11 @@ export default function ApprovalsPage() {
   }
 
   if (loading) {
-    return <LogoLoader text="Loading Approvals Center..." />;
+    return (
+      <div className="space-y-6 font-sans">
+        <TableSkeleton rows={6} cols={5} />
+      </div>
+    );
   }
 
   const itemsPerPage = 8;

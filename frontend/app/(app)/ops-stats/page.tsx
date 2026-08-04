@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { useToast } from '../../../lib/toast/ToastProvider';
-import { TableSkeleton } from '../../../components/ui/Skeleton';
-import LogoLoader from '../../../components/ui/LogoLoader';
+import { TableSkeleton, ListSkeleton } from '../../../components/ui/Skeleton';
 
 export default function OpsStatsPage() {
   const { user } = useAuth();
@@ -454,7 +453,7 @@ export default function OpsStatsPage() {
             </div>
 
             {empLoading ? (
-              <LogoLoader size={60} text="Fetching stats..." />
+              <ListSkeleton count={3} />
             ) : empStats ? (
               <div className="space-y-6">
                 {/* Profile header */}

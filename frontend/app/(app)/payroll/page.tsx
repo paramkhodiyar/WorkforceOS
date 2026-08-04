@@ -7,6 +7,7 @@ import { useToast } from '../../../lib/toast/ToastProvider';
 import { TableSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
+import PaginationControls from '../../../components/ui/PaginationControls';
 
 export default function PayrollPage() {
   const { user } = useAuth();

@@ -6,7 +6,7 @@ import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import LiveClock from '../../../components/dashboard/LiveClock';
-import LogoLoader from '../../../components/ui/LogoLoader';
+import { CardSkeleton, TableSkeleton } from '../../../components/ui/Skeleton';
 import { triggerHaptic } from '../../../lib/utils/haptics';
 
 export default function DashboardPage() {
@@ -210,7 +210,12 @@ export default function DashboardPage() {
   }
 
   if (loading) {
-    return <LogoLoader text="Loading Dashboard Data..." />;
+    return (
+      <div className="space-y-6 font-sans">
+        <CardSkeleton count={4} />
+        <TableSkeleton rows={5} cols={5} />
+      </div>
+    );
   }
 
   if (!user) return null;

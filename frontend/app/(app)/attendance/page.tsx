@@ -327,7 +327,11 @@ export default function AttendancePage() {
   );
 
   if (loading) {
-    return <LogoLoader size={72} text="Loading Attendance Data..." />;
+    return (
+      <div className="space-y-6 font-sans">
+        <TableSkeleton rows={5} cols={6} />
+      </div>
+    );
   }
 
   return (

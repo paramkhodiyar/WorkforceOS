@@ -133,7 +133,7 @@ export default function SettingsPage() {
   async function loadLicense() {
     try {
       const res = await api.organization.getLicense();
-      setLicenseData(res.data);
+      setLicenseData(res.data || res);
     } catch (err: any) {
       console.error("Failed to load license details:", err);
     }

@@ -164,6 +164,21 @@ export class LicenseService {
       throw AppError.notFound("Organization not found");
     }
 
+    if (!org.licenseKey && org.subscriptionStatus === "TRIAL") {
+      const { key } = generatePersonalizedLicenseKey(org.name, "TRIAL", LicenseType.TRIAL);
+      const trialEndDate = org.trialEndDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      await prisma.organization.update({
+        where: { id: orgId },
+        data: {
+          licenseKey: key,
+          licenseStatus: LicenseStatus.ACTIVE,
+          licenseValidUntil: trialEndDate,
+          licenseMaxEmployees: 15
+        }
+      }).catch(() => {});
+      org.licenseKey = key;
+    }
+
     const activeEmployeesCount = await prisma.user.count({
       where: { organizationId: orgId, status: "ACTIVE", isDeleted: false }
     });

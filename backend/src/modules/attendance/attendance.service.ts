@@ -57,12 +57,12 @@ export class AttendanceService {
     const status = isLate ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
 
     let notes: string | undefined = undefined;
-    const org = await prisma.organization.findUnique({
-      where: { id: orgId }
+    const settings = await prisma.orgSettings.findUnique({
+      where: { organizationId: orgId }
     });
-    const OFFICE_LAT = org?.officeLatitude ?? 12.9716;
-    const OFFICE_LNG = org?.officeLongitude ?? 77.5946;
-    const MAX_RADIUS_METERS = org?.officeRadius ?? 200;
+    const OFFICE_LAT = settings?.officeLatitude ?? 12.9716;
+    const OFFICE_LNG = settings?.officeLongitude ?? 77.5946;
+    const MAX_RADIUS_METERS = settings?.officeRadius ?? 200;
 
     if (workMode === "WFO" && gpsLat !== undefined && gpsLng !== undefined && gpsLat !== null && gpsLng !== null) {
       const R = 6371e3; // Earth's radius in meters
@@ -474,7 +474,10 @@ export class AttendanceService {
       throw AppError.badRequest("Adjustment request is already resolved");
     }
 
-    if (request.requestedBy === approverId) {
+    const approver = await prisma.user.findUnique({ where: { id: approverId }, select: { systemRole: true } });
+    const isOrgAdmin = approver?.systemRole === "ORG_ADMIN" || approver?.systemRole === "SUPER_ADMIN";
+
+    if (request.requestedBy === approverId && !isOrgAdmin) {
       throw AppError.forbidden("Two-person rule violation: You cannot approve your own adjustment request");
     }
 

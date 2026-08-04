@@ -210,7 +210,7 @@ export default function DashboardPage() {
   }
 
   if (loading) {
-    return <LogoLoader size={72} text="Loading Dashboard Data..." />;
+    return <LogoLoader text="Loading Dashboard Data..." />;
   }
 
   if (!user) return null;

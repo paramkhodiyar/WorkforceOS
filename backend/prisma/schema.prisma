@@ -210,9 +210,6 @@ model Organization {
   isDeleted   Boolean  @default(false)
   deletedAt   DateTime?
   enabledFeatures String[] @default(["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "notifications", "audit", "calendar"])
-  officeLatitude  Float?
-  officeLongitude Float?
-  officeRadius    Float?
 
   // Subscription & Onboarding fields
   subscriptionStatus SubscriptionStatus @default(TRIAL)
@@ -245,6 +242,35 @@ model Organization {
   profileUpdateRequests ProfileUpdateRequest[]
   licenseKeys  LicenseKey[]
   customerInvoices CustomerInvoice[]
+  orgSettings  OrgSettings?
+}
+
+model OrgSettings {
+  id                  String   @id @default(cuid())
+  organizationId      String   @unique
+
+  // Office Location & Geofencing
+  officeLatitude      Float?
+  officeLongitude     Float?
+  officeRadius        Float?   @default(200)
+  officeName          String?  @default("Head Office")
+
+  // Work Schedule
+  workStartTime       String   @default("09:00")
+  workEndTime         String   @default("18:00")
+  totalWorkHours      Float    @default(9.0)
+  gracePeriodMinutes  Int      @default(15)
+
+  // Payroll Component Defaults (% of basic salary)
+  hraPercent          Float    @default(40)
+  pfPercent           Float    @default(12)
+  specialAllowPercent Float    @default(20)
+  lopDeductionEnabled Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model LicenseKey {

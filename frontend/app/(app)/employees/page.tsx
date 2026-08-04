@@ -10,6 +10,7 @@ import { ThreeDotMenu } from '../../../components/ui/ThreeDotMenu';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
 import { CustomDatePicker } from '../../../components/ui/CustomDatePicker';
 import { CustomSelect } from '../../../components/ui/CustomSelect';
+import PaginationControls from '../../../components/ui/PaginationControls';
 
 export default function EmployeesPage() {
   const { user } = useAuth();
@@ -743,29 +744,15 @@ export default function EmployeesPage() {
           </>
         )}
 
-        {totalPages > 1 && (
-          <div className="p-4 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-body-sm text-outline">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredEmployees.length)} of {filteredEmployees.length} entries
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-                className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
-              >
-                Previous
-              </button>
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(currentPage + 1)}
-                className="px-3 py-1.5 border border-slate-200 rounded-lg text-body-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer text-on-surface"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="p-4 border-t border-slate-100">
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredEmployees.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
 
       {selectedIds.length > 0 && (

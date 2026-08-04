@@ -672,6 +672,12 @@ export class EmployeesService {
         }
       });
 
+      const userRole = req?.user?.systemRole;
+      if (userRole === SystemRole.ORG_ADMIN || userRole === SystemRole.SUPER_ADMIN) {
+        await this.approveProfileRequest(request.id, orgId, userId, req);
+        return { ...request, status: "APPROVED" };
+      }
+
       // Find organization admins and HR to notify them
       const adminsAndHr = await prisma.user.findMany({
         where: {

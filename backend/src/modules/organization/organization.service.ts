@@ -50,40 +50,8 @@ export class OrganizationService {
     actorId: string,
     req?: any
   ) {
-    const org = await prisma.organization.findUnique({
-      where: { id }
-    });
-
-    if (!org) {
-      throw new Error("Organization not found");
-    }
-
-    const updated = await prisma.organization.update({
-      where: { id },
-      data: {
-        officeLatitude: data.officeLatitude,
-        officeLongitude: data.officeLongitude,
-        officeRadius: data.officeRadius
-      }
-    });
-
-    await AuditService.log({
-      organizationId: id,
-      actorId,
-      action: AuditAction.UPDATED,
-      module: "organization",
-      targetId: id,
-      targetType: "Organization",
-      oldValue: {
-        officeLatitude: org.officeLatitude,
-        officeLongitude: org.officeLongitude,
-        officeRadius: org.officeRadius
-      },
-      newValue: data,
-      req
-    });
-
-    return updated;
+    const { OrgSettingsService } = await import("./orgSettings.service");
+    return OrgSettingsService.update(id, data, actorId, req);
   }
 
   static async verifyUpi(id: string, utr: string, tier: any, actorId: string, req?: any) {

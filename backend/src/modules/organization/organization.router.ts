@@ -10,7 +10,9 @@ import {
   verifyUpi,
   listHolidays,
   createHoliday,
-  deleteHoliday
+  deleteHoliday,
+  getOrgSettings,
+  updateOrgSettings
 } from "./organization.controller";
 import { updateFeaturesSchema, updateLocationSchema } from "./organization.validation";
 import { createHolidaySchema } from "./holiday.validation";
@@ -22,6 +24,10 @@ router.get("/slug/:slug", getOrgBySlug);
 router.post("/verify-upi", authenticate, verifyUpi);
 router.patch("/:orgId/features", authenticate, validate(updateFeaturesSchema), updateOrgFeatures);
 router.patch("/:orgId/location", authenticate, validate(updateLocationSchema), updateOrgLocation);
+
+// Workplace Settings (OrgSettings)
+router.get("/settings", authenticate, getOrgSettings);
+router.patch("/settings", authenticate, updateOrgSettings);
 
 // Holiday Management
 router.get("/holidays", authenticate, listHolidays);

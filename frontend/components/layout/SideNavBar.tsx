@@ -81,6 +81,13 @@ export default function SideNavBar() {
       show: isAdmin || isHR || isActualManager || hasTeamsOrDepts
     },
     {
+      label: 'Approvals',
+      icon: 'fact_check',
+      href: '/approvals',
+      show: isAdmin || isHR || isActualManager,
+      badge: hasPendingRequests
+    },
+    {
       label: 'Employees',
       icon: 'badge',
       href: '/employees',

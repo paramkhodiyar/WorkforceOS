@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
 
@@ -52,9 +53,18 @@ export default function KnowledgePage() {
 
   return (
     <div className="space-y-6 font-sans">
-      <div>
-        <h1 className="text-headline-md font-bold text-on-surface">Policies & Handbook</h1>
-        <p className="text-body-sm text-outline">Search and read corporate documents and compliance articles</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-headline-md font-bold text-slate-900">Policies &amp; Notice Board</h1>
+          <p className="text-body-sm text-slate-500">Search and read corporate documents, notices, and compliance handbooks</p>
+        </div>
+        <Link
+          href="/knowledge/new"
+          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px]">edit_note</span>
+          Create Notice
+        </Link>
       </div>
 
       <div className="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm">

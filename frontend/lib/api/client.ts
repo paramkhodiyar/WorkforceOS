@@ -494,6 +494,11 @@ export const api = {
   knowledge: {
     list: (): Promise<any> => request('/knowledge/articles'),
     get: (id: string): Promise<any> => request(`/knowledge/articles/${id}`),
+    create: (data: any): Promise<any> =>
+      request('/knowledge/articles', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
   audit: {
     logs: (): Promise<any> => request('/audit/logs'),
@@ -708,6 +713,27 @@ export const api = {
       request('/chatbot/internal', {
         method: 'POST',
         body: JSON.stringify({ message }),
+      }),
+  },
+  orgSettings: {
+    get: (): Promise<any> => request('/organization/settings'),
+    update: (data: {
+      officeLatitude?: number | null;
+      officeLongitude?: number | null;
+      officeRadius?: number | null;
+      officeName?: string | null;
+      workStartTime?: string;
+      workEndTime?: string;
+      totalWorkHours?: number;
+      gracePeriodMinutes?: number;
+      hraPercent?: number;
+      pfPercent?: number;
+      specialAllowPercent?: number;
+      lopDeductionEnabled?: boolean;
+    }): Promise<any> =>
+      request('/organization/settings', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
       }),
   },
 };

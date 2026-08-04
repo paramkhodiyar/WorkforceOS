@@ -30,6 +30,14 @@ export default function SettingsPage() {
   const [officeLat, setOfficeLat] = useState<string>('');
   const [officeLng, setOfficeLng] = useState<string>('');
   const [officeRadius, setOfficeRadius] = useState<string>('');
+  const [workStartTime, setWorkStartTime] = useState<string>('09:00');
+  const [workEndTime, setWorkEndTime] = useState<string>('18:00');
+  const [totalWorkHours, setTotalWorkHours] = useState<string>('9.0');
+  const [gracePeriodMinutes, setGracePeriodMinutes] = useState<string>('15');
+  const [hraPercent, setHraPercent] = useState<string>('40');
+  const [pfPercent, setPfPercent] = useState<string>('12');
+  const [specialAllowPercent, setSpecialAllowPercent] = useState<string>('20');
+  const [lopDeductionEnabled, setLopDeductionEnabled] = useState<boolean>(true);
   const [savingLocation, setSavingLocation] = useState(false);
 
   const [addressQuery, setAddressQuery] = useState('');
@@ -79,12 +87,13 @@ export default function SettingsPage() {
   async function loadData() {
     try {
       setLoading(true);
-      const [deptRes, teamRes, empRes, orgRes, reqRes] = await Promise.all([
+      const [deptRes, teamRes, empRes, orgRes, reqRes, settingsRes] = await Promise.all([
         api.departments.list(),
         api.teams.list(),
         api.employees.list({ limit: 1000 }),
         api.organization.get(),
         api.employees.listProfileRequests().catch(() => ({ data: [] })),
+        api.orgSettings.get().catch(() => null),
       ]);
 
       setDepartments(deptRes.data || []);
@@ -94,7 +103,20 @@ export default function SettingsPage() {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('profile-requests-updated'));
       }
-      if (orgRes?.data) {
+      if (settingsRes?.data) {
+        const s = settingsRes.data;
+        setOfficeLat(s.officeLatitude !== null && s.officeLatitude !== undefined ? String(s.officeLatitude) : '');
+        setOfficeLng(s.officeLongitude !== null && s.officeLongitude !== undefined ? String(s.officeLongitude) : '');
+        setOfficeRadius(s.officeRadius !== null && s.officeRadius !== undefined ? String(s.officeRadius) : '200');
+        setWorkStartTime(s.workStartTime || '09:00');
+        setWorkEndTime(s.workEndTime || '18:00');
+        setTotalWorkHours(s.totalWorkHours !== undefined ? String(s.totalWorkHours) : '9.0');
+        setGracePeriodMinutes(s.gracePeriodMinutes !== undefined ? String(s.gracePeriodMinutes) : '15');
+        setHraPercent(s.hraPercent !== undefined ? String(s.hraPercent) : '40');
+        setPfPercent(s.pfPercent !== undefined ? String(s.pfPercent) : '12');
+        setSpecialAllowPercent(s.specialAllowPercent !== undefined ? String(s.specialAllowPercent) : '20');
+        setLopDeductionEnabled(s.lopDeductionEnabled ?? true);
+      } else if (orgRes?.data) {
         setOfficeLat(orgRes.data.officeLatitude !== null ? String(orgRes.data.officeLatitude) : '');
         setOfficeLng(orgRes.data.officeLongitude !== null ? String(orgRes.data.officeLongitude) : '');
         setOfficeRadius(orgRes.data.officeRadius !== null ? String(orgRes.data.officeRadius) : '');
@@ -273,23 +295,23 @@ export default function SettingsPage() {
         throw new Error('Please enter valid numeric values for latitude, longitude, and radius.');
       }
 
-      await api.organization.updateLocation(user.organizationId, {
+      await api.orgSettings.update({
         officeLatitude: lat,
         officeLongitude: lng,
         officeRadius: rad,
+        workStartTime,
+        workEndTime,
+        totalWorkHours: parseFloat(totalWorkHours) || 9.0,
+        gracePeriodMinutes: parseInt(gracePeriodMinutes) || 15,
+        hraPercent: parseFloat(hraPercent) || 40,
+        pfPercent: parseFloat(pfPercent) || 12,
+        specialAllowPercent: parseFloat(specialAllowPercent) || 20,
+        lopDeductionEnabled,
       });
 
-      // Refresh data
-      const orgRes = await api.organization.get();
-      if (orgRes?.data) {
-        setOfficeLat(orgRes.data.officeLatitude !== null ? String(orgRes.data.officeLatitude) : '');
-        setOfficeLng(orgRes.data.officeLongitude !== null ? String(orgRes.data.officeLongitude) : '');
-        setOfficeRadius(orgRes.data.officeRadius !== null ? String(orgRes.data.officeRadius) : '');
-      }
-
-      toast.success('Office location & geofencing settings saved successfully.');
+      toast.success('Workplace settings saved successfully.');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to save location settings.');
+      setErrorMessage(err.message || 'Failed to save workplace settings.');
     } finally {
       setSavingLocation(false);
     }
@@ -516,7 +538,7 @@ export default function SettingsPage() {
               activeTab === 'location' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Office Location
+            Workplace Settings
           </button>
         )}
         {isAdmin && (
@@ -955,142 +977,247 @@ export default function SettingsPage() {
             </div>
           )}
           {activeTab === 'location' && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm max-w-lg space-y-6">
-              <div>
-                <h2 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-1">Office Location & Geofencing</h2>
-                <p className="text-body-sm text-outline">
-                  Configure your office coordinates and maximum geofencing allowance radius. 
-                  Clock-ins marked as WFO (Work From Office) will verify users are within bounds.
-                </p>
-              </div>
-
-              <form onSubmit={handleSaveLocation} className="space-y-4">
-                {/* Address Search */}
-                <div className="space-y-1.5 text-left">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
-                    Search Office Address
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Type address, e.g. Dunder Mifflin Scranton..."
-                      value={addressQuery}
-                      onChange={(e) => handleAddressSearch(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
-                    />
-                    {addressSuggestions.length > 0 && (
-                      <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50 max-h-48 overflow-y-auto">
-                        {addressSuggestions.map((s: any) => (
-                          <button
-                            key={s.place_id}
-                            type="button"
-                            onClick={() => {
-                              setOfficeLat(parseFloat(s.lat).toFixed(6));
-                              setOfficeLng(parseFloat(s.lon).toFixed(6));
-                              setAddressQuery(s.display_name);
-                              setAddressSuggestions([]);
-                            }}
-                            className="w-full text-left px-3 py-2 text-[11px] hover:bg-slate-50 text-slate-700 font-medium truncate block border-b border-slate-100 last:border-0 cursor-pointer"
-                          >
-                            {s.display_name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+            <div className="max-w-2xl space-y-6">
+              <form onSubmit={handleSaveLocation} className="space-y-6">
+                {/* Section 1: Office Location & Geofencing */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
+                  <div>
+                    <h2 className="text-label-md font-bold text-slate-800 uppercase tracking-wider mb-1">Office Location &amp; Geofencing</h2>
+                    <p className="text-body-sm text-slate-500">
+                      Configure office coordinates and geofence allowance radius for WFO clock-ins.
+                    </p>
                   </div>
-                  <p className="text-[10px] text-slate-400">
-                    Search your company office name or street address to automatically retrieve coordinates.
-                  </p>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                  {/* Address Search */}
                   <div className="space-y-1.5 text-left">
                     <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
-                      Office Latitude
+                      Search Office Address
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Type address, e.g. Dunder Mifflin Scranton..."
+                        value={addressQuery}
+                        onChange={(e) => handleAddressSearch(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
+                      />
+                      {addressSuggestions.length > 0 && (
+                        <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50 max-h-48 overflow-y-auto">
+                          {addressSuggestions.map((s: any) => (
+                            <button
+                              key={s.place_id}
+                              type="button"
+                              onClick={() => {
+                                setOfficeLat(parseFloat(s.lat).toFixed(6));
+                                setOfficeLng(parseFloat(s.lon).toFixed(6));
+                                setAddressQuery(s.display_name);
+                                setAddressSuggestions([]);
+                              }}
+                              className="w-full text-left px-3 py-2 text-[11px] hover:bg-slate-50 text-slate-700 font-medium truncate block border-b border-slate-100 last:border-0 cursor-pointer"
+                            >
+                              {s.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                        Office Latitude
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 12.9716"
+                        value={officeLat}
+                        onChange={(e) => setOfficeLat(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                        Office Longitude
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 77.5946"
+                        value={officeLng}
+                        onChange={(e) => setOfficeLng(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                      Allowable Geofence Radius (meters)
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. 12.9716"
-                      value={officeLat}
-                      onChange={(e) => setOfficeLat(e.target.value)}
+                      placeholder="e.g. 200"
+                      value={officeRadius}
+                      onChange={(e) => setOfficeRadius(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
                     />
                   </div>
-                  <div className="space-y-1.5 text-left">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
-                      Office Longitude
-                    </label>
+
+                  {/* Embedded Map Preview */}
+                  {officeLat && officeLng && !isNaN(parseFloat(officeLat)) && !isNaN(parseFloat(officeLng)) && (
+                    <div className="w-full h-44 rounded-xl overflow-hidden border border-slate-200 shadow-inner">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src={`https://maps.google.com/maps?q=${parseFloat(officeLat)},${parseFloat(officeLng)}&z=15&output=embed`}
+                        frameBorder="0"
+                        scrolling="no"
+                        className="border-0"
+                      />
+                    </div>
+                  )}
+
+                  <div className="pt-2 flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.geolocation) {
+                          navigator.geolocation.getCurrentPosition((pos) => {
+                            setOfficeLat(pos.coords.latitude.toFixed(6));
+                            setOfficeLng(pos.coords.longitude.toFixed(6));
+                            setAddressQuery('Current GPS Location');
+                          }, (err) => {
+                            toast.error('Unable to fetch GPS location.');
+                          });
+                        }
+                      }}
+                      className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">my_location</span>
+                      <span>Use Current Location</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Section 2: Shift & Work Schedule */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
+                  <div>
+                    <h2 className="text-label-md font-bold text-slate-800 uppercase tracking-wider mb-1">Work Schedule &amp; Shift Timing</h2>
+                    <p className="text-body-sm text-slate-500">
+                      Set standard office hours, expected daily hours, and late check-in grace period.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Work Start Time</label>
+                      <input
+                        type="time"
+                        value={workStartTime}
+                        onChange={(e) => setWorkStartTime(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Work End Time</label>
+                      <input
+                        type="time"
+                        value={workEndTime}
+                        onChange={(e) => setWorkEndTime(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Required Work Hours</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        placeholder="9.0"
+                        value={totalWorkHours}
+                        onChange={(e) => setTotalWorkHours(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Grace Period (Minutes)</label>
+                      <input
+                        type="number"
+                        placeholder="15"
+                        value={gracePeriodMinutes}
+                        onChange={(e) => setGracePeriodMinutes(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Payroll Component Defaults */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
+                  <div>
+                    <h2 className="text-label-md font-bold text-slate-800 uppercase tracking-wider mb-1">Payroll Component Defaults</h2>
+                    <p className="text-body-sm text-slate-500">
+                      Configure default percentage splits of Basic salary for HRA, PF, and Special Allowances.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">HRA (% of Basic)</label>
+                      <input
+                        type="number"
+                        placeholder="40"
+                        value={hraPercent}
+                        onChange={(e) => setHraPercent(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">PF (% of Basic)</label>
+                      <input
+                        type="number"
+                        placeholder="12"
+                        value={pfPercent}
+                        onChange={(e) => setPfPercent(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Special Allowance (%)</label>
+                      <input
+                        type="number"
+                        placeholder="20"
+                        value={specialAllowPercent}
+                        onChange={(e) => setSpecialAllowPercent(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
                     <input
-                      type="text"
-                      placeholder="e.g. 77.5946"
-                      value={officeLng}
-                      onChange={(e) => setOfficeLng(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
+                      type="checkbox"
+                      id="lopDeduction"
+                      checked={lopDeductionEnabled}
+                      onChange={(e) => setLopDeductionEnabled(e.target.checked)}
+                      className="h-4 w-4 accent-slate-900 rounded cursor-pointer"
                     />
+                    <label htmlFor="lopDeduction" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                      Enable automatic Loss of Pay (LOP) deductions for unapproved absences
+                    </label>
                   </div>
                 </div>
 
-                <div className="space-y-1.5 text-left">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
-                    Allowable Radius (meters)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 200"
-                    value={officeRadius}
-                    onChange={(e) => setOfficeRadius(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl p-3 text-xs focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-800 font-semibold outline-none"
-                  />
-                  <p className="text-[10px] text-slate-450">
-                    Minimum: 10m. Reverts to default 200m if empty.
-                  </p>
-                </div>
-
-                {/* Embedded Map Preview */}
-                {officeLat && officeLng && !isNaN(parseFloat(officeLat)) && !isNaN(parseFloat(officeLng)) && (
-                  <div className="w-full h-48 rounded-xl overflow-hidden border border-slate-200 shadow-inner mt-4">
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      src={`https://maps.google.com/maps?q=${parseFloat(officeLat)},${parseFloat(officeLng)}&z=15&output=embed`}
-                      frameBorder="0"
-                      scrolling="no"
-                      marginHeight={0}
-                      marginWidth={0}
-                      className="border-0"
-                    />
-                  </div>
-                )}
-
-                <div className="pt-2 flex justify-between items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition((pos) => {
-                          setOfficeLat(pos.coords.latitude.toFixed(6));
-                          setOfficeLng(pos.coords.longitude.toFixed(6));
-                          setAddressQuery('Current GPS Location');
-                        }, (err) => {
-                          toast.error('Unable to fetch your GPS location. Please enter the coordinates manually.');
-                        });
-                      } else {
-                        toast.error('Geolocation is not supported by your browser. Please enter coordinates manually.');
-                      }
-                    }}
-                    className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-650 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                  >
-                    <span className="material-symbols-outlined text-[16px] text-primary">my_location</span>
-                    <span>Use Current Location</span>
-                  </button>
-
+                {/* Save Workplace Settings */}
+                <div className="pt-2">
                   <button
                     type="submit"
                     disabled={savingLocation}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
+                    className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-50"
                   >
-                    {savingLocation && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0"></div>}
-                    <span>Save Geofencing</span>
+                    {savingLocation ? 'Saving Workplace Settings...' : 'Save Workplace Settings'}
                   </button>
                 </div>
               </form>

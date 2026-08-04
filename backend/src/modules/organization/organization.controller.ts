@@ -1,9 +1,30 @@
 import { Request, Response } from "express";
 import { OrganizationService } from "./organization.service";
+import { OrgSettingsService } from "./orgSettings.service";
 import { sendSuccess } from "../../utils/response.util";
 import { asyncHandler } from "../../utils/asyncHandler.util";
 import { AppError } from "../../utils/errors.util";
 import { prisma } from "../../config/database";
+
+const isAdminRole = (role: string) =>
+  role === "SYS_OWNER" || role === "SUPER_ADMIN" || role === "ORG_ADMIN";
+
+export const getOrgSettings = asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.org!.id;
+  const settings = await OrgSettingsService.get(orgId);
+  return sendSuccess(res, settings);
+});
+
+export const updateOrgSettings = asyncHandler(async (req: Request, res: Response) => {
+  const userRole = req.user!.systemRole;
+  const originalRole = req.user!.originalRole;
+  if (!isAdminRole(userRole) && originalRole !== "SYS_OWNER") {
+    throw AppError.forbidden("Only organization administrators can update workplace settings");
+  }
+  const orgId = req.org!.id;
+  const settings = await OrgSettingsService.update(orgId, req.body, req.user!.id, req);
+  return sendSuccess(res, settings, "Workplace settings updated successfully");
+});
 
 export const getOrgMetadata = asyncHandler(async (req: Request, res: Response) => {
   const org = await OrganizationService.getById(req.org!.id);

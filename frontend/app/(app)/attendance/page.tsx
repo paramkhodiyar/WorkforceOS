@@ -10,6 +10,7 @@ import { Button } from '../../../components/ui/Button';
 import { ReadMoreText } from '../../../components/ui/ReadMoreText';
 import { triggerHaptic } from '../../../lib/utils/haptics';
 import LogoLoader from '../../../components/ui/LogoLoader';
+import PaginationControls from '../../../components/ui/PaginationControls';
 
 export default function AttendancePage() {
   const { user } = useAuth();
@@ -848,29 +849,13 @@ export default function AttendancePage() {
                 </tbody>
               </table>
 
-              {totalPagesTeam > 1 && (
-                <div className="pt-4 mt-4 border-t border-outline-variant flex items-center justify-between">
-                  <span className="text-[11px] text-outline">
-                    Showing {(currentPageTeam - 1) * itemsPerPage + 1} to {Math.min(currentPageTeam * itemsPerPage, filteredTeam.length)} of {filteredTeam.length} entries
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      disabled={currentPageTeam === 1}
-                      onClick={() => setCurrentPageTeam(currentPageTeam - 1)}
-                      className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
-                    >
-                      Prev
-                    </button>
-                    <button
-                      disabled={currentPageTeam === totalPagesTeam}
-                      onClick={() => setCurrentPageTeam(currentPageTeam + 1)}
-                      className="px-2 py-1 border border-outline-variant hover:bg-surface-container-low rounded text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer text-on-surface"
-                    >
-                      Next
-                    </button>
-                  </div>
-</div>
-              )}
+              <PaginationControls
+                currentPage={currentPageTeam}
+                totalPages={totalPagesTeam}
+                totalItems={filteredTeam.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPageTeam}
+              />
             </>
           )}
         </div>

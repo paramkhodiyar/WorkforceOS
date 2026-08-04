@@ -32,27 +32,46 @@ export default function PlatformAdminCmsPage() {
 
   const isPlatformOwner = user?.systemRole === 'SYS_OWNER' || user?.originalRole === 'SYS_OWNER' || user?.systemRole === 'SUPER_ADMIN';
 
+  const [initialLoaded, setInitialLoaded] = useState(false);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      if (activeTab === 'CUSTOMERS') {
-        const res = await api.adminCms.listCustomers({ search });
-        const all = Array.isArray(res.data?.items) ? res.data.items : Array.isArray(res.data) ? res.data : Array.isArray(res.items) ? res.items : [];
-        setCustomers(all.filter((o: any) => o.subscriptionStatus !== 'TRIAL'));
-      } else if (activeTab === 'TRIALS') {
-        const res = await api.adminCms.listCustomers({ search });
-        const all = Array.isArray(res.data?.items) ? res.data.items : Array.isArray(res.data) ? res.data : Array.isArray(res.items) ? res.items : [];
-        setTrials(all.filter((o: any) => o.subscriptionStatus === 'TRIAL'));
-      } else if (activeTab === 'INVOICES') {
-        const res = await api.adminCms.listInvoices();
+      const [custRes, invRes] = await Promise.allSettled([
+        api.adminCms.listCustomers({ search, limit: 100 }),
+        api.adminCms.listInvoices()
+      ]);
+
+      let allOrgs: any[] = [];
+      if (custRes.status === 'fulfilled') {
+        const res = custRes.value;
+        allOrgs = Array.isArray(res.data?.items) ? res.data.items : Array.isArray(res.data) ? res.data : Array.isArray(res.items) ? res.items : [];
+      }
+
+      const activePaid = allOrgs.filter((o: any) => o.subscriptionStatus !== 'TRIAL');
+      const activeTrials = allOrgs.filter((o: any) => o.subscriptionStatus === 'TRIAL');
+
+      setCustomers(activePaid);
+      setTrials(activeTrials);
+
+      if (invRes.status === 'fulfilled') {
+        const res = invRes.value;
         setInvoices(Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : []);
       }
+
+      // On initial load, if there are 0 paid customers but trials exist, auto-default to TRIALS tab so user sees data immediately!
+      if (!initialLoaded) {
+        setInitialLoaded(true);
+        if (activePaid.length === 0 && activeTrials.length > 0) {
+          setActiveTab('TRIALS');
+        }
+      }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to load CMS data');
+      console.error('Error loading CMS data:', err);
     } finally {
       setLoading(false);
     }
-  }, [activeTab, search]);
+  }, [search, initialLoaded]);
 
   useEffect(() => {
     loadData();
@@ -121,10 +140,10 @@ export default function PlatformAdminCmsPage() {
     );
   }
 
-  const TABS: { id: TabId; label: string; icon: string }[] = [
-    { id: 'CUSTOMERS', label: 'Customer Orgs', icon: 'corporate_fare' },
-    { id: 'TRIALS', label: 'Trial Registrations', icon: 'science' },
-    { id: 'INVOICES', label: 'Payment Invoices', icon: 'receipt_long' },
+  const TABS: { id: TabId; label: string; icon: string; count?: number }[] = [
+    { id: 'CUSTOMERS', label: 'Customer Orgs', icon: 'corporate_fare', count: customers.length },
+    { id: 'TRIALS', label: 'Trial Registrations', icon: 'science', count: trials.length },
+    { id: 'INVOICES', label: 'Payment Invoices', icon: 'receipt_long', count: invoices.length },
     { id: 'MINT_KEY', label: 'Mint License Key', icon: 'key' },
   ];
 
@@ -285,7 +304,16 @@ export default function PlatformAdminCmsPage() {
             }`}
           >
             <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
-            {tab.label}
+            <span>{tab.label}</span>
+            {tab.count !== undefined && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                activeTab === tab.id
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-slate-100 text-slate-600'
+              }`}>
+                {tab.count}
+              </span>
+            )}
           </button>
         ))}
       </div>

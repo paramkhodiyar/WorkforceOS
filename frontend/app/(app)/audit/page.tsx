@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api/client';
 import { useAuth } from '../../../lib/auth/AuthProvider';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
+import { PermissionGuard } from '../../../components/auth/PermissionGuard';
 
 export default function AuditPage() {
   const { user } = useAuth();
@@ -76,7 +77,8 @@ export default function AuditPage() {
   }
 
   return (
-    <div className="space-y-6 font-sans">
+    <PermissionGuard requireAdmin>
+      <div className="space-y-6 font-sans">
       <div>
         <h1 className="text-headline-md font-bold text-on-surface">System Audit Trail</h1>
         <p className="text-body-sm text-outline">Inspect real-time operations, logs, and state changes</p>
@@ -201,5 +203,6 @@ export default function AuditPage() {
         )}
       </div>
     </div>
+    </PermissionGuard>
   );
 }

@@ -6,6 +6,7 @@ import { useAuth } from '../../../lib/auth/AuthProvider';
 import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
+import { PermissionGuard } from '../../../components/auth/PermissionGuard';
 
 export default function PasswordManagerPage() {
   const { user } = useAuth();
@@ -92,31 +93,28 @@ export default function PasswordManagerPage() {
     );
   }
 
-  if (!isAdmin) {
-    return null;
-  }
-
   return (
-    <div className="space-y-6 font-sans pb-12">
-      <div>
-        <h1 className="text-headline-md font-bold text-on-surface flex items-center gap-2">
-          <span className="material-symbols-outlined text-[28px] text-primary">vpn_key</span>
-          Admin Password Manager
-        </h1>
-        <p className="text-body-sm text-outline">
-          Securely manage organization passwords, rotate credentials, and override access locks.
-        </p>
-      </div>
+    <PermissionGuard requireAdmin>
+      <div className="space-y-6 font-sans pb-12">
+        <div>
+          <h1 className="text-headline-md font-bold text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-[28px] text-primary">vpn_key</span>
+            Admin Password Manager
+          </h1>
+          <p className="text-body-sm text-outline">
+            Securely manage organization passwords, rotate credentials, and override access locks.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Side: Employee List */}
-        <div className="lg:col-span-1 bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[600px]">
-          <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
-                search
-              </span>
-              <input
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* Left Side: Employee List */}
+          <div className="lg:col-span-1 bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[600px]">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                  search
+                </span>
+                <input
                 type="text"
                 placeholder="Search staff by name or email..."
                 value={searchQuery}
@@ -346,5 +344,6 @@ export default function PasswordManagerPage() {
         </div>
       </div>
     </div>
-  );
+  </PermissionGuard>
+);
 }

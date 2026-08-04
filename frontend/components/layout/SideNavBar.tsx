@@ -16,7 +16,7 @@ export default function SideNavBar() {
     const sysRole = user.systemRole;
     const usrRoles = user.roles || [];
     const isHrRole = usrRoles.some((r: any) => r.roleName === 'HR_MANAGER');
-    const isAdminRole = sysRole === 'SUPER_ADMIN' || sysRole === 'ORG_ADMIN';
+    const isAdminRole = sysRole === 'SUPER_ADMIN' || sysRole === 'ORG_ADMIN' || user.originalRole === 'SYS_OWNER';
 
     function checkPending() {
       if (isAdminRole || isHrRole) {
@@ -31,7 +31,6 @@ export default function SideNavBar() {
 
     checkPending();
 
-    // Refresh badge every 60 seconds so admins see new requests without a page reload
     const interval = setInterval(checkPending, 60000);
 
     if (typeof window !== 'undefined') {
@@ -50,7 +49,7 @@ export default function SideNavBar() {
   const systemRole = user.systemRole;
   const orgName = user?.organization?.name || 'WorkforceOS';
   const userRoles = user.roles || [];
-  const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
+  const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER') || systemRole === 'HR';
   const isFinance = userRoles.some((r: any) => r.roleName === 'FINANCE_MANAGER');
   const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
   const isLeaderOrHead = (user.departmentHead && user.departmentHead.length > 0) || (user.teamLead && user.teamLead.length > 0);
@@ -59,7 +58,7 @@ export default function SideNavBar() {
     isLeaderOrHead ||
     (user.teams && user.teams.length > 0) ||
     user.departmentId !== null;
-  const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+  const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN' || user.originalRole === 'SYS_OWNER';
 
   const activeFeatures = (features && features.length > 0) ? features : [
     'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar'
@@ -95,67 +94,67 @@ export default function SideNavBar() {
       label: 'Employees',
       icon: 'badge',
       href: '/employees',
-      show: (isAdmin || isHR || isActualManager) && features.includes('employees')
+      show: (isAdmin || isHR || isActualManager) && activeFeatures.includes('employees')
     },
     {
       label: 'Statuses',
       icon: 'wifi',
       href: '/statuses',
-      show: (isAdmin || isHR || isActualManager) && features.includes('attendance')
+      show: (isAdmin || isHR || isActualManager) && activeFeatures.includes('attendance')
     },
     {
       label: 'Attendance',
       icon: 'event_available',
       href: '/attendance',
-      show: features.includes('attendance')
+      show: activeFeatures.includes('attendance')
     },
     {
       label: 'Leave',
       icon: 'event_busy',
       href: '/leave',
-      show: features.includes('leave')
+      show: activeFeatures.includes('leave')
     },
     {
       label: 'Tasks',
       icon: 'assignment',
       href: '/tasks',
-      show: features.includes('tasks')
+      show: activeFeatures.includes('tasks')
     },
     {
       label: 'Performance',
       icon: 'trending_up',
       href: '/performance',
-      show: features.includes('performance')
+      show: activeFeatures.includes('performance')
     },
     {
       label: 'Calendar',
       icon: 'calendar_today',
       href: '/calendar',
-      show: features.includes('calendar')
+      show: activeFeatures.includes('calendar')
     },
     {
       label: 'Payroll',
       icon: 'payments',
       href: '/payroll',
-      show: features.includes('payroll')
+      show: (isAdmin || isHR || isFinance) && activeFeatures.includes('payroll')
     },
     {
       label: 'Expenses',
       icon: 'receipt_long',
       href: '/expenses',
-      show: features.includes('expenses')
+      show: activeFeatures.includes('expenses')
     },
     {
       label: 'Assets',
       icon: 'inventory_2',
       href: '/assets',
-      show: features.includes('assets')
+      show: activeFeatures.includes('assets')
     },
     {
       label: 'Knowledge',
       icon: 'menu_book',
       href: '/knowledge',
-      show: features.includes('knowledge')
+      show: activeFeatures.includes('knowledge')
     },
     {
       label: 'Password Manager',
@@ -167,13 +166,13 @@ export default function SideNavBar() {
       label: 'Audit Log',
       icon: 'history',
       href: '/audit',
-      show: isAdmin && features.includes('audit')
+      show: isAdmin && activeFeatures.includes('audit')
     }
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface-container-lowest flex flex-col p-5 z-40 hidden md:flex">
-      <div className="mb-8 px-2 border-b border-slate-100 pb-5">
+    <aside className="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface-container-lowest flex flex-col p-5 z-40 hidden md:flex select-none">
+      <div className="mb-6 px-2 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-3">
           <img 
             src={user?.organization?.logoUrl || "/workforceoslogo.png"} 
@@ -189,7 +188,7 @@ export default function SideNavBar() {
             </p>
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-1.5 px-1 opacity-70">
+        <div className="mt-2.5 flex items-center gap-1.5 px-1 opacity-70">
           <img src="/workforceoslogo.png" className="h-3 w-3 object-contain" alt="WorkforceOS" />
           <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">WorkforceOS Portal</span>
         </div>
@@ -202,55 +201,60 @@ export default function SideNavBar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
+              className={`flex items-center justify-between px-3.5 py-2 rounded-xl transition-all duration-200 ${
                 isActive
-                  ? 'bg-primary-container text-on-primary-container font-semibold'
-                  : 'text-on-surface-variant hover:bg-slate-50'
+                  ? 'bg-slate-900 text-white font-semibold shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
-              <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-              <span className="text-label-md">{item.label}</span>
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-[19px]">{item.icon}</span>
+                <span className="text-xs font-bold">{item.label}</span>
+              </div>
+              {item.badge && (
+                <span className="h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+              )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="pt-4 border-t border-outline-variant mt-auto space-y-1">
+      <div className="pt-4 border-t border-slate-100 mt-auto space-y-1">
         <Link 
           href="/profile"
-          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
+          className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${
             pathname === '/profile'
-              ? 'bg-primary-container text-on-primary-container font-semibold'
-              : 'text-on-surface-variant hover:bg-slate-50'
+              ? 'bg-slate-900 text-white font-semibold'
+              : 'text-slate-600 hover:bg-slate-50'
           }`}
         >
-          <span className="material-symbols-outlined text-[20px]">account_circle</span>
-          <span className="text-label-md">My Profile</span>
+          <span className="material-symbols-outlined text-[19px]">account_circle</span>
+          <span className="text-xs font-bold">My Profile</span>
         </Link>
         {(isAdmin || isHR) && (
           <Link 
             href="/settings"
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
+            className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-200 ${
               pathname === '/settings'
-                ? 'bg-primary-container text-on-primary-container font-semibold'
-                : 'text-on-surface-variant hover:bg-slate-50'
+                ? 'bg-slate-900 text-white font-semibold'
+                : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <span className="material-symbols-outlined text-[20px] relative">
-              settings
-              {hasPendingRequests && (
-                <span className="absolute top-0.5 right-0.5 block h-1.5 w-1.5 rounded-full bg-red-500 ring-[1px] ring-white"></span>
-              )}
-            </span>
-            <span className="text-label-md">Settings</span>
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-[19px]">settings</span>
+              <span className="text-xs font-bold">Settings</span>
+            </div>
+            {hasPendingRequests && (
+              <span className="h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+            )}
           </Link>
         )}
         <a
           href="mailto:paramkhodiyar1008@gmail.com"
-          className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-slate-50 transition-colors"
+          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
         >
-          <span className="material-symbols-outlined text-[20px]">help</span>
-          <span className="text-label-md">Support</span>
+          <span className="material-symbols-outlined text-[19px]">help</span>
+          <span className="text-xs font-bold">Support</span>
         </a>
       </div>
     </aside>

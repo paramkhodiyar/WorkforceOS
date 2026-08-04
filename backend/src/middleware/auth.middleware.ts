@@ -70,6 +70,15 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       throw AppError.unauthorized("User account is inactive or suspended");
     }
 
+    const isSysOwner = decoded.systemRole === "SYS_OWNER" || user.systemRole === "SYS_OWNER" || decoded.originalRole === "SYS_OWNER";
+    if (!isSysOwner && user.organization && req.path !== "/organization/license") {
+      const org = user.organization;
+      const trialEndDate = org.trialEndDate ? new Date(org.trialEndDate) : null;
+      if (org.subscriptionStatus === "TRIAL" && trialEndDate && trialEndDate < new Date()) {
+        throw AppError.forbidden("Workspace 7-day trial period has expired. Please upgrade subscription to reactivate access.");
+      }
+    }
+
     const formattedRoles = user.roles.map((ur: any) => ({
       roleId: ur.roleId,
       roleName: ur.role.name,

@@ -473,6 +473,13 @@ export class AuthService {
       throw AppError.unauthorized("Invalid credentials");
     }
 
+    if (user.systemRole !== "SYS_OWNER" && user.organizationId) {
+      const org = await prisma.organization.findUnique({ where: { id: user.organizationId } });
+      if (org && org.subscriptionStatus === "TRIAL" && org.trialEndDate && new Date(org.trialEndDate) < new Date()) {
+        throw AppError.forbidden("Your 7-day workspace trial has expired. Please contact your administrator or upgrade your subscription to reactivate access.");
+      }
+    }
+
     const payload = {
       userId: user.id,
       email: user.email,

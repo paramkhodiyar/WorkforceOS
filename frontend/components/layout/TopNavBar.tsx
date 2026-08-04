@@ -2,19 +2,21 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth/AuthProvider';
 import { api } from '../../lib/api/client';
 
 /** Returns a human-readable date label relative to today */
 function formatNotifDate(dateStr: string): string {
   const d = new Date(dateStr);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
+  if (isNaN(d.getTime())) return '';
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
 
   const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  if (d.toDateString() === today.toDateString()) {
+  if (d.toDateString() === now.toDateString()) {
     return `Today · ${time}`;
   }
   if (d.toDateString() === yesterday.toDateString()) {
@@ -24,7 +26,13 @@ function formatNotifDate(dateStr: string): string {
 }
 
 export default function TopNavBar() {
-  const { user, logout } = useAuth();
+  const { user, organization, logout } = useAuth();
+  const router = useRouter();
+
+  const isTrial = organization?.subscriptionStatus === 'TRIAL';
+  const trialEndDate = organization?.trialEndDate ? new Date(organization.trialEndDate) : null;
+  const now = new Date();
+  const diffDays = trialEndDate ? Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 0;
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -111,7 +119,21 @@ export default function TopNavBar() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-        {user.originalRole === 'SYS_OWNER' && (
+        {isTrial && (
+          <Link
+            href="/settings"
+            className={`text-[10px] px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl font-extrabold uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 shrink-0 ${
+              diffDays <= 2
+                ? 'bg-rose-50 text-rose-700 border border-rose-200 animate-pulse'
+                : 'bg-amber-50 text-amber-800 border border-amber-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[14px]">hourglass_top</span>
+            <span className="hidden sm:inline">{diffDays} {diffDays === 1 ? 'Day' : 'Days'} Trial Left</span>
+            <span className="sm:hidden font-black">{diffDays}d Trial</span>
+          </Link>
+        )}
+        {user?.originalRole === 'SYS_OWNER' && (
           <Link
             href="/select-role"
             className="text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl font-extrabold uppercase tracking-wider flex items-center gap-1 transition-all active:scale-95 shrink-0"

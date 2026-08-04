@@ -9,7 +9,7 @@ const router = Router();
 router.use(authenticate, (req, res, next) => {
   const role = req.user?.systemRole;
   const originalRole = req.user?.originalRole;
-  if (role === "SYS_OWNER" || role === "SUPER_ADMIN" || originalRole === "SYS_OWNER") {
+  if (role === "SYS_OWNER" || role === "SUPER_ADMIN" || role === "ORG_ADMIN" || originalRole === "SYS_OWNER") {
     return next();
   }
   return next(AppError.forbidden("Access denied: Platform Admin System Owner permissions required."));

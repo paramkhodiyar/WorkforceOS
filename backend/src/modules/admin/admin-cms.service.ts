@@ -28,12 +28,7 @@ export class AdminCmsService {
           select: { users: true }
         },
         users: {
-          where: {
-            OR: [
-              { systemRole: "ORG_ADMIN" },
-              { roles: { some: { role: { name: "ORG_ADMIN" } } } }
-            ]
-          },
+          where: { isDeleted: false },
           take: 1,
           select: { id: true, firstName: true, lastName: true, email: true, phone: true }
         }

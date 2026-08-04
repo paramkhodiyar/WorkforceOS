@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../../../lib/auth/AuthProvider';
 import { api } from '../../../../lib/api/client';
 import { useToast } from '../../../../lib/toast/ToastProvider';
@@ -12,12 +12,16 @@ export default function PlatformAdminCmsPage() {
   const { user, switchRole } = useAuth();
   const toast = useToast();
 
-  const [activeTab, setActiveTab] = useState<TabId>('CUSTOMERS');
+  const [activeTab, setActiveTab] = useState<TabId>('TRIALS');
   const [customers, setCustomers] = useState<any[]>([]);
   const [trials, setTrials] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 8;
 
   // Mint Key Form State
   const [mintCompany, setMintCompany] = useState('');
@@ -38,7 +42,7 @@ export default function PlatformAdminCmsPage() {
     setLoading(true);
     try {
       const [custRes, invRes] = await Promise.allSettled([
-        api.adminCms.listCustomers({ search, limit: 100 }),
+        api.adminCms.listCustomers({ limit: 200 }),
         api.adminCms.listInvoices()
       ]);
 
@@ -59,11 +63,12 @@ export default function PlatformAdminCmsPage() {
         setInvoices(Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : []);
       }
 
-      // On initial load, if there are 0 paid customers but trials exist, auto-default to TRIALS tab so user sees data immediately!
       if (!initialLoaded) {
         setInitialLoaded(true);
         if (activePaid.length === 0 && activeTrials.length > 0) {
           setActiveTab('TRIALS');
+        } else if (activePaid.length > 0) {
+          setActiveTab('CUSTOMERS');
         }
       }
     } catch (err: any) {
@@ -71,53 +76,73 @@ export default function PlatformAdminCmsPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, initialLoaded]);
+  }, [initialLoaded]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  // Reset page to 1 when tab or search changes
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, search]);
+
+  const activeRows = useMemo(() => {
+    const rawRows = activeTab === 'CUSTOMERS' ? customers : activeTab === 'TRIALS' ? trials : [];
+    if (!search.trim()) return rawRows;
+    const q = search.toLowerCase().trim();
+    return rawRows.filter((o: any) => 
+      (o.name && o.name.toLowerCase().includes(q)) ||
+      (o.slug && o.slug.toLowerCase().includes(q)) ||
+      (o.licenseKey && o.licenseKey.toLowerCase().includes(q)) ||
+      (o.adminContact?.email && o.adminContact.email.toLowerCase().includes(q)) ||
+      (o.adminContact?.firstName && o.adminContact.firstName.toLowerCase().includes(q))
+    );
+  }, [activeTab, customers, trials, search]);
+
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * itemsPerPage;
+    return activeRows.slice(start, start + itemsPerPage);
+  }, [activeRows, page, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(activeRows.length / itemsPerPage));
+
   async function handleToggleOrgStatus(orgId: string, currentStatus: string) {
     const nextStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
       await api.adminCms.updateStatus(orgId, nextStatus);
-      toast.success(`License marked as ${nextStatus}`);
+      toast.success(`License status updated to ${nextStatus}`);
       loadData();
       if (selectedOrg?.id === orgId) {
         setSelectedOrg({ ...selectedOrg, licenseStatus: nextStatus });
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update status');
+      toast.error(err.message || 'Failed to update organization status');
     }
   }
 
-  async function handleVerifyInvoice(invoiceId: string, isApproved: boolean) {
-    try {
-      await api.adminCms.verifyInvoice(invoiceId, isApproved);
-      toast.success(isApproved ? 'Invoice approved & license activated!' : 'Invoice rejected');
-      loadData();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to verify invoice');
-    }
-  }
-
-  async function handleMintKeySubmit(e: React.FormEvent) {
+  async function handleMintKey(e: React.FormEvent) {
     e.preventDefault();
-    if (!mintCompany.trim()) { toast.error('Company Name is required'); return; }
+    if (!mintCompany.trim()) {
+      toast.error('Please enter a company name');
+      return;
+    }
     setMinting(true);
     setGeneratedKeyResult(null);
     try {
       const res = await api.adminCms.mintKey({
         companyName: mintCompany.trim(),
         tier: mintTier,
-        maxEmployees: parseInt(mintSeats, 10),
-        validityDays: parseInt(mintValidity, 10),
+        maxEmployees: parseInt(mintSeats, 10) || 50,
+        validityDays: parseInt(mintValidity, 10) || 365,
         notes: mintNotes.trim()
       });
-      setGeneratedKeyResult(res.data.key);
-      toast.success('License Key minted successfully!');
+      const key = res.data?.key || res.key;
+      setGeneratedKeyResult(key);
+      toast.success('Custom License Key minted successfully!');
       setMintCompany('');
       setMintNotes('');
+      loadData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to mint key');
     } finally {
@@ -125,14 +150,19 @@ export default function PlatformAdminCmsPage() {
     }
   }
 
+  function handleCopyKey(keyStr: string) {
+    navigator.clipboard.writeText(keyStr);
+    toast.success('License key copied to clipboard!');
+  }
+
   if (!isPlatformOwner) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 max-w-md text-center space-y-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 max-w-md text-center space-y-4 shadow-sm">
           <span className="material-symbols-outlined text-[48px] text-red-500">gavel</span>
           <h2 className="text-xl font-extrabold text-slate-900">Access Denied</h2>
           <p className="text-slate-600 text-sm">Platform Admin System Owner permissions are required.</p>
-          <Link href="/dashboard" className="inline-block px-6 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl">
+          <Link href="/dashboard" className="inline-block px-6 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm hover:bg-slate-800 transition-all">
             Return to Dashboard
           </Link>
         </div>
@@ -147,144 +177,51 @@ export default function PlatformAdminCmsPage() {
     { id: 'MINT_KEY', label: 'Mint License Key', icon: 'key' },
   ];
 
-  const OrgTable = ({ rows, emptyMsg }: { rows: any[]; emptyMsg: string }) => (
-    <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-sm">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
-              <th className="py-4 px-6">Organization</th>
-              <th className="py-4 px-6">Admin Contact</th>
-              <th className="py-4 px-6">License Key</th>
-              <th className="py-4 px-6">Tier & Seats</th>
-              <th className="py-4 px-6">Status</th>
-              <th className="py-4 px-6">Registered</th>
-              <th className="py-4 px-6 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {loading ? (
-              <tr><td colSpan={7} className="py-10 text-center text-slate-400 text-sm">Loading...</td></tr>
-            ) : rows.length === 0 ? (
-              <tr><td colSpan={7} className="py-10 text-center text-slate-400 text-sm">{emptyMsg}</td></tr>
-            ) : (
-              rows.map((org) => (
-                <tr key={org.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-4 px-6">
-                    <p className="font-bold text-slate-900">{org.name}</p>
-                    <span className="text-xs text-slate-400 font-mono">/{org.slug}</span>
-                  </td>
-                  <td className="py-4 px-6">
-                    {org.adminContact ? (
-                      <div>
-                        <p className="font-semibold text-slate-800 text-sm">{org.adminContact.firstName} {org.adminContact.lastName}</p>
-                        <p className="text-xs text-slate-400 font-mono">{org.adminContact.email}</p>
-                      </div>
-                    ) : (
-                      <span className="text-slate-400 text-xs">No admin listed</span>
-                    )}
-                  </td>
-                  <td className="py-4 px-6 font-mono text-xs">
-                    {org.licenseKey ? (
-                      <span className="bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 text-slate-800 font-bold">
-                        {org.licenseKey}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">None</span>
-                    )}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className="inline-block bg-slate-100 text-slate-700 font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border border-slate-200 mb-1">
-                      {org.subscriptionTier}
-                    </span>
-                    <p className="text-xs text-slate-500 font-medium">{org.activeEmployeesCount} / {org.licenseMaxEmployees} seats</p>
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className={`inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                      org.licenseStatus === 'ACTIVE'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : org.subscriptionStatus === 'TRIAL'
-                        ? 'bg-amber-50 text-amber-700 border-amber-200'
-                        : 'bg-red-50 text-red-700 border-red-200'
-                    }`}>
-                      {org.subscriptionStatus === 'TRIAL' ? 'Trial' : org.licenseStatus}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-xs text-slate-500 font-medium">
-                    {org.createdAt ? new Date(org.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                  </td>
-                  <td className="py-4 px-6 text-right space-x-2">
-                    <button
-                      onClick={() => setSelectedOrg(org)}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
-                    >
-                      Details
-                    </button>
-                    <button
-                      onClick={() => handleToggleOrgStatus(org.id, org.licenseStatus)}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                        org.licenseStatus === 'ACTIVE'
-                          ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                          : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                      }`}
-                    >
-                      {org.licenseStatus === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-6 md:p-10 space-y-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 sm:p-6 md:p-8 space-y-6">
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white px-7 py-6 rounded-3xl border border-slate-200">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white px-6 py-5 rounded-3xl border border-slate-200/90 shadow-sm">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-1">WorkforceOS Platform</p>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-blue-600 mb-0.5">WorkforceOS Platform CMS</p>
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
             Customer & License Command
           </h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">
-            Manage organizations, trial registrations, invoices, and license keys.
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Manage tenant organizations, trial evaluation telemetry, invoices, and license keys.
           </p>
         </div>
 
-        {/* Persona Role Switcher */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shrink-0">
-          <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider hidden sm:block">Switch:</span>
+        {/* Role Switcher */}
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80 shrink-0">
+          <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider hidden sm:block">Switch Persona:</span>
           <button
             onClick={() => switchRole('SYS_OWNER')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              user.systemRole === 'SYS_OWNER' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-200'
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              user.systemRole === 'SYS_OWNER' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-200/70'
             }`}
           >
             Owner
           </button>
           <button
             onClick={() => switchRole('ORG_ADMIN')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              user.systemRole === 'ORG_ADMIN' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-200'
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              user.systemRole === 'ORG_ADMIN' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-200/70'
             }`}
           >
             Org Admin
           </button>
           <button
             onClick={() => switchRole('HR_MANAGER')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              user.systemRole === 'HR' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-200'
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              user.systemRole === 'HR' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-200/70'
             }`}
           >
             HR
           </button>
           <Link
             href="/dashboard"
-            className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all ml-1 cursor-pointer"
+            className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-extrabold hover:bg-slate-50 transition-all ml-1 cursor-pointer shadow-2xs"
           >
             Dashboard
           </Link>
@@ -292,24 +229,24 @@ export default function PlatformAdminCmsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 gap-6 overflow-x-auto">
+      <div className="flex border-b border-slate-200 gap-4 sm:gap-6 overflow-x-auto select-none pt-1">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`pb-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            className={`pb-3.5 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === tab.id
-                ? 'border-slate-900 text-slate-900'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-blue-600 text-blue-700 font-extrabold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
+            <span className={`material-symbols-outlined text-[18px] ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'}`}>{tab.icon}</span>
             <span>{tab.label}</span>
             {tab.count !== undefined && (
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
                 activeTab === tab.id
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-slate-100 text-slate-600'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-slate-100 text-slate-500'
               }`}>
                 {tab.count}
               </span>
@@ -318,278 +255,385 @@ export default function PlatformAdminCmsPage() {
         ))}
       </div>
 
-      {/* Search bar (for data tabs) */}
+      {/* Data Section: CUSTOMERS or TRIALS */}
       {(activeTab === 'CUSTOMERS' || activeTab === 'TRIALS') && (
-        <div>
-          <input
-            type="text"
-            placeholder="Search by company name, slug, or license key..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-96 p-3.5 bg-white border border-slate-200 rounded-2xl text-sm focus:border-slate-500 outline-none"
-          />
-        </div>
-      )}
+        <div className="space-y-4">
 
-      {/* TAB: CUSTOMERS */}
-      {activeTab === 'CUSTOMERS' && (
-        <OrgTable rows={customers} emptyMsg="No paid customer organizations found." />
-      )}
-
-      {/* TAB: TRIAL REGISTRATIONS */}
-      {activeTab === 'TRIALS' && (
-        <OrgTable rows={trials} emptyMsg="No trial registrations yet. When someone registers a trial from the homepage, they'll appear here." />
-      )}
-
-      {/* TAB: INVOICES */}
-      {activeTab === 'INVOICES' && (
-        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
-                  <th className="py-4 px-6">Invoice #</th>
-                  <th className="py-4 px-6">Organization</th>
-                  <th className="py-4 px-6">Tier</th>
-                  <th className="py-4 px-6">Amount</th>
-                  <th className="py-4 px-6">12-Digit UTR</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  <tr><td colSpan={7} className="py-10 text-center text-slate-400 text-sm">Loading invoices...</td></tr>
-                ) : invoices.length === 0 ? (
-                  <tr><td colSpan={7} className="py-10 text-center text-slate-400 text-sm">No payment invoices submitted yet.</td></tr>
-                ) : (
-                  invoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-4 px-6 font-mono font-bold text-xs">{inv.invoiceNumber}</td>
-                      <td className="py-4 px-6 font-bold">{inv.organization?.name || inv.organizationId}</td>
-                      <td className="py-4 px-6">
-                        <span className="bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded border border-slate-200">
-                          {inv.tier}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 font-extrabold text-slate-900">₹{inv.amount.toLocaleString()}</td>
-                      <td className="py-4 px-6 font-mono text-xs font-bold">{inv.utr}</td>
-                      <td className="py-4 px-6">
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                          inv.status === 'VERIFIED'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : inv.status === 'REJECTED'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}>
-                          {inv.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-right space-x-2">
-                        {inv.status === 'PENDING' && (
-                          <>
-                            <button
-                              onClick={() => handleVerifyInvoice(inv.id, true)}
-                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleVerifyInvoice(inv.id, false)}
-                              className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-xl transition-all cursor-pointer"
-                            >
-                              Decline
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB: MINT KEY */}
-      {activeTab === 'MINT_KEY' && (
-        <div className="max-w-2xl bg-white border border-slate-200 p-8 rounded-3xl space-y-6">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900">Mint Personalized License Key</h2>
-            <p className="text-slate-500 text-xs mt-1">
-              Generates a signed key formatted as <span className="font-mono font-bold text-slate-700">WFOS-[COMP]-[TIER]-[HASH]</span>.
-            </p>
-          </div>
-
-          <form onSubmit={handleMintKeySubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                Target Company Name *
-              </label>
+          {/* Search Bar & Stats */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative w-full sm:w-96">
+              <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                search
+              </span>
               <input
                 type="text"
-                placeholder="e.g. Acme Corporation"
+                placeholder="Search company name, slug, email, or key..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200/90 rounded-2xl text-xs font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-2xs"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="text-xs font-semibold text-slate-500 self-end sm:self-center">
+              Showing <span className="font-bold text-slate-900">{activeRows.length}</span> {activeTab === 'TRIALS' ? 'trial' : 'customer'} organizations
+            </div>
+          </div>
+
+          {/* Clean Spaced Table */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-[10px] uppercase tracking-wider font-extrabold select-none">
+                    <th className="py-3.5 px-5 min-w-[200px]">Organization</th>
+                    <th className="py-3.5 px-5 min-w-[220px]">Admin Contact</th>
+                    <th className="py-3.5 px-5 min-w-[220px]">License Key</th>
+                    <th className="py-3.5 px-5 min-w-[130px]">Tier & Seats</th>
+                    <th className="py-3.5 px-5 min-w-[100px]">Status</th>
+                    <th className="py-3.5 px-5 min-w-[110px]">Registered</th>
+                    <th className="py-3.5 px-5 min-w-[150px] text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                          <span className="text-xs font-semibold text-slate-500">Loading organizations telemetry...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : paginatedRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400">
+                        <span className="material-symbols-outlined text-[36px] text-slate-300 mb-1">domain_disabled</span>
+                        <p className="text-xs font-semibold text-slate-600">
+                          {search ? `No results found matching "${search}"` : activeTab === 'TRIALS' ? 'No trial registrations found' : 'No paid customer organizations found'}
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedRows.map((org) => (
+                      <tr key={org.id} className="hover:bg-slate-50/80 transition-colors">
+                        {/* Organization Column */}
+                        <td className="py-3.5 px-5">
+                          <div className="flex items-center gap-2.5 max-w-[220px]">
+                            <div className="h-8 w-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 font-black text-xs shrink-0 uppercase">
+                              {org.name.slice(0, 2)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-slate-900 truncate" title={org.name}>{org.name}</p>
+                              <span className="text-[10px] text-slate-400 font-mono block truncate">/{org.slug}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Admin Contact Column */}
+                        <td className="py-3.5 px-5">
+                          {org.adminContact ? (
+                            <div className="max-w-[220px]">
+                              <p className="font-bold text-slate-800 truncate" title={`${org.adminContact.firstName} ${org.adminContact.lastName}`}>
+                                {org.adminContact.firstName} {org.adminContact.lastName}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono truncate" title={org.adminContact.email}>
+                                {org.adminContact.email}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-xs">No admin listed</span>
+                          )}
+                        </td>
+
+                        {/* License Key Column - Fixed Non-Overlapping Monospace Pill */}
+                        <td className="py-3.5 px-5">
+                          {org.licenseKey ? (
+                            <div className="inline-flex items-center gap-1.5 bg-slate-100/90 border border-slate-200/80 px-2.5 py-1 rounded-xl whitespace-nowrap">
+                              <span className="font-mono text-[11px] font-bold text-slate-800 tracking-tight">
+                                {org.licenseKey}
+                              </span>
+                              <button
+                                onClick={() => handleCopyKey(org.licenseKey)}
+                                title="Copy Key"
+                                className="text-slate-400 hover:text-slate-800 transition-colors cursor-pointer flex items-center"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">content_copy</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-xs font-mono">None</span>
+                          )}
+                        </td>
+
+                        {/* Tier & Seats */}
+                        <td className="py-3.5 px-5 whitespace-nowrap">
+                          <span className="inline-block bg-slate-100 text-slate-700 font-extrabold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-md border border-slate-200 mb-1">
+                            {org.subscriptionTier}
+                          </span>
+                          <p className="text-[11px] text-slate-500 font-semibold">{org.activeEmployeesCount} / {org.licenseMaxEmployees} seats</p>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-5 whitespace-nowrap">
+                          <span className={`inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                            org.licenseStatus === 'ACTIVE'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : org.subscriptionStatus === 'TRIAL'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-rose-50 text-rose-700 border-rose-200'
+                          }`}>
+                            {org.subscriptionStatus === 'TRIAL' ? 'Trial' : org.licenseStatus}
+                          </span>
+                        </td>
+
+                        {/* Registered Date */}
+                        <td className="py-3.5 px-5 text-slate-500 font-semibold whitespace-nowrap">
+                          {org.createdAt ? new Date(org.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        </td>
+
+                        {/* Actions Flex Row - Never Squeezed */}
+                        <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setSelectedOrg(org)}
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                            >
+                              Details
+                            </button>
+                            <button
+                              onClick={() => handleToggleOrgStatus(org.id, org.licenseStatus)}
+                              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                                org.licenseStatus === 'ACTIVE'
+                                  ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                              }`}
+                            >
+                              {org.licenseStatus === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls Footer */}
+            {activeRows.length > 0 && (
+              <div className="flex items-center justify-between px-6 py-3.5 bg-slate-50/70 border-t border-slate-200/80 text-xs font-semibold text-slate-600 select-none">
+                <div>
+                  Showing <span className="font-bold text-slate-900">{(page - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-900">{Math.min(activeRows.length, page * itemsPerPage)}</span> of <span className="font-bold text-slate-900">{activeRows.length}</span> entries
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    disabled={page === 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className="px-3 py-1.5 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-3 py-1 text-slate-800 font-extrabold text-xs">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    disabled={page === totalPages}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    className="px-3 py-1.5 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Payment Invoices */}
+      {activeTab === 'INVOICES' && (
+        <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm p-6 space-y-4">
+          <h2 className="text-base font-bold text-slate-900">Platform Payment Invoices & Manual Verification</h2>
+          {invoices.length === 0 ? (
+            <div className="py-12 text-center text-slate-400">
+              <span className="material-symbols-outlined text-[40px] text-slate-300 mb-1">receipt_long</span>
+              <p className="text-xs font-semibold text-slate-600">No payment invoices pending verification.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {invoices.map((inv: any) => (
+                <div key={inv.id} className="py-4 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">{inv.organization?.name || 'Organization'}</p>
+                    <p className="text-xs text-slate-500 font-mono">UTR: {inv.utrNumber || 'N/A'} · Amount: ₹{inv.amount}</p>
+                  </div>
+                  <span className="text-xs font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 uppercase">
+                    {inv.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab: Mint License Key */}
+      {activeTab === 'MINT_KEY' && (
+        <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm p-6 md:p-8 max-w-2xl space-y-6">
+          <div>
+            <h2 className="text-lg font-extrabold text-slate-900">Mint Personalized Custom License Key</h2>
+            <p className="text-xs text-slate-500 font-medium">Generate enterprise license keys for custom offline activations or enterprise deals.</p>
+          </div>
+
+          <form onSubmit={handleMintKey} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 uppercase">Company Name</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Dunder Mifflin Paper Co."
                 value={mintCompany}
                 onChange={(e) => setMintCompany(e.target.value)}
-                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-slate-500 outline-none"
-                required
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 rounded-xl text-xs font-semibold outline-none transition-all"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Tier</label>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 uppercase">Subscription Tier</label>
                 <select
                   value={mintTier}
                   onChange={(e) => setMintTier(e.target.value)}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none font-bold"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none"
                 >
-                  <option value="STARTUP">Startup (15 seats)</option>
-                  <option value="GROWTH">Growth (50 seats)</option>
-                  <option value="ENTERPRISE">Enterprise (1000 seats)</option>
+                  <option value="STARTUP">Startup (15 Seats)</option>
+                  <option value="GROWTH">Growth (50 Seats)</option>
+                  <option value="ENTERPRISE">Enterprise (1000 Seats)</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Seat Limit</label>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 uppercase">Max Seats</label>
                 <input
                   type="number"
                   value={mintSeats}
                   onChange={(e) => setMintSeats(e.target.value)}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none font-mono"
-                  required
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Validity (Days)</label>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 uppercase">Validity (Days)</label>
                 <input
                   type="number"
                   value={mintValidity}
                   onChange={(e) => setMintValidity(e.target.value)}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none font-mono"
-                  required
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Internal Notes</label>
-              <textarea
-                placeholder="e.g. Issued for Acme Corp annual enterprise contract"
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 uppercase">Notes / Reference</label>
+              <input
+                type="text"
+                placeholder="Internal notes or invoice ref..."
                 value={mintNotes}
                 onChange={(e) => setMintNotes(e.target.value)}
-                rows={2}
-                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={minting}
-              className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2"
             >
-              {minting ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Minting Key...
-                </>
-              ) : 'Mint License Key'}
+              {minting && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+              <span>Mint License Key</span>
             </button>
           </form>
 
           {generatedKeyResult && (
-            <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-center">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Key Generated</p>
-              <p className="text-xl font-mono font-black text-slate-900 select-all break-all">{generatedKeyResult}</p>
-              <p className="text-xs text-slate-500">Copy & share this key with the client administrator.</p>
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2 select-all">
+              <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Generated Personalized License Key:</p>
+              <div className="flex items-center justify-between bg-white px-3.5 py-2 rounded-xl border border-emerald-200">
+                <span className="font-mono text-sm font-black text-slate-900">{generatedKeyResult}</span>
+                <button
+                  onClick={() => handleCopyKey(generatedKeyResult)}
+                  className="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* ORG DETAIL DRAWER */}
+      {/* Organization Details Modal Drawer */}
       {selectedOrg && (
-        <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50 flex justify-end">
-          <div className="bg-white w-full max-w-lg h-full p-8 space-y-6 overflow-y-auto">
-            <div className="flex justify-between items-start pb-4 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 select-none">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-xl font-extrabold text-slate-900">{selectedOrg.name}</h3>
-                <p className="text-xs font-mono text-slate-400 mt-0.5">/{selectedOrg.slug}</p>
-                <span className={`inline-block mt-2 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                  selectedOrg.subscriptionStatus === 'TRIAL'
-                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : selectedOrg.licenseStatus === 'ACTIVE'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-red-50 text-red-700 border-red-200'
-                }`}>
-                  {selectedOrg.subscriptionStatus === 'TRIAL' ? 'Trial' : selectedOrg.licenseStatus}
-                </span>
+                <h3 className="text-base font-extrabold text-slate-900">{selectedOrg.name}</h3>
+                <span className="text-xs text-slate-400 font-mono">ID: {selectedOrg.id}</span>
               </div>
               <button
                 onClick={() => setSelectedOrg(null)}
-                className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 text-xs font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-5">
-              <div className="bg-slate-50 p-4 rounded-2xl space-y-2 border border-slate-200">
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">License Key</p>
-                <p className="font-mono text-sm font-bold text-slate-900 break-all">{selectedOrg.licenseKey || 'None assigned'}</p>
-                <div className="flex items-center gap-3 pt-1 text-xs font-medium text-slate-500">
-                  <span>Status: <strong>{selectedOrg.licenseStatus}</strong></span>
-                  <span>·</span>
-                  <span>Seats: <strong>{selectedOrg.licenseMaxEmployees}</strong></span>
-                  <span>·</span>
-                  <span>Tier: <strong>{selectedOrg.subscriptionTier}</strong></span>
+            <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Subscription Tier</span>
+                  <span className="font-bold text-slate-900 text-sm">{selectedOrg.subscriptionTier}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Active Employees</span>
+                  <span className="font-bold text-slate-900 text-sm">{selectedOrg.activeEmployeesCount} / {selectedOrg.licenseMaxEmployees} seats</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Active License Key</span>
+                  <span className="font-mono font-bold text-slate-800 text-xs select-all">{selectedOrg.licenseKey || 'None'}</span>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Admin Contact</h4>
-                {selectedOrg.adminContact ? (
-                  <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-1">
-                    <p className="font-bold text-slate-900">{selectedOrg.adminContact.firstName} {selectedOrg.adminContact.lastName}</p>
-                    <p className="text-xs text-slate-500 font-mono">{selectedOrg.adminContact.email}</p>
-                    <p className="text-xs text-slate-500 font-mono">{selectedOrg.adminContact.phone || 'No phone on file'}</p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-400">No admin contact details</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Seat Usage</h4>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-slate-100 rounded-full h-2">
-                    <div
-                      className="bg-slate-700 h-2 rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (selectedOrg.activeEmployeesCount / (selectedOrg.licenseMaxEmployees || 1)) * 100)}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-bold text-slate-600 shrink-0">
-                    {selectedOrg.activeEmployeesCount} / {selectedOrg.licenseMaxEmployees}
-                  </span>
+              {selectedOrg.adminContact && (
+                <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Primary Organization Contact</span>
+                  <p className="font-bold text-slate-800">{selectedOrg.adminContact.firstName} {selectedOrg.adminContact.lastName}</p>
+                  <p className="font-mono text-slate-500">{selectedOrg.adminContact.email}</p>
                 </div>
-              </div>
+              )}
+            </div>
 
-              <div className="pt-4 border-t border-slate-100 flex gap-3">
-                <button
-                  onClick={() => handleToggleOrgStatus(selectedOrg.id, selectedOrg.licenseStatus)}
-                  className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                    selectedOrg.licenseStatus === 'ACTIVE'
-                      ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                  }`}
-                >
-                  {selectedOrg.licenseStatus === 'ACTIVE' ? 'Deactivate License' : 'Activate License'}
-                </button>
-              </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <button
+                onClick={() => setSelectedOrg(null)}
+                className="px-4 py-2 border border-slate-200 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-50"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

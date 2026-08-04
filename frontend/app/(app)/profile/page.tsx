@@ -78,6 +78,26 @@ function ProfileContent() {
   const [showHomeChangeRequest, setShowHomeChangeRequest] = useState(false);
   const [homeChangeReason, setHomeChangeReason] = useState('');
 
+  // Compensation edit states (Admin/HR only)
+  const [editingComp, setEditingComp] = useState(false);
+  const [editSalaryBand, setEditSalaryBand] = useState('');
+  const [editBasicSalary, setEditBasicSalary] = useState('');
+  const [editCtcAnnual, setEditCtcAnnual] = useState('');
+  const [editTaxRegime, setEditTaxRegime] = useState('NEW');
+  const [editPfApplicable, setEditPfApplicable] = useState(false);
+  const [compSaving, setCompSaving] = useState(false);
+
+  // Job Details edit states (Admin/HR only)
+  const [editingJob, setEditingJob] = useState(false);
+  const [editDesignation, setEditDesignation] = useState('');
+  const [editJobSalaryBand, setEditJobSalaryBand] = useState('');
+  const [editDepartmentId, setEditDepartmentId] = useState('');
+  const [editManagerId, setEditManagerId] = useState('');
+  const [editJoinDate, setEditJoinDate] = useState('');
+  const [jobSaving, setJobSaving] = useState(false);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [allEmployees, setAllEmployees] = useState<any[]>([]);
+
   const systemRole = user?.systemRole;
   const userRoles = user?.roles || [];
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
@@ -265,8 +285,72 @@ function ProfileContent() {
         setEmergencyPhone('');
         setEmergencyAltPhone('');
       }
+
+      // Compensation edit defaults
+      setEditSalaryBand(profile.salaryBand || 'BAND_C');
+      setEditBasicSalary(profile.basicSalary ? String(profile.basicSalary) : '');
+      setEditCtcAnnual(profile.ctcAnnual ? String(profile.ctcAnnual) : '');
+      setEditTaxRegime(profile.taxRegime || 'NEW');
+      setEditPfApplicable(profile.pfApplicable ?? false);
+
+      // Job edit defaults
+      setEditDesignation(profile.designation || '');
+      setEditJobSalaryBand(profile.salaryBand || 'BAND_C');
+      setEditDepartmentId(profile.departmentId || '');
+      setEditManagerId(profile.managerId || '');
+      setEditJoinDate(profile.joinDate ? new Date(profile.joinDate).toISOString().split('T')[0] : '');
     }
   }, [profile]);
+
+  // Load departments and all employees for admin dropdowns
+  useEffect(() => {
+    if (isAdmin || isHR) {
+      api.departments.list().then(res => setDepartments(res.data || [])).catch(() => {});
+      api.employees.list().then(res => setAllEmployees(res.data?.employees || res.data || [])).catch(() => {});
+    }
+  }, [isAdmin, isHR]);
+
+  async function handleSaveComp(e: React.FormEvent) {
+    e.preventDefault();
+    setCompSaving(true);
+    try {
+      await api.employees.update(profile.id, {
+        salaryBand: editSalaryBand,
+        basicSalary: editBasicSalary ? parseFloat(editBasicSalary) : undefined,
+        ctcAnnual: editCtcAnnual ? parseFloat(editCtcAnnual) : undefined,
+        taxRegime: editTaxRegime,
+        pfApplicable: editPfApplicable,
+      });
+      toast.success('Pay structure updated successfully.');
+      setEditingComp(false);
+      loadProfileData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update compensation');
+    } finally {
+      setCompSaving(false);
+    }
+  }
+
+  async function handleSaveJob(e: React.FormEvent) {
+    e.preventDefault();
+    setJobSaving(true);
+    try {
+      await api.employees.update(profile.id, {
+        designation: editDesignation,
+        salaryBand: editJobSalaryBand,
+        departmentId: editDepartmentId || undefined,
+        managerId: editManagerId || undefined,
+        joinDate: editJoinDate ? new Date(editJoinDate) : undefined,
+      });
+      toast.success('Job details updated successfully.');
+      setEditingJob(false);
+      loadProfileData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update job details');
+    } finally {
+      setJobSaving(false);
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -910,88 +994,258 @@ function ProfileContent() {
 
             {activeTab === 'job' && (
               <div className="space-y-4">
-                <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-2">Employment Information</h3>
-                <div className="divide-y divide-slate-100">
-                  <div className="flex justify-between py-3 text-body-sm">
-                    <span className="text-outline">Employee ID</span>
-                    <span className="font-semibold text-on-surface">{profile.employeeId || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between py-3 text-body-sm">
-                    <span className="text-outline">Designation</span>
-                    <span className="font-semibold text-on-surface">{profile.designation || 'Staff Member'}</span>
-                  </div>
-                  <div className="flex justify-between py-3 text-body-sm">
-                    <span className="text-outline">Department</span>
-                    <span className="font-semibold text-on-surface">{profile.department?.name || 'Operations'}</span>
-                  </div>
-                  <div className="flex justify-between py-3 text-body-sm">
-                    <span className="text-outline">System Role</span>
-                    <span className="font-semibold text-on-surface text-xs">{profile.systemRole}</span>
-                  </div>
-                  <div className="flex justify-between py-3 text-body-sm">
-                    <span className="text-outline">Reporting Manager</span>
-                    <span className="font-semibold text-on-surface">
-                      {profile.manager ? `${profile.manager.firstName} ${profile.manager.lastName}` : 'None'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-3 text-body-sm">
-                    <span className="text-outline">Join Date</span>
-                    <span className="font-semibold text-on-surface font-mono">
-                      {profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : 'N/A'}
-                    </span>
-                  </div>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Employment Information</h3>
+                  {(isAdmin || isHR) && !editingJob && (
+                    <button
+                      onClick={() => setEditingJob(true)}
+                      className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-label-sm font-bold transition-all active:scale-[0.98] cursor-pointer"
+                    >
+                      Edit Job Details
+                    </button>
+                  )}
                 </div>
+
+                {editingJob && (isAdmin || isHR) ? (
+                  <form onSubmit={handleSaveJob} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Designation</label>
+                        <input
+                          type="text"
+                          value={editDesignation}
+                          onChange={(e) => setEditDesignation(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary rounded-lg text-body-sm outline-none font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Salary Band</label>
+                        <select
+                          value={editJobSalaryBand}
+                          onChange={(e) => setEditJobSalaryBand(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary rounded-lg text-body-sm outline-none font-medium"
+                        >
+                          <option value="BAND_A">Band A — VP / C-Suite</option>
+                          <option value="BAND_B">Band B — Director / Head</option>
+                          <option value="BAND_C">Band C — Lead / Manager</option>
+                          <option value="BAND_D">Band D — Associate / Staff</option>
+                          <option value="BAND_E">Band E — Intern / Junior</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Department</label>
+                        <select
+                          value={editDepartmentId}
+                          onChange={(e) => setEditDepartmentId(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary rounded-lg text-body-sm outline-none font-medium"
+                        >
+                          <option value="">No department</option>
+                          {departments.map((d: any) => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Reporting Manager</label>
+                        <select
+                          value={editManagerId}
+                          onChange={(e) => setEditManagerId(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary rounded-lg text-body-sm outline-none font-medium"
+                        >
+                          <option value="">No manager</option>
+                          {allEmployees.filter((e: any) => e.id !== profile.id).map((emp: any) => (
+                            <option key={emp.id} value={emp.id}>{emp.firstName} {emp.lastName}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Join Date</label>
+                      <input
+                        type="date"
+                        value={editJoinDate}
+                        onChange={(e) => setEditJoinDate(e.target.value)}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary rounded-lg text-body-sm outline-none font-medium"
+                      />
+                    </div>
+                    <div className="pt-3 border-t border-slate-100 flex gap-3">
+                      <button type="button" onClick={() => setEditingJob(false)} className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-on-surface rounded-lg text-label-sm font-bold transition-all cursor-pointer">Cancel</button>
+                      <button type="submit" disabled={jobSaving} className="flex-1 py-2 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold transition-all cursor-pointer disabled:opacity-60">
+                        {jobSaving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    <div className="flex justify-between py-3 text-body-sm">
+                      <span className="text-outline">Employee ID</span>
+                      <span className="font-semibold text-on-surface">{profile.employeeId || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between py-3 text-body-sm">
+                      <span className="text-outline">Designation</span>
+                      <span className="font-semibold text-on-surface">{profile.designation || 'Staff Member'}</span>
+                    </div>
+                    <div className="flex justify-between py-3 text-body-sm">
+                      <span className="text-outline">Department</span>
+                      <span className="font-semibold text-on-surface">{profile.department?.name || 'Operations'}</span>
+                    </div>
+                    <div className="flex justify-between py-3 text-body-sm">
+                      <span className="text-outline">Salary Band</span>
+                      <span className="font-semibold text-on-surface">{profile.salaryBand || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between py-3 text-body-sm">
+                      <span className="text-outline">System Role</span>
+                      <span className="font-semibold text-on-surface text-xs">{profile.systemRole}</span>
+                    </div>
+                    <div className="flex justify-between py-3 text-body-sm">
+                      <span className="text-outline">Reporting Manager</span>
+                      <span className="font-semibold text-on-surface">
+                        {profile.manager ? `${profile.manager.firstName} ${profile.manager.lastName}` : 'None'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-3 text-body-sm">
+                      <span className="text-outline">Join Date</span>
+                      <span className="font-semibold text-on-surface font-mono">
+                        {profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'compensation' && canViewCompensation && (
               <div className="space-y-6">
-                <div>
-                  <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-4">Compensation & Salary Structure</h3>
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center">
-                     <div>
-                      <p className="text-[10px] text-outline uppercase font-semibold">Salary Grade Band</p>
-                      <p className="text-title-md font-bold text-on-surface mt-0.5">
-                        {profile.salaryBand === 'BAND_A' ? 'Band A (VP / C-Suite)'
-                         : profile.salaryBand === 'BAND_B' ? 'Band B (Director / Head)'
-                         : profile.salaryBand === 'BAND_C' ? 'Band C (Lead / Manager)'
-                         : profile.salaryBand === 'BAND_D' ? 'Band D (Associate / Staff)'
-                         : 'Band E (Intern / Junior)'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-outline uppercase font-semibold">Estimated Net Take Home</p>
-                      <p className="text-title-lg font-bold text-primary mt-0.5 font-mono">₹{netSalary.toLocaleString()}</p>
-                    </div>
-                  </div>
+                <div className="flex justify-between items-start">
+                  <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider">Compensation &amp; Salary Structure</h3>
+                  {(isAdmin || isHR) && !isOwnProfile && !editingComp && (
+                    <button
+                      onClick={() => setEditingComp(true)}
+                      className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-label-sm font-bold transition-all active:scale-[0.98] cursor-pointer shrink-0"
+                    >
+                      Edit Pay Structure
+                    </button>
+                  )}
                 </div>
 
-                <div className="divide-y divide-slate-100">
-                  <div className="flex justify-between py-2.5 text-body-sm">
-                    <span className="text-outline font-medium">Basic Salary</span>
-                    <span className="font-semibold text-on-surface font-mono">₹{compDetails.basic.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between py-2.5 text-body-sm">
-                    <span className="text-outline font-medium">HRA (House Rent Allowance)</span>
-                    <span className="font-semibold text-on-surface font-mono">₹{compDetails.hra.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between py-2.5 text-body-sm">
-                    <span className="text-outline font-medium">Special Allowances</span>
-                    <span className="font-semibold text-on-surface font-mono">₹{compDetails.allowances.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between py-2.5 text-body-sm">
-                    <span className="text-outline font-medium text-error">Standard Deductions (PF/Insurance)</span>
-                    <span className="font-semibold text-error font-mono">-₹{compDetails.deductions.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between py-2.5 text-body-sm">
-                    <span className="text-outline font-medium text-error">Estimated Income Tax</span>
-                    <span className="font-semibold text-error font-mono">-₹{compDetails.tax.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between py-3 text-label-md font-bold pt-4">
-                    <span className="text-on-surface">Total Gross Salary</span>
-                    <span className="text-on-surface font-mono">₹{grossSalary.toLocaleString()}</span>
-                  </div>
-                </div>
+                {editingComp && (isAdmin || isHR) ? (
+                  <form onSubmit={handleSaveComp} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Salary Band</label>
+                        <select
+                          value={editSalaryBand}
+                          onChange={(e) => setEditSalaryBand(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary rounded-lg text-body-sm outline-none font-medium"
+                        >
+                          <option value="BAND_A">Band A — VP / C-Suite</option>
+                          <option value="BAND_B">Band B — Director / Head</option>
+                          <option value="BAND_C">Band C — Lead / Manager</option>
+                          <option value="BAND_D">Band D — Associate / Staff</option>
+                          <option value="BAND_E">Band E — Intern / Junior</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Tax Regime</label>
+                        <select
+                          value={editTaxRegime}
+                          onChange={(e) => setEditTaxRegime(e.target.value)}
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary rounded-lg text-body-sm outline-none font-medium"
+                        >
+                          <option value="NEW">New Tax Regime (FY 2024-25)</option>
+                          <option value="OLD">Old Tax Regime</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Basic Salary (Monthly ₹)</label>
+                        <input
+                          type="number"
+                          value={editBasicSalary}
+                          onChange={(e) => setEditBasicSalary(e.target.value)}
+                          placeholder="e.g. 80000"
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary rounded-lg text-body-sm outline-none font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-label-sm text-outline mb-1.5 uppercase font-semibold">Annual CTC (₹)</label>
+                        <input
+                          type="number"
+                          value={editCtcAnnual}
+                          onChange={(e) => setEditCtcAnnual(e.target.value)}
+                          placeholder="e.g. 1200000"
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 focus:border-primary rounded-lg text-body-sm outline-none font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                      <input
+                        type="checkbox"
+                        id="pfApplicable"
+                        checked={editPfApplicable}
+                        onChange={(e) => setEditPfApplicable(e.target.checked)}
+                        className="h-4 w-4 accent-primary cursor-pointer"
+                      />
+                      <label htmlFor="pfApplicable" className="text-body-sm font-medium text-on-surface cursor-pointer">
+                        PF (Provident Fund) Applicable — deducts 12% of basic salary
+                      </label>
+                    </div>
+                    <div className="pt-3 border-t border-slate-100 flex gap-3">
+                      <button type="button" onClick={() => setEditingComp(false)} className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-on-surface rounded-lg text-label-sm font-bold transition-all cursor-pointer">Cancel</button>
+                      <button type="submit" disabled={compSaving} className="flex-1 py-2 bg-primary hover:bg-blue-700 text-on-primary rounded-lg text-label-sm font-bold transition-all cursor-pointer disabled:opacity-60">
+                        {compSaving ? 'Saving...' : 'Update Pay Structure'}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] text-outline uppercase font-semibold">Salary Grade Band</p>
+                        <p className="text-title-md font-bold text-on-surface mt-0.5">
+                          {profile.salaryBand === 'BAND_A' ? 'Band A (VP / C-Suite)'
+                           : profile.salaryBand === 'BAND_B' ? 'Band B (Director / Head)'
+                           : profile.salaryBand === 'BAND_C' ? 'Band C (Lead / Manager)'
+                           : profile.salaryBand === 'BAND_D' ? 'Band D (Associate / Staff)'
+                           : 'Band E (Intern / Junior)'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-outline uppercase font-semibold">Estimated Net Take Home</p>
+                        <p className="text-title-lg font-bold text-primary mt-0.5 font-mono">₹{netSalary.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      <div className="flex justify-between py-2.5 text-body-sm">
+                        <span className="text-outline font-medium">Basic Salary</span>
+                        <span className="font-semibold text-on-surface font-mono">₹{compDetails.basic.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between py-2.5 text-body-sm">
+                        <span className="text-outline font-medium">HRA (House Rent Allowance)</span>
+                        <span className="font-semibold text-on-surface font-mono">₹{compDetails.hra.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between py-2.5 text-body-sm">
+                        <span className="text-outline font-medium">Special Allowances</span>
+                        <span className="font-semibold text-on-surface font-mono">₹{compDetails.allowances.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between py-2.5 text-body-sm">
+                        <span className="text-outline font-medium text-error">Standard Deductions (PF/Insurance)</span>
+                        <span className="font-semibold text-error font-mono">-₹{compDetails.deductions.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between py-2.5 text-body-sm">
+                        <span className="text-outline font-medium text-error">Estimated Income Tax</span>
+                        <span className="font-semibold text-error font-mono">-₹{compDetails.tax.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between py-3 text-label-md font-bold pt-4">
+                        <span className="text-on-surface">Total Gross Salary</span>
+                        <span className="text-on-surface font-mono">₹{grossSalary.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

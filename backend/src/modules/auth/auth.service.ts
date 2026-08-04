@@ -160,83 +160,270 @@ export class AuthService {
       console.error("Failed to send trial lead emails:", error);
     });
 
-    // Seed dummy Tasks, Leave Requests, and Attendance for evaluation
-    const users = await prisma.user.findMany({ where: { organizationId: orgId } });
-    const engineer = users.find(u => u.email === `engineer@${slug}.com`);
-    const hr = users.find(u => u.email === `hr@${slug}.com`);
+    // --- Comprehensive Trial Seed for Feature Evaluation ---
+    const allUsers = await prisma.user.findMany({
+      where: { organizationId: orgId, isDeleted: false }
+    });
+    const engineer = allUsers.find(u => u.email === `engineer@${slug}.com`);
+    const hr = allUsers.find(u => u.email === `hr@${slug}.com`);
+
+    // Helper to create a past date
+    const daysAgo = (n: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
 
     if (engineer && adminUser && hr) {
-      // 1. Seed some tasks
-      await prisma.task.createMany({
-        data: [
-          {
-            taskId: `TSK-${Math.floor(Math.random() * 90000) + 10000}`,
-            title: "Evaluate WorkforceOS Features",
-            description: "Go through Tasks, Attendance, Payroll, and Leaves in the trial.",
-            creatorId: adminUser.id,
-            assigneeId: engineer.id,
-            status: "IN_PROGRESS",
-            priority: "HIGH",
-            dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-            orgId: orgId
-          },
-          {
-            taskId: `TSK-${Math.floor(Math.random() * 90000) + 10000}`,
-            title: "Setup Trial Payroll Run",
-            description: "Verify that payroll computes correctly in the finance dashboard.",
-            creatorId: adminUser.id,
-            assigneeId: adminUser.id,
-            status: "DRAFT",
-            priority: "MEDIUM",
-            dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-            orgId: orgId
-          }
-        ]
-      });
-
-      // 2. Seed some leave requests
-      await prisma.leaveRequest.create({
-        data: {
-          userId: engineer.id,
-          leaveType: "SICK",
-          startDate: new Date(),
-          endDate: new Date(),
-          days: 1.0,
-          reason: "Feeling unwell, taking day off",
-          status: "PENDING"
+      // -----------------------------------------------
+      // 1. Add more demo employees for richer experience
+      // -----------------------------------------------
+      const demoEmployees = [
+        {
+          firstName: "Priya", lastName: "Sharma",
+          email: `finance@${slug}.com`, phone: "9876543213",
+          designation: "Finance Manager", departmentName: "Finance",
+          salaryBand: "BAND_B", basicSalary: "70000", ctcAnnual: "960000", taxRegime: "OLD",
+          managerEmail: adminUser.email
+        },
+        {
+          firstName: "Rahul", lastName: "Verma",
+          email: `design@${slug}.com`, phone: "9876543214",
+          designation: "UI/UX Designer", departmentName: "Design",
+          salaryBand: "BAND_C", basicSalary: "55000", ctcAnnual: "720000", taxRegime: "NEW",
+          managerEmail: adminUser.email
+        },
+        {
+          firstName: "Sneha", lastName: "Patel",
+          email: `sales@${slug}.com`, phone: "9876543215",
+          designation: "Sales Lead", departmentName: "Sales",
+          salaryBand: "BAND_B", basicSalary: "65000", ctcAnnual: "900000", taxRegime: "NEW",
+          managerEmail: adminUser.email
+        },
+        {
+          firstName: "Arjun", lastName: "Kumar",
+          email: `ops@${slug}.com`, phone: "9876543216",
+          designation: "Operations Analyst", departmentName: "Operations",
+          salaryBand: "BAND_D", basicSalary: "35000", ctcAnnual: "480000", taxRegime: "NEW",
+          managerEmail: engineer.email
         }
+      ];
+
+      // Import OnboardingService to create more employees properly
+      const { OnboardingService } = await import("../onboarding/onboarding.service");
+      for (const emp of demoEmployees) {
+        try {
+          const dept = await prisma.department.findFirst({
+            where: { name: emp.departmentName, organizationId: orgId }
+          });
+          const manager = await prisma.user.findFirst({
+            where: { email: emp.managerEmail, organizationId: orgId }
+          });
+          const empPassword = generateTrialPassword();
+          const { hashPassword: hashPw } = await import("../../utils/hash.util");
+          const hashedPw = await hashPw(empPassword);
+          await (prisma.user as any).create({
+            data: {
+              firstName: emp.firstName,
+              lastName: emp.lastName,
+              email: emp.email,
+              phone: emp.phone,
+              password: hashedPw,
+              designation: emp.designation,
+              departmentId: dept?.id,
+              managerId: manager?.id,
+              organizationId: orgId,
+              systemRole: "EMPLOYEE",
+              employeeId: `EMP-${Math.floor(Math.random() * 9000) + 1000}`,
+              salaryBand: emp.salaryBand,
+              basicSalary: parseFloat(emp.basicSalary),
+              ctcAnnual: parseFloat(emp.ctcAnnual),
+              taxRegime: emp.taxRegime,
+              status: "ACTIVE",
+              joinDate: daysAgo(Math.floor(Math.random() * 365 + 30))
+            }
+          });
+        } catch (_) { /* skip if email already exists */ }
+      }
+
+      // Reload all users after creating extras
+      const seedUsers = await prisma.user.findMany({
+        where: { organizationId: orgId, isDeleted: false }
       });
 
-      // 3. Seed some attendance
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      const checkInTime = new Date(yesterday);
-      checkInTime.setHours(9, 15, 0);
-      const checkOutTime = new Date(yesterday);
-      checkOutTime.setHours(18, 5, 0);
+      // -----------------------------------------------
+      // 2. Bank details and emergency contacts
+      // -----------------------------------------------
+      const banks = ["HDFC Bank", "SBI", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank"];
+      const bloodGroups = ["A+", "B+", "O+", "AB+", "A-", "O-"];
+      const genders = ["Male", "Female"];
 
-      await prisma.attendance.createMany({
-        data: [
-          {
-            userId: engineer.id,
-            date: yesterday,
-            checkIn: checkInTime,
-            checkOut: checkOutTime,
-            status: "PRESENT",
-            totalHours: 8.8
-          },
-          {
-            userId: adminUser.id,
-            date: yesterday,
-            checkIn: checkInTime,
-            checkOut: checkOutTime,
-            status: "PRESENT",
-            totalHours: 8.8
+      for (let i = 0; i < seedUsers.length; i++) {
+        const u = seedUsers[i];
+        const empNo = 1000 + i;
+        try {
+          const { encrypt } = await import("../../utils/encryption.util");
+          await prisma.bankDetail.upsert({
+            where: { userId: u.id },
+            update: {},
+            create: {
+              userId: u.id,
+              bankName: banks[i % banks.length],
+              accountNumber: encrypt(`3${empNo}000000${empNo}`),
+              ifscCode: `HDFC000${empNo}`,
+              accountHolderName: `${u.firstName} ${u.lastName}`,
+              panNumber: encrypt(`ABCDE${empNo}F`),
+              aadhaarLast4: `${1000 + (i * 37) % 9000}`
+            }
+          });
+        } catch (_) {}
+
+        try {
+          await prisma.emergencyContact.upsert({
+            where: { userId: u.id },
+            update: {},
+            create: {
+              userId: u.id,
+              name: `Emergency Contact of ${u.firstName}`,
+              relation: i % 2 === 0 ? "Spouse" : "Parent",
+              phone: `98765${43210 + i}`,
+              altPhone: `87654${32100 + i}`
+            }
+          });
+        } catch (_) {}
+
+        // Update basic profile fields
+        await prisma.user.update({
+          where: { id: u.id },
+          data: {
+            gender: genders[i % 2],
+            bloodGroup: bloodGroups[i % bloodGroups.length],
+            dateOfBirth: daysAgo(365 * (25 + (i * 3) % 15)),
+            personalEmail: `${u.firstName.toLowerCase()}.personal@gmail.com`,
+            personalPhone: `9999${100000 + i}`,
+            address: {
+              line1: `${i + 1}/${i + 10}, MG Road`,
+              line2: "Sector 4",
+              city: "Bengaluru",
+              state: "Karnataka",
+              pincode: `56000${i + 1}`,
+              country: "India"
+            }
           }
-        ]
-      });
+        }).catch(() => {});
+      }
+
+      // -----------------------------------------------
+      // 3. 30-day attendance history for each employee
+      // -----------------------------------------------
+      const attendanceStatuses = ["PRESENT", "PRESENT", "PRESENT", "PRESENT", "HALF_DAY", "ABSENT", "PRESENT"] as const;
+
+      for (const u of seedUsers) {
+        const attendanceData = [];
+        for (let day = 1; day <= 30; day++) {
+          const date = daysAgo(day);
+          const dayOfWeek = date.getDay();
+          if (dayOfWeek === 0 || dayOfWeek === 6) continue; // Skip weekends
+
+          const status = attendanceStatuses[day % attendanceStatuses.length];
+          if (status === "ABSENT") {
+            attendanceData.push({ userId: u.id, date, status: "ABSENT" as const, totalHours: 0 });
+            continue;
+          }
+
+          const checkIn = new Date(date);
+          checkIn.setHours(8 + (day % 2), 15 + (day % 30), 0);
+          const checkOut = new Date(date);
+          const hoursWorked = status === "HALF_DAY" ? 4.5 : 8 + (day % 2);
+          checkOut.setHours(checkIn.getHours() + hoursWorked, 30, 0);
+
+          attendanceData.push({
+            userId: u.id,
+            date,
+            checkIn,
+            checkOut,
+            status: status === "HALF_DAY" ? "HALF_DAY" as const : "PRESENT" as const,
+            totalHours: hoursWorked
+          });
+        }
+        if (attendanceData.length > 0) {
+          await prisma.attendance.createMany({ data: attendanceData, skipDuplicates: true });
+        }
+      }
+
+      // -----------------------------------------------
+      // 4. Leave requests — variety of types and statuses
+      // -----------------------------------------------
+      const leaveTypes = ["CASUAL", "SICK", "EARNED", "CASUAL", "SICK"] as const;
+      const leaveStatuses = ["APPROVED", "APPROVED", "PENDING", "REJECTED", "PENDING"] as const;
+      const leaveReasons = [
+        "Family function attendance",
+        "Medical checkup and recovery",
+        "Personal work — bank KYC",
+        "Visiting home town for festival",
+        "Feeling unwell — fever and cold"
+      ];
+
+      for (let i = 0; i < seedUsers.length; i++) {
+        const u = seedUsers[i];
+        for (let j = 0; j < 3; j++) {
+          const startDay = 5 + (i * 3) + (j * 7);
+          const startDate = daysAgo(startDay);
+          const endDate = daysAgo(startDay - 1);
+          try {
+            await prisma.leaveRequest.create({
+              data: {
+                userId: u.id,
+                leaveType: leaveTypes[(i + j) % leaveTypes.length] as any,
+                startDate,
+                endDate,
+                days: 1.0 + (j % 2) * 0.5,
+                reason: leaveReasons[(i + j) % leaveReasons.length],
+                status: leaveStatuses[(i + j) % leaveStatuses.length] as any
+              }
+            });
+          } catch (_) {}
+        }
+      }
+
+      // -----------------------------------------------
+      // 5. Tasks across team members
+      // -----------------------------------------------
+      const taskTitles = [
+        { title: "Evaluate WorkforceOS Attendance Module", priority: "HIGH", status: "IN_PROGRESS" },
+        { title: "Setup Payroll Configuration", priority: "HIGH", status: "DRAFT" },
+        { title: "Review HR Policies and Leave Structure", priority: "MEDIUM", status: "IN_PROGRESS" },
+        { title: "Onboard New Employee Checklist", priority: "MEDIUM", status: "COMPLETED" },
+        { title: "Configure Department Hierarchy", priority: "LOW", status: "DRAFT" },
+        { title: "Test Expense Reporting Module", priority: "MEDIUM", status: "IN_PROGRESS" },
+        { title: "Quarterly Performance Review Setup", priority: "HIGH", status: "DRAFT" },
+        { title: "Audit Attendance Data Accuracy", priority: "LOW", status: "COMPLETED" },
+        { title: "Integrate Leave Policy with Payroll", priority: "HIGH", status: "IN_PROGRESS" },
+        { title: "Update Employee Salary Bands", priority: "MEDIUM", status: "DRAFT" },
+      ];
+
+      for (let i = 0; i < taskTitles.length; i++) {
+        const t = taskTitles[i];
+        const assignee = seedUsers[i % seedUsers.length];
+        try {
+          await prisma.task.create({
+            data: {
+              taskId: `TSK-${10000 + i}`,
+              title: t.title,
+              description: `Trial evaluation task: ${t.title}. Use this to explore WorkforceOS capabilities.`,
+              creatorId: adminUser.id,
+              assigneeId: assignee.id,
+              status: t.status as any,
+              priority: t.priority as any,
+              dueDate: new Date(Date.now() + (3 + i) * 24 * 60 * 60 * 1000),
+              orgId: orgId
+            }
+          });
+        } catch (_) {}
+      }
     }
+
 
     // Auto-login the user immediately after signing up
     return this.login(cleanEmail, password, req);

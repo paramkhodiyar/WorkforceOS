@@ -977,8 +977,7 @@ export default function SettingsPage() {
             </div>
           )}
           {activeTab === 'location' && (
-            <div className="max-w-2xl space-y-6">
-              <form onSubmit={handleSaveLocation} className="space-y-6">
+            <form onSubmit={handleSaveLocation} className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 {/* Section 1: Office Location & Geofencing */}
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
                   <div>
@@ -1211,17 +1210,16 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Save Workplace Settings */}
-                <div className="pt-2">
+                <div className="col-span-1 lg:col-span-2 pt-2">
                   <button
                     type="submit"
                     disabled={savingLocation}
-                    className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                    className="w-full py-3 bg-[#135bec] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50 uppercase tracking-wider"
                   >
                     {savingLocation ? 'Saving Workplace Settings...' : 'Save Workplace Settings'}
                   </button>
                 </div>
               </form>
-            </div>
           )}
           {activeTab === 'profile-requests' && (
             <div className="space-y-6">
@@ -1741,14 +1739,6 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {featureToggling && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900/50 backdrop-blur-md font-sans">
-          <div className="bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-4 max-w-xs text-center border border-slate-200">
-            <LogoLoader size={64} text="Updating Modules..." />
-            <p className="text-[11px] text-outline leading-relaxed">Applying organization configuration and updating user menus... Please wait.</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

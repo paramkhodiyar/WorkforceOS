@@ -100,6 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (tokens) {
         localStorage.setItem('token', tokens.accessToken);
         localStorage.setItem('refreshToken', tokens.refreshToken);
+        try {
+          api.auth.cookieExchange(tokens.accessToken, tokens.refreshToken).catch(() => {});
+        } catch (_) {}
         if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
           (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
             type: 'save_token',

@@ -34,26 +34,11 @@ function onRefreshFailed(err: any) {
 function isProtectedPath(): boolean {
   if (typeof window === 'undefined') return false;
   const path = window.location.pathname;
-  const protectedPrefixes = [
-    '/dashboard',
-    '/employees',
-    '/tasks',
-    '/attendance',
-    '/leave',
-    '/performance',
-    '/payroll',
-    '/assets',
-    '/audit',
-    '/calendar',
-    '/settings',
-    '/profile',
-    '/select-role',
-    '/my-team',
-    '/ops-stats',
-    '/paywall',
-    '/onboarding/setup'
-  ];
-  return protectedPrefixes.some(prefix => path === prefix || path.startsWith(prefix + '/'));
+  const publicPaths = ['/login', '/register-trial', '/paywall', '/onboarding/setup', '/email-preview', '/features', '/privacy', '/terms'];
+  if (path === '/' || publicPaths.some(p => path === p || path.startsWith(p + '/'))) {
+    return false;
+  }
+  return true;
 }
 
 function getErrorMessage(status: number, errorData: any, defaultPrefix = "Request failed"): string {
@@ -100,6 +85,7 @@ async function request(path: string, options: RequestInit = {}, signal?: AbortSi
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
+    credentials: 'include',
     ...options,
     headers,
     ...(signal ? { signal } : {}),

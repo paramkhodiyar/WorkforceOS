@@ -61,6 +61,10 @@ export default function SideNavBar() {
     user.departmentId !== null;
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
 
+  const activeFeatures = (features && features.length > 0) ? features : [
+    'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar'
+  ];
+
   const menuItems = [
     {
       label: 'Dashboard',

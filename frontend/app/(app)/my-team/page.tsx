@@ -114,8 +114,6 @@ export default function MyTeamPage() {
       setScopes(list);
       if (list.length > 0) {
         setSelectedScope(list[0].value);
-      } else {
-        router.push('/unauthorized');
       }
       setErrorMessage('');
     } catch (err: any) {

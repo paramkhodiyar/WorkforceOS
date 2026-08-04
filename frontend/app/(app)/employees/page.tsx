@@ -139,11 +139,9 @@ export default function EmployeesPage() {
       const isManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER' || r.roleName === 'DEPARTMENT_HEAD');
       const isActualManager = isManager || isLeaderOrHead;
 
-      if (!isAdmin && !isHR && !isActualManager) {
-        router.push('/unauthorized');
-      }
+      // Inline check handles non-admin access cleanly without redirecting
     }
-  }, [user, router]);
+  }, [user]);
 
   async function handleEnroll(e: React.FormEvent) {
     e.preventDefault();

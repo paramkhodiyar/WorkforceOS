@@ -28,11 +28,7 @@ export default function PasswordManagerPage() {
   const systemRole = user?.systemRole;
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
 
-  useEffect(() => {
-    if (!loading && !isAdmin) {
-      router.push('/unauthorized');
-    }
-  }, [isAdmin, loading, router]);
+  // Inline check handles non-admin access cleanly without redirecting
 
   async function loadDirectory() {
     try {

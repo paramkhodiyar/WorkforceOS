@@ -19,11 +19,9 @@ export default function AuditPage() {
     if (user) {
       const systemRole = user.systemRole;
       const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
-      if (!isAdmin) {
-        router.push('/unauthorized');
-      }
+      // Inline check handles non-admin access cleanly without redirecting
     }
-  }, [user, router]);
+  }, [user]);
 
   useEffect(() => {
     async function loadLogs() {

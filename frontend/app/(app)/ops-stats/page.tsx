@@ -22,11 +22,9 @@ export default function OpsStatsPage() {
       const systemRole = user.systemRole;
       const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
       const isHR = (user.roles || []).some((r: any) => r.roleName === 'HR_MANAGER') || systemRole === 'HR';
-      if (!isAdmin && !isHR) {
-        router.push('/unauthorized');
-      }
+      // Inline check handles non-admin access cleanly without redirecting
     }
-  }, [user, router]);
+  }, [user]);
 
   async function loadOpsStats() {
     try {

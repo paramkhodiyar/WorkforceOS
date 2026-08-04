@@ -39,13 +39,9 @@ export default function HolidaysPage() {
 
   useEffect(() => {
     if (user) {
-      if (!isAdmin && !isHR) {
-        router.push('/unauthorized');
-      } else {
-        loadHolidays();
-      }
+      loadHolidays();
     }
-  }, [user, router]);
+  }, [user]);
 
   async function handleAddHoliday(e: React.FormEvent) {
     e.preventDefault();

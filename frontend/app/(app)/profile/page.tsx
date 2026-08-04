@@ -168,9 +168,7 @@ function ProfileContent() {
       }
     } catch (err) {
       console.error(err);
-      if (!isOwnProfile) {
-        router.push('/unauthorized');
-      }
+      // Non-accessible profile target handles inline state without redirecting
     } finally {
       setLoading(false);
     }

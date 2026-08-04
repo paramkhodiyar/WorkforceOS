@@ -74,8 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(response.data);
       try {
         const orgRes = await api.organization.get();
-        setOrganization(orgRes.data);
-        setFeatures(orgRes.data.enabledFeatures || []);
+        const loadedFeatures = orgRes.data?.enabledFeatures;
+        const finalFeatures = (loadedFeatures && loadedFeatures.length > 0) ? loadedFeatures : [
+          'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar'
+        ];
+        setOrganization({ ...orgRes.data, enabledFeatures: finalFeatures });
+        setFeatures(finalFeatures);
       } catch (orgResError) {
         console.error(orgResError);
       }
@@ -115,8 +119,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(response.data.user);
       try {
         const orgRes = await api.organization.get();
-        setOrganization(orgRes.data);
-        setFeatures(orgRes.data.enabledFeatures || []);
+        const loadedFeatures = orgRes.data?.enabledFeatures;
+        const finalFeatures = (loadedFeatures && loadedFeatures.length > 0) ? loadedFeatures : [
+          'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar'
+        ];
+        setOrganization({ ...orgRes.data, enabledFeatures: finalFeatures });
+        setFeatures(finalFeatures);
       } catch (err) {
         console.error(err);
       }

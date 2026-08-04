@@ -64,7 +64,7 @@ export default function BottomNavBar() {
               }}
               className={`relative z-10 flex items-center gap-2 px-3.5 py-2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] active:scale-95 cursor-pointer ${
                 isActive
-                  ? 'bg-slate-900 text-white font-bold shadow-sm'
+                  ? 'bg-blue-600 text-white font-extrabold shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 font-medium'
               }`}
             >

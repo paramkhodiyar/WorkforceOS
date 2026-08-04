@@ -8,7 +8,7 @@ import { api } from '../../lib/api/client';
 
 export default function SideNavBar() {
   const pathname = usePathname();
-  const { user, features } = useAuth();
+  const { user, features, hasPermission } = useAuth();
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function SideNavBar() {
       label: 'Employees',
       icon: 'badge',
       href: '/employees',
-      show: (isAdmin || isHR || isActualManager) && activeFeatures.includes('employees')
+      show: (isAdmin || isHR || isActualManager || hasPermission('employee', 'read')) && activeFeatures.includes('employees')
     },
     {
       label: 'Statuses',
@@ -136,7 +136,7 @@ export default function SideNavBar() {
       label: 'Payroll',
       icon: 'payments',
       href: '/payroll',
-      show: (isAdmin || isHR || isFinance) && activeFeatures.includes('payroll')
+      show: (isAdmin || isHR || isFinance || hasPermission('payroll', 'read')) && activeFeatures.includes('payroll')
     },
     {
       label: 'Expenses',
@@ -171,7 +171,7 @@ export default function SideNavBar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface-container-lowest flex flex-col p-5 z-40 hidden md:flex select-none">
+    <aside className="fixed left-0 top-0 h-screen w-64 border-r border-slate-200 bg-white flex flex-col p-5 z-40 hidden md:flex select-none">
       <div className="mb-6 px-2 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-3">
           <img 
@@ -183,13 +183,13 @@ export default function SideNavBar() {
             <h1 className="text-label-md font-bold text-slate-800 tracking-tight truncate uppercase">
               {orgName}
             </h1>
-            <p className="text-[9px] text-outline uppercase tracking-wider font-semibold">
+            <p className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
               {systemRole.replace('_', ' ')}
             </p>
           </div>
         </div>
         <div className="mt-2.5 flex items-center gap-1.5 px-1 opacity-70">
-          <img src="/workforceoslogo.png" className="h-3 w-3 object-contain" alt="WorkforceOS" />
+          <img src="/workforceoslogo.png" className="h-3.5 w-3.5 object-contain" alt="WorkforceOS" />
           <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">WorkforceOS Portal</span>
         </div>
       </div>
@@ -201,15 +201,17 @@ export default function SideNavBar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center justify-between px-3.5 py-2 rounded-xl transition-all duration-200 ${
+              className={`flex items-center justify-between px-4 py-2.5 rounded-2xl transition-all duration-200 ${
                 isActive
-                  ? 'bg-slate-900 text-white font-semibold shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-blue-50 text-blue-700 font-extrabold border border-blue-100/80 shadow-none'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium text-label-md'
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[19px]">{item.icon}</span>
-                <span className="text-xs font-bold">{item.label}</span>
+                <span className={`material-symbols-outlined text-[20px] ${isActive ? 'text-blue-700' : 'text-slate-500'}`}>
+                  {item.icon}
+                </span>
+                <span className="text-label-md">{item.label}</span>
               </div>
               {item.badge && (
                 <span className="h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
@@ -222,27 +224,31 @@ export default function SideNavBar() {
       <div className="pt-4 border-t border-slate-100 mt-auto space-y-1">
         <Link 
           href="/profile"
-          className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 ${
             pathname === '/profile'
-              ? 'bg-slate-900 text-white font-semibold'
-              : 'text-slate-600 hover:bg-slate-50'
+              ? 'bg-blue-50 text-blue-700 font-extrabold border border-blue-100/80 shadow-none'
+              : 'text-slate-600 hover:bg-slate-50 font-medium text-label-md'
           }`}
         >
-          <span className="material-symbols-outlined text-[19px]">account_circle</span>
-          <span className="text-xs font-bold">My Profile</span>
+          <span className={`material-symbols-outlined text-[20px] ${pathname === '/profile' ? 'text-blue-700' : 'text-slate-500'}`}>
+            account_circle
+          </span>
+          <span className="text-label-md">My Profile</span>
         </Link>
         {(isAdmin || isHR) && (
           <Link 
             href="/settings"
-            className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-200 ${
+            className={`flex items-center justify-between px-4 py-2.5 rounded-2xl transition-all duration-200 ${
               pathname === '/settings'
-                ? 'bg-slate-900 text-white font-semibold'
-                : 'text-slate-600 hover:bg-slate-50'
+                ? 'bg-blue-50 text-blue-700 font-extrabold border border-blue-100/80 shadow-none'
+                : 'text-slate-600 hover:bg-slate-50 font-medium text-label-md'
             }`}
           >
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[19px]">settings</span>
-              <span className="text-xs font-bold">Settings</span>
+              <span className={`material-symbols-outlined text-[20px] ${pathname === '/settings' ? 'text-blue-700' : 'text-slate-500'}`}>
+                settings
+              </span>
+              <span className="text-label-md">Settings</span>
             </div>
             {hasPendingRequests && (
               <span className="h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
@@ -251,10 +257,10 @@ export default function SideNavBar() {
         )}
         <a
           href="mailto:paramkhodiyar1008@gmail.com"
-          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
+          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-slate-600 hover:bg-slate-50 font-medium text-label-md transition-colors"
         >
-          <span className="material-symbols-outlined text-[19px]">help</span>
-          <span className="text-xs font-bold">Support</span>
+          <span className="material-symbols-outlined text-[20px] text-slate-500">help</span>
+          <span className="text-label-md">Support</span>
         </a>
       </div>
     </aside>

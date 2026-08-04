@@ -29,7 +29,8 @@ export default function TopNavBar() {
   const { user, organization, logout } = useAuth();
   const router = useRouter();
 
-  const isTrial = organization?.subscriptionStatus === 'TRIAL';
+  const isSysOwner = user?.systemRole === 'SYS_OWNER' || user?.originalRole === 'SYS_OWNER';
+  const isTrial = !isSysOwner && organization?.subscriptionStatus === 'TRIAL';
   const trialEndDate = organization?.trialEndDate ? new Date(organization.trialEndDate) : null;
   const now = new Date();
   const diffDays = trialEndDate ? Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 0;
@@ -223,7 +224,9 @@ export default function TopNavBar() {
             )}
             <div className="hidden sm:block">
               <p className="text-label-md font-bold text-on-surface leading-tight">{user.firstName} {user.lastName}</p>
-              <p className="text-[10px] text-outline font-semibold uppercase tracking-wider mt-0.5">{user.designation || 'Staff'}</p>
+              <p className="text-[10px] text-outline font-bold uppercase tracking-wider mt-0.5">
+                {user?.designation || (isSysOwner ? 'Platform Owner' : user?.systemRole?.replace('_', ' ') || 'Organization Staff')}
+              </p>
             </div>
           </Link>
           <button onClick={logout} className="hover:bg-surface-container p-1.5 rounded-full transition-transform active:scale-95 cursor-pointer">

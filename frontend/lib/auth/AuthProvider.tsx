@@ -43,6 +43,7 @@ interface AuthContextValue {
   logout: () => void;
   switchRole: (role: string) => Promise<void>;
   refetchUser: () => Promise<void>;
+  hasPermission: (resource: string, action?: string) => boolean;
   /** Only available in development builds */
   quickLogin?: (email: string) => Promise<void>;
 }
@@ -202,6 +203,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  function hasPermission(resource: string, action = 'read'): boolean {
+    if (!user) return false;
+    const isSysAdmin = user.systemRole === 'SYS_OWNER' || user.systemRole === 'SUPER_ADMIN' || user.systemRole === 'ORG_ADMIN' || user.originalRole === 'SYS_OWNER';
+    if (isSysAdmin) return true;
+
+    const userPerms = user.permissions || [];
+    if (userPerms.includes(`${resource}:${action}`) || userPerms.includes(`${resource}:manage`) || userPerms.includes(`${resource}:*`)) {
+      return true;
+    }
+
+    const objPerms = user.permissionObjects || [];
+    return objPerms.some((p: any) => p.resource === resource && (p.action === action || p.action === 'manage' || p.action === '*'));
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -215,6 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         switchRole,
         refetchUser: loadUser,
+        hasPermission,
       } satisfies AuthContextValue}
     >
       {children}

@@ -37,15 +37,15 @@ export default function PlatformAdminCmsPage() {
     try {
       if (activeTab === 'CUSTOMERS') {
         const res = await api.adminCms.listCustomers({ search });
-        const all = res.data?.items || [];
+        const all = Array.isArray(res.data?.items) ? res.data.items : Array.isArray(res.data) ? res.data : Array.isArray(res.items) ? res.items : [];
         setCustomers(all.filter((o: any) => o.subscriptionStatus !== 'TRIAL'));
       } else if (activeTab === 'TRIALS') {
         const res = await api.adminCms.listCustomers({ search });
-        const all = res.data?.items || [];
+        const all = Array.isArray(res.data?.items) ? res.data.items : Array.isArray(res.data) ? res.data : Array.isArray(res.items) ? res.items : [];
         setTrials(all.filter((o: any) => o.subscriptionStatus === 'TRIAL'));
       } else if (activeTab === 'INVOICES') {
         const res = await api.adminCms.listInvoices();
-        setInvoices(res.data || []);
+        setInvoices(Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : []);
       }
     } catch (err: any) {
       toast.error(err.message || 'Failed to load CMS data');

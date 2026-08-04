@@ -181,9 +181,14 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
       },
       roles: {
         include: {
-          role: true
+          role: {
+            include: {
+              permissions: true
+            }
+          }
         }
       },
+      organization: true,
       departmentHead: {
         where: { isDeleted: false },
         select: { id: true, name: true }
@@ -203,11 +208,24 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     throw AppError.notFound("User not found");
   }
 
-  const formattedRoles = user.roles.map((ur) => ({
+  const allPermissions = new Set<string>();
+  const permissionObjects: Array<{ resource: string; action: string }> = [];
+
+  user.roles.forEach((ur: any) => {
+    if (ur.role?.permissions) {
+      ur.role.permissions.forEach((p: any) => {
+        allPermissions.add(`${p.resource}:${p.action}`);
+        permissionObjects.push({ resource: p.resource, action: p.action });
+      });
+    }
+  });
+
+  const formattedRoles = user.roles.map((ur: any) => ({
     roleId: ur.roleId,
     roleName: ur.role.name,
     scopeType: ur.scopeType,
-    scopeId: ur.scopeId
+    scopeId: ur.scopeId,
+    permissions: ur.role.permissions ? ur.role.permissions.map((p: any) => ({ resource: p.resource, action: p.action })) : []
   }));
 
   const userProfile = {
@@ -227,7 +245,10 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     department: user.department,
     manager: user.manager,
     organizationId: user.organizationId,
+    organization: user.organization,
     roles: formattedRoles,
+    permissions: Array.from(allPermissions),
+    permissionObjects,
     departmentHead: user.departmentHead,
     teamLead: user.teamLead,
     teams: user.teams,

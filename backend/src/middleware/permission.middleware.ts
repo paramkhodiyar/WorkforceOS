@@ -8,16 +8,23 @@ export function requirePermission(resource: string, action: string | string[]) {
   const actions = Array.isArray(action) ? action : [action];
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user || !req.org) {
+      if (!req.user) {
         throw AppError.unauthorized("Authentication required");
       }
 
       if (
         req.user.systemRole === "SYS_OWNER" ||
         req.user.systemRole === "SUPER_ADMIN" ||
-        req.user.systemRole === "ORG_ADMIN" ||
         req.user.originalRole === "SYS_OWNER"
       ) {
+        return next();
+      }
+
+      if (!req.org) {
+        throw AppError.unauthorized("Organization context required");
+      }
+
+      if (req.user.systemRole === "ORG_ADMIN") {
         return next();
       }
 

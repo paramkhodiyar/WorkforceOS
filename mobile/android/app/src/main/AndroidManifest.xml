@@ -30,18 +30,52 @@
             </intent-filter>
         </activity>
 
-        <!-- WorkforceOS Quick Clock Attendance AppWidget Receiver -->
+        <!-- Standard 4x2 Attendance Widget Receiver -->
         <receiver
             android:name=".AttendanceWidgetProvider"
             android:exported="true"
-            android:label="@string/widget_attendance_name">
+            android:label="@string/widget_standard_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.workforceos.mobile.ACTION_TOGGLE_ATTENDANCE" />
+                <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFO" />
+                <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFH" />
+                <action android:name="com.workforceos.mobile.ACTION_CLOCK_OUT" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/attendance_widget_info" />
+                android:resource="@xml/attendance_widget_standard_info" />
+        </receiver>
+
+        <!-- Compact 2x1 Bar Attendance Widget Receiver -->
+        <receiver
+            android:name=".AttendanceWidgetCompactProvider"
+            android:exported="true"
+            android:label="@string/widget_compact_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFO" />
+                <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFH" />
+                <action android:name="com.workforceos.mobile.ACTION_CLOCK_OUT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/attendance_widget_compact_info" />
+        </receiver>
+
+        <!-- Full Dashboard 4x3 Attendance Widget Receiver -->
+        <receiver
+            android:name=".AttendanceWidgetDashboardProvider"
+            android:exported="true"
+            android:label="@string/widget_dashboard_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFO" />
+                <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFH" />
+                <action android:name="com.workforceos.mobile.ACTION_CLOCK_OUT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/attendance_widget_dashboard_info" />
         </receiver>
 
         <meta-data

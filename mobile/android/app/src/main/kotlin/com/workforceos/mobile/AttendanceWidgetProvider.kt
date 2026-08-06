@@ -6,10 +6,10 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import android.widget.RemoteViews
 import org.json.JSONObject
 import java.io.OutputStreamWriter
@@ -33,34 +33,36 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
 
         val action = intent.action ?: return
         if (action == ACTION_CLOCK_IN_WFO || action == ACTION_CLOCK_IN_WFH || action == ACTION_CLOCK_OUT) {
-            // Debounce Guard: 2.5 seconds rate limit per click
+            // Debounce guard: 3 second rate limit
             val now = System.currentTimeMillis()
-            if (now - lastActionTime < 2500) {
-                return
-            }
+            if (now - lastActionTime < 3000) return
             lastActionTime = now
 
             triggerHapticFeedback(context)
-            val mode = if (action == ACTION_CLOCK_IN_WFH) "WFH" else "WFO"
+
+            val workMode = if (action == ACTION_CLOCK_IN_WFH) "WFH" else "WFO"
             val isClockOut = action == ACTION_CLOCK_OUT
 
-            // Render immediate visual loading state
+            // Show immediate processing state across all widgets
             showProcessingState(context)
 
+            // Fire network call on background thread
             Thread {
-                performAttendanceAction(context, mode, isClockOut)
+                performAttendanceAction(context, workMode, isClockOut)
             }.start()
         }
     }
 
+    // ─── Processing State ──────────────────────────────────────────────────────
+
     private fun showProcessingState(context: Context) {
         try {
             val mgr = AppWidgetManager.getInstance(context)
-            
+
             val standardIds = mgr.getAppWidgetIds(ComponentName(context, AttendanceWidgetProvider::class.java))
             for (id in standardIds) {
                 val views = RemoteViews(context.packageName, R.layout.widget_standard_layout)
-                views.setTextViewText(R.id.widget_action_text, "PROCESSING...")
+                views.setTextViewText(R.id.widget_action_text, "PROCESSING…")
                 views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_pill_inactive)
                 mgr.updateAppWidget(id, views)
             }
@@ -68,7 +70,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             val compactIds = mgr.getAppWidgetIds(ComponentName(context, AttendanceWidgetCompactProvider::class.java))
             for (id in compactIds) {
                 val views = RemoteViews(context.packageName, R.layout.widget_compact_layout)
-                views.setTextViewText(R.id.widget_action_text, "PROCESSING...")
+                views.setTextViewText(R.id.widget_action_text, "LOADING…")
                 views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_pill_inactive)
                 mgr.updateAppWidget(id, views)
             }
@@ -76,7 +78,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             val dashboardIds = mgr.getAppWidgetIds(ComponentName(context, AttendanceWidgetDashboardProvider::class.java))
             for (id in dashboardIds) {
                 val views = RemoteViews(context.packageName, R.layout.widget_dashboard_layout)
-                views.setTextViewText(R.id.widget_action_text, "PROCESSING...")
+                views.setTextViewText(R.id.widget_action_text, "PROCESSING…")
                 views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_pill_inactive)
                 mgr.updateAppWidget(id, views)
             }
@@ -85,15 +87,24 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    // ─── Haptic Feedback ───────────────────────────────────────────────────────
+
     private fun triggerHapticFeedback(context: Context) {
         try {
-            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-            if (vibrator != null && vibrator.hasVibrator()) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator.vibrate(50)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+                val vibrator = vm?.defaultVibrator
+                vibrator?.vibrate(VibrationEffect.createOneShot(60, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+                if (vibrator != null && vibrator.hasVibrator()) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(60, VibrationEffect.DEFAULT_AMPLITUDE))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        vibrator.vibrate(60)
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -101,12 +112,16 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    // ─── Network Call ──────────────────────────────────────────────────────────
+
     private fun performAttendanceAction(context: Context, workMode: String, isClockOut: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val token = prefs.getString("auth_token", "") ?: ""
-        val baseUrl = prefs.getString("api_base_url", "https://workforceos-backend.onrender.com/api/v1") ?: "https://workforceos-backend.onrender.com/api/v1"
+        val baseUrl = prefs.getString("api_base_url", "https://workforceos-backend.onrender.com/api/v1")
+            ?: "https://workforceos-backend.onrender.com/api/v1"
 
         val endpoint = if (isClockOut) "$baseUrl/attendance/check-out" else "$baseUrl/attendance/check-in"
+        var success = false
 
         try {
             val url = URL(endpoint)
@@ -116,8 +131,8 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             if (token.isNotEmpty()) {
                 conn.setRequestProperty("Authorization", "Bearer $token")
             }
-            conn.connectTimeout = 8000
-            conn.readTimeout = 8000
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
             conn.doOutput = true
 
             val jsonBody = JSONObject().apply {
@@ -133,18 +148,14 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             writer.close()
 
             val responseCode = conn.responseCode
-            if (responseCode in 200..299) {
-                val newStatus = if (isClockOut) "CLOCKED_OUT" else "CLOCKED_IN"
-                prefs.edit().apply {
-                    putString("attendance_status", newStatus)
-                    putString("active_work_mode", workMode)
-                    putLong("last_clock_time", System.currentTimeMillis())
-                    apply()
-                }
-            }
+            success = responseCode in 200..299
         } catch (e: Exception) {
             e.printStackTrace()
-            // Local optimistic update fallback for seamless responsiveness
+            // Optimistic update on network failure
+            success = true
+        }
+
+        if (success) {
             val newStatus = if (isClockOut) "CLOCKED_OUT" else "CLOCKED_IN"
             prefs.edit().apply {
                 putString("attendance_status", newStatus)
@@ -152,6 +163,8 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
                 putLong("last_clock_time", System.currentTimeMillis())
                 apply()
             }
+            // Second haptic pulse on success
+            triggerHapticFeedback(context)
         }
 
         refreshAllWidgets(context)
@@ -162,7 +175,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
         const val ACTION_CLOCK_IN_WFH = "com.workforceos.mobile.ACTION_CLOCK_IN_WFH"
         const val ACTION_CLOCK_OUT = "com.workforceos.mobile.ACTION_CLOCK_OUT"
         const val PREFS_NAME = "WorkforceOSWidgetPrefs"
-        
+
         private var lastActionTime = 0L
 
         fun refreshAllWidgets(context: Context) {
@@ -194,16 +207,14 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             val isLoggedIn = prefs.getBoolean("is_logged_in", false)
             val token = prefs.getString("auth_token", "") ?: ""
 
-            // Handle Unauthenticated / Logged Out Graceful State
+            // Show logged-out screen if not authenticated
             if (!isLoggedIn || token.isEmpty()) {
                 val loggedOutViews = RemoteViews(context.packageName, R.layout.widget_logged_out_layout)
                 val openAppIntent = Intent(context, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
                 val pendingOpen = PendingIntent.getActivity(
-                    context,
-                    0,
-                    openAppIntent,
+                    context, 0, openAppIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 loggedOutViews.setOnClickPendingIntent(R.id.widget_login_button, pendingOpen)
@@ -212,34 +223,36 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
                 return
             }
 
-            // Authenticated Widget View State
             val status = prefs.getString("attendance_status", "CLOCKED_OUT") ?: "CLOCKED_OUT"
             val workMode = prefs.getString("active_work_mode", "WFO") ?: "WFO"
-            val userName = prefs.getString("user_name", "Param Owner") ?: "Param Owner"
+            val userName = prefs.getString("user_name", "Staff Member") ?: "Staff Member"
             val lastTime = prefs.getLong("last_clock_time", 0L)
 
             val views = RemoteViews(context.packageName, layoutResId)
+
+            // User name
             views.setTextViewText(R.id.widget_user_name, userName)
 
             val isClockedIn = status == "CLOCKED_IN"
 
-            // Mode Selector Pill Highlights (WFO / WFH)
-            if (layoutResId == R.layout.widget_standard_layout || layoutResId == R.layout.widget_dashboard_layout) {
+            // ── Mode Selector (standard & dashboard only) ──────────────────
+            val hasModePills = layoutResId == R.layout.widget_standard_layout ||
+                    layoutResId == R.layout.widget_dashboard_layout
+
+            if (hasModePills) {
                 if (workMode == "WFH") {
                     views.setInt(R.id.widget_btn_wfh, "setBackgroundResource", R.drawable.bg_pill_active)
                     views.setTextColor(R.id.widget_btn_wfh, 0xFFFFFFFF.toInt())
-
                     views.setInt(R.id.widget_btn_wfo, "setBackgroundResource", R.drawable.bg_pill_inactive)
                     views.setTextColor(R.id.widget_btn_wfo, 0xFF475569.toInt())
                 } else {
                     views.setInt(R.id.widget_btn_wfo, "setBackgroundResource", R.drawable.bg_pill_active)
                     views.setTextColor(R.id.widget_btn_wfo, 0xFFFFFFFF.toInt())
-
                     views.setInt(R.id.widget_btn_wfh, "setBackgroundResource", R.drawable.bg_pill_inactive)
                     views.setTextColor(R.id.widget_btn_wfh, 0xFF475569.toInt())
                 }
 
-                // Pending intents for WFO / WFH Mode selection
+                // WFO button pending intent
                 val wfoIntent = Intent(context, AttendanceWidgetProvider::class.java).apply {
                     action = ACTION_CLOCK_IN_WFO
                 }
@@ -248,6 +261,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
                     PendingIntent.getBroadcast(context, 101, wfoIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                 )
 
+                // WFH button pending intent
                 val wfhIntent = Intent(context, AttendanceWidgetProvider::class.java).apply {
                     action = ACTION_CLOCK_IN_WFH
                 }
@@ -257,27 +271,34 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
                 )
             }
 
-            // Action Button & Status Pill Update
+            // ── Status Pill ────────────────────────────────────────────────
             if (isClockedIn) {
-                views.setTextViewText(R.id.widget_status_pill, "CLOCKED IN")
+                views.setTextViewText(R.id.widget_status_pill, "✓ CLOCKED IN")
                 views.setInt(R.id.widget_status_pill, "setBackgroundResource", R.drawable.bg_status_in)
-                views.setTextColor(R.id.widget_status_pill, 0xFF047857.toInt()) // Emerald Dark Green
+                views.setTextColor(R.id.widget_status_pill, 0xFF047857.toInt())
+            } else {
+                views.setTextViewText(R.id.widget_status_pill, "CLOCKED OUT")
+                views.setInt(R.id.widget_status_pill, "setBackgroundResource", R.drawable.bg_status_out)
+                views.setTextColor(R.id.widget_status_pill, 0xFF475569.toInt())
+            }
 
+            // ── Duration (standard & dashboard only) ───────────────────────
+            if (layoutResId != R.layout.widget_compact_layout) {
+                if (isClockedIn && lastTime > 0) {
+                    val diffMs = System.currentTimeMillis() - lastTime
+                    val hours = diffMs / (1000 * 60 * 60)
+                    val mins = (diffMs / (1000 * 60)) % 60
+                    views.setTextViewText(R.id.widget_duration, String.format("%dh %02dm", hours, mins))
+                } else {
+                    views.setTextViewText(R.id.widget_duration, if (isClockedIn) "Active" else "--:--")
+                }
+            }
+
+            // ── Action Button ──────────────────────────────────────────────
+            if (isClockedIn) {
                 views.setTextViewText(R.id.widget_action_text, "CLOCK OUT")
                 views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_btn_clock_out)
 
-                if (layoutResId != R.layout.widget_compact_layout) {
-                    if (lastTime > 0) {
-                        val diffMs = System.currentTimeMillis() - lastTime
-                        val hours = diffMs / (1000 * 60 * 60)
-                        val mins = (diffMs / (1000 * 60)) % 60
-                        views.setTextViewText(R.id.widget_duration, String.format("%dh %02dm", hours, mins))
-                    } else {
-                        views.setTextViewText(R.id.widget_duration, "Active")
-                    }
-                }
-
-                // Clock out action pending intent
                 val outIntent = Intent(context, AttendanceWidgetProvider::class.java).apply {
                     action = ACTION_CLOCK_OUT
                 }
@@ -286,18 +307,14 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
                     PendingIntent.getBroadcast(context, 103, outIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                 )
             } else {
-                views.setTextViewText(R.id.widget_status_pill, "CLOCKED OUT")
-                views.setInt(R.id.widget_status_pill, "setBackgroundResource", R.drawable.bg_status_out)
-                views.setTextColor(R.id.widget_status_pill, 0xFF475569.toInt()) // Slate Text
-
-                views.setTextViewText(R.id.widget_action_text, if (layoutResId == R.layout.widget_compact_layout) "CLOCK IN" else "CLOCK IN ($workMode)")
+                val modeLabel = if (layoutResId == R.layout.widget_compact_layout) {
+                    if (workMode == "WFH") "CLOCK IN (WFH)" else "CLOCK IN (WFO)"
+                } else {
+                    if (workMode == "WFH") "QUICK CLOCK IN (WFH)" else "QUICK CLOCK IN (WFO)"
+                }
+                views.setTextViewText(R.id.widget_action_text, modeLabel)
                 views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_btn_clock_in)
 
-                if (layoutResId != R.layout.widget_compact_layout) {
-                    views.setTextViewText(R.id.widget_duration, "-- : --")
-                }
-
-                // Clock in action pending intent (uses selected workMode)
                 val inAction = if (workMode == "WFH") ACTION_CLOCK_IN_WFH else ACTION_CLOCK_IN_WFO
                 val inIntent = Intent(context, AttendanceWidgetProvider::class.java).apply {
                     action = inAction
@@ -313,7 +330,8 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
     }
 }
 
-// Compact Bar Widget Provider
+// ─── Sub-providers ─────────────────────────────────────────────────────────────
+
 class AttendanceWidgetCompactProvider : AttendanceWidgetProvider() {
     override fun onUpdate(
         context: Context,
@@ -326,7 +344,6 @@ class AttendanceWidgetCompactProvider : AttendanceWidgetProvider() {
     }
 }
 
-// Full Dashboard Widget Provider
 class AttendanceWidgetDashboardProvider : AttendanceWidgetProvider() {
     override fun onUpdate(
         context: Context,

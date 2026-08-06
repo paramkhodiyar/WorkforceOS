@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- WorkforceOS Standard Widget (4×2 → also works as 2×2 square) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_standard_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_widget_card"
+    android:orientation="vertical"
     android:padding="14dp">
 
-    <!-- Header Section -->
+    <!-- Header: Logo + App Name + Username -->
     <LinearLayout
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
@@ -15,8 +17,8 @@
         android:gravity="center_vertical">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:src="@mipmap/ic_launcher"
             android:contentDescription="WorkforceOS" />
 
@@ -24,10 +26,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="6dp"
             android:text="WORKFORCEOS"
             android:textColor="#0F172A"
-            android:textSize="11sp"
+            android:textSize="10sp"
             android:textStyle="bold"
             android:letterSpacing="0.08" />
 
@@ -37,55 +39,16 @@
             android:layout_height="wrap_content"
             android:text="Staff Member"
             android:textColor="#64748B"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+            android:textSize="10sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
     </LinearLayout>
 
-    <!-- WFO / WFH Mode Selector Row -->
-    <LinearLayout
-        android:id="@+id/mode_selector_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/header_layout"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:id="@+id/widget_btn_wfo"
-            android:layout_width="0dp"
-            android:layout_height="28dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_pill_active"
-            android:gravity="center"
-            android:text="WFO (Office)"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:textStyle="bold" />
-
-        <View
-            android:layout_width="8dp"
-            android:layout_height="1dp" />
-
-        <TextView
-            android:id="@+id/widget_btn_wfh"
-            android:layout_width="0dp"
-            android:layout_height="28dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_pill_inactive"
-            android:gravity="center"
-            android:text="WFH (Home)"
-            android:textColor="#475569"
-            android:textSize="10sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Center Status Information Row -->
+    <!-- Status Row: Pill + Duration -->
     <LinearLayout
         android:id="@+id/status_section"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/mode_selector_layout"
         android:layout_marginTop="8dp"
         android:orientation="horizontal"
         android:gravity="center_vertical">
@@ -97,16 +60,19 @@
             android:background="@drawable/bg_status_out"
             android:text="CLOCKED OUT"
             android:textColor="#334155"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textStyle="bold"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="4dp" />
+            android:paddingStart="9dp"
+            android:paddingEnd="9dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp" />
 
         <TextView
             android:id="@+id/widget_duration"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
             android:text="-- : --"
             android:textColor="#64748B"
             android:textSize="11sp"
@@ -114,24 +80,64 @@
 
         <TextView
             android:id="@+id/widget_location"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="end"
-            android:text="Office Geofence"
+            android:text="Office"
             android:textColor="#94A3B8"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:maxLines="1"
             android:ellipsize="end" />
     </LinearLayout>
 
-    <!-- Bottom Action Button -->
+    <!-- Mode Selector: WFO / WFH -->
+    <LinearLayout
+        android:id="@+id/mode_selector_layout"
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_btn_wfo"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_pill_active"
+            android:gravity="center"
+            android:text="WFO"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="6dp"
+            android:layout_height="1dp" />
+
+        <TextView
+            android:id="@+id/widget_btn_wfh"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_pill_inactive"
+            android:gravity="center"
+            android:text="WFH"
+            android:textColor="#475569"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Spacer that grows to push action button to bottom -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Action Button -->
     <LinearLayout
         android:id="@+id/widget_action_button"
         android:layout_width="match_parent"
-        android:layout_height="38dp"
-        android:layout_below="@id/status_section"
-        android:layout_marginTop="8dp"
+        android:layout_height="36dp"
         android:background="@drawable/bg_btn_clock_in"
         android:gravity="center"
         android:orientation="horizontal">
@@ -140,11 +146,11 @@
             android:id="@+id/widget_action_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="QUICK CLOCK IN"
+            android:text="CLOCK IN (WFO)"
             android:textColor="#FFFFFF"
             android:textSize="11sp"
             android:textStyle="bold"
-            android:letterSpacing="0.05" />
+            android:letterSpacing="0.04" />
     </LinearLayout>
 
-</RelativeLayout>
+</LinearLayout>

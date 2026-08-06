@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/services.dart';
 import '../services/attendance_widget_service.dart';
 
 /// WebViewScreen — the main app shell.
@@ -204,7 +204,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         case 'save_token':
           final token = data['token'] as String?;
           final refreshToken = data['refreshToken'] as String?;
-          final userName = data['userName'] as String? ?? 'Param Owner';
+          final userName = data['userName'] as String? ?? 'Staff Member';
           if (token != null && token.isNotEmpty) {
             await prefs.setString('auth_token', token);
             if (refreshToken != null && refreshToken.isNotEmpty) {
@@ -228,6 +228,42 @@ class _WebViewScreenState extends State<WebViewScreen> {
           await AttendanceWidgetService.clearWidgetData();
           debugPrint('Bridge: tokens cleared & Android widget reset');
 
+        // Haptic feedback trigger from web app clock-in/out button press
+        case 'haptic_feedback':
+          final style = data['style'] as String? ?? 'medium';
+          switch (style) {
+            case 'light':
+              await HapticFeedback.lightImpact();
+            case 'heavy':
+              await HapticFeedback.heavyImpact();
+            case 'selection':
+              await HapticFeedback.selectionClick();
+            default:
+              await HapticFeedback.mediumImpact();
+          }
+          debugPrint('Bridge: haptic feedback → $style');
+
+        // Attendance action completed — sync widget state
+        case 'attendance_action':
+          final newStatus = data['status'] as String? ?? 'CLOCKED_OUT';
+          final workMode = data['workMode'] as String? ?? 'WFO';
+          final savedToken = prefs.getString('auth_token') ?? '';
+          final savedUserName = prefs.getString('user_name') ?? 'Staff Member';
+          if (savedToken.isNotEmpty) {
+            await AttendanceWidgetService.updateWidgetData(
+              isLoggedIn: true,
+              status: newStatus,
+              userName: savedUserName,
+              token: savedToken,
+              workMode: workMode,
+              apiBaseUrl: 'https://workforceos-backend.onrender.com/api/v1',
+              lastClockTimeMs: DateTime.now().millisecondsSinceEpoch,
+            );
+          }
+          // Success haptic
+          await HapticFeedback.heavyImpact();
+          debugPrint('Bridge: attendance_action → status=$newStatus mode=$workMode');
+
         case 'set_biometric_pref':
           final enabled = data['enabled'] as bool? ?? false;
           await prefs.setBool('use_biometric', enabled);
@@ -235,7 +271,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         case 'get_biometric_pref':
           final bioPref = prefs.getBool('use_biometric') ?? false;
-          // Call back into the web page so the toggle reflects the real pref.
           await _controller.runJavaScript(
             'if(window.__workforceBiometricPref) window.__workforceBiometricPref($bioPref);'
           );

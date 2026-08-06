@@ -774,19 +774,19 @@ export class AuthService {
       module: "auth",
       targetId: userId,
       targetType: "User",
-      newValue: { passwordChanged: true },
-      req
+      newValue: { passwordChanged: true }
     });
 
     return updatedUser;
   }
 
   static async switchRole(userId: string, selectedRole: string, currentPayload: any) {
-    if (currentPayload.originalRole !== "SYS_OWNER") {
-      throw AppError.forbidden("Only the system owner is authorized to switch roles dynamically");
+    const isOwner = currentPayload?.originalRole === "SYS_OWNER" || currentPayload?.systemRole === "SYS_OWNER" || currentPayload?.originalRole === "SUPER_ADMIN" || currentPayload?.systemRole === "SUPER_ADMIN";
+    if (!isOwner) {
+      throw AppError.forbidden("Only system owners are authorized to switch roles dynamically");
     }
 
-    const allowedRoles = ["ORG_ADMIN", "HR", "EMPLOYEE"];
+    const allowedRoles = ["ORG_ADMIN", "HR", "EMPLOYEE", "SYS_OWNER"];
     if (!allowedRoles.includes(selectedRole)) {
       throw AppError.badRequest("Invalid target role for owner simulation");
     }

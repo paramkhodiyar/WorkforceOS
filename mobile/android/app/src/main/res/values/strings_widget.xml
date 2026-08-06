@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="widget_attendance_name">WorkforceOS Attendance</string>
+    <string name="widget_attendance_description">Shows live attendance status with quick clock-in and clock-out actions.</string>
     <string name="widget_compact_name">WorkforceOS Quick Bar (Compact)</string>
     <string name="widget_compact_description">Minimalist attendance status bar with quick clock in/out action.</string>
-
     <string name="widget_standard_name">WorkforceOS Attendance Card (Standard)</string>
     <string name="widget_standard_description">Standard attendance card with WFO and WFH mode selectors.</string>
-
     <string name="widget_dashboard_name">WorkforceOS Attendance Dashboard (Full)</string>
     <string name="widget_dashboard_description">Expanded dashboard view with shift timing, WFO/WFH mode, and action controls.</string>
 </resources>

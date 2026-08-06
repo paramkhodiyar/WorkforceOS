@@ -173,7 +173,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await api.auth.switchRole(role);
       
-      const tokens = response.data?.tokens;
+      const tokens = response.data?.tokens || response.tokens;
+      const userObj = response.data?.user || response.user || user;
       if (tokens) {
         localStorage.setItem('token', tokens.accessToken);
         localStorage.setItem('refreshToken', tokens.refreshToken);
@@ -186,14 +187,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      setUser(response.data.user);
+      if (userObj) {
+        setUser({ ...userObj, originalRole: 'SYS_OWNER', systemRole: role });
+      }
       
       try {
         const orgRes = await api.organization.get();
-        setOrganization(orgRes.data);
-        setFeatures(orgRes.data.enabledFeatures || []);
+        const orgData = orgRes.data || orgRes;
+        if (orgData) {
+          setOrganization(orgData);
+          setFeatures(orgData.enabledFeatures || []);
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Org fetch fallback on role switch:', err);
       }
       setLoading(false);
       router.push('/dashboard');

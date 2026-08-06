@@ -33,13 +33,55 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
 
         val action = intent.action ?: return
         if (action == ACTION_CLOCK_IN_WFO || action == ACTION_CLOCK_IN_WFH || action == ACTION_CLOCK_OUT) {
+            // Debounce Guard: 2.5 seconds rate limit per click
+            val now = System.currentTimeMillis()
+            if (now - lastActionTime < 2500) {
+                return
+            }
+            lastActionTime = now
+
             triggerHapticFeedback(context)
             val mode = if (action == ACTION_CLOCK_IN_WFH) "WFH" else "WFO"
             val isClockOut = action == ACTION_CLOCK_OUT
 
+            // Render immediate visual loading state
+            showProcessingState(context)
+
             Thread {
                 performAttendanceAction(context, mode, isClockOut)
             }.start()
+        }
+    }
+
+    private fun showProcessingState(context: Context) {
+        try {
+            val mgr = AppWidgetManager.getInstance(context)
+            
+            val standardIds = mgr.getAppWidgetIds(ComponentName(context, AttendanceWidgetProvider::class.java))
+            for (id in standardIds) {
+                val views = RemoteViews(context.packageName, R.layout.widget_standard_layout)
+                views.setTextViewText(R.id.widget_action_text, "PROCESSING...")
+                views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_pill_inactive)
+                mgr.updateAppWidget(id, views)
+            }
+
+            val compactIds = mgr.getAppWidgetIds(ComponentName(context, AttendanceWidgetCompactProvider::class.java))
+            for (id in compactIds) {
+                val views = RemoteViews(context.packageName, R.layout.widget_compact_layout)
+                views.setTextViewText(R.id.widget_action_text, "PROCESSING...")
+                views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_pill_inactive)
+                mgr.updateAppWidget(id, views)
+            }
+
+            val dashboardIds = mgr.getAppWidgetIds(ComponentName(context, AttendanceWidgetDashboardProvider::class.java))
+            for (id in dashboardIds) {
+                val views = RemoteViews(context.packageName, R.layout.widget_dashboard_layout)
+                views.setTextViewText(R.id.widget_action_text, "PROCESSING...")
+                views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_pill_inactive)
+                mgr.updateAppWidget(id, views)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -62,7 +104,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
     private fun performAttendanceAction(context: Context, workMode: String, isClockOut: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val token = prefs.getString("auth_token", "") ?: ""
-        val baseUrl = prefs.getString("api_base_url", "http://localhost:4000/api/v1") ?: "http://localhost:4000/api/v1"
+        val baseUrl = prefs.getString("api_base_url", "https://workforceos-backend.onrender.com/api/v1") ?: "https://workforceos-backend.onrender.com/api/v1"
 
         val endpoint = if (isClockOut) "$baseUrl/attendance/check-out" else "$baseUrl/attendance/check-in"
 
@@ -74,6 +116,8 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             if (token.isNotEmpty()) {
                 conn.setRequestProperty("Authorization", "Bearer $token")
             }
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
             conn.doOutput = true
 
             val jsonBody = JSONObject().apply {
@@ -100,7 +144,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            // Local optimistic update
+            // Local optimistic update fallback for seamless responsiveness
             val newStatus = if (isClockOut) "CLOCKED_OUT" else "CLOCKED_IN"
             prefs.edit().apply {
                 putString("attendance_status", newStatus)
@@ -118,6 +162,8 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
         const val ACTION_CLOCK_IN_WFH = "com.workforceos.mobile.ACTION_CLOCK_IN_WFH"
         const val ACTION_CLOCK_OUT = "com.workforceos.mobile.ACTION_CLOCK_OUT"
         const val PREFS_NAME = "WorkforceOSWidgetPrefs"
+        
+        private var lastActionTime = 0L
 
         fun refreshAllWidgets(context: Context) {
             val mgr = AppWidgetManager.getInstance(context)
@@ -169,7 +215,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             // Authenticated Widget View State
             val status = prefs.getString("attendance_status", "CLOCKED_OUT") ?: "CLOCKED_OUT"
             val workMode = prefs.getString("active_work_mode", "WFO") ?: "WFO"
-            val userName = prefs.getString("user_name", "Staff Member") ?: "Staff Member"
+            val userName = prefs.getString("user_name", "Param Owner") ?: "Param Owner"
             val lastTime = prefs.getLong("last_clock_time", 0L)
 
             val views = RemoteViews(context.packageName, layoutResId)
@@ -215,6 +261,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             if (isClockedIn) {
                 views.setTextViewText(R.id.widget_status_pill, "CLOCKED IN")
                 views.setInt(R.id.widget_status_pill, "setBackgroundResource", R.drawable.bg_status_in)
+                views.setTextColor(R.id.widget_status_pill, 0xFF047857.toInt()) // Emerald Dark Green
 
                 views.setTextViewText(R.id.widget_action_text, "CLOCK OUT")
                 views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_btn_clock_out)
@@ -239,6 +286,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             } else {
                 views.setTextViewText(R.id.widget_status_pill, "CLOCKED OUT")
                 views.setInt(R.id.widget_status_pill, "setBackgroundResource", R.drawable.bg_status_out)
+                views.setTextColor(R.id.widget_status_pill, 0xFF475569.toInt()) // Slate Text
 
                 views.setTextViewText(R.id.widget_action_text, "CLOCK IN ($workMode)")
                 views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_btn_clock_in)

@@ -53,7 +53,7 @@ export default function AttendancePage() {
   const isHR = userRoles.some((r: any) => r.roleName === 'HR_MANAGER');
   const isDeptHead = userRoles.some((r: any) => r.roleName === 'DEPARTMENT_HEAD');
   const isTeamManager = userRoles.some((r: any) => r.roleName === 'TEAM_MANAGER');
-  const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN';
+  const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN' || systemRole === 'SYS_OWNER' || user?.originalRole === 'SYS_OWNER';
   const showTeamAttendance = isAdmin || isHR || isDeptHead || isTeamManager;
 
   const formatDateTime = (dStr: string | null | undefined) => {
@@ -945,7 +945,7 @@ export default function AttendancePage() {
                           >
                             {actioningAdjustmentId === req.id ? 'Processing...' : 'Reject'}
                           </button>
-                          {!isOwnRequest && (
+                          {(isAdmin || (!isOwnRequest && isHR)) && (
                             <button
                               type="button"
                               disabled={actioningAdjustmentId === req.id}
@@ -1011,7 +1011,7 @@ export default function AttendancePage() {
                                 >
                                   {actioningAdjustmentId === req.id ? 'Processing...' : 'Reject'}
                                 </button>
-                                {!isOwnRequest && (
+                                {(isAdmin || (!isOwnRequest && isHR)) && (
                                   <button
                                     type="button"
                                     disabled={actioningAdjustmentId === req.id}

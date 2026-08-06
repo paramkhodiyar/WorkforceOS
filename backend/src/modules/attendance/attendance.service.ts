@@ -404,6 +404,13 @@ export class AttendanceService {
       throw AppError.notFound("Attendance record not found");
     }
 
+    const requester = await prisma.user.findUnique({
+      where: { id: requestedBy },
+      select: { systemRole: true }
+    });
+
+    const isOrgAdmin = requester?.systemRole === "ORG_ADMIN" || requester?.systemRole === "SYS_OWNER" || requester?.systemRole === "SUPER_ADMIN";
+
     const request = await prisma.attendanceAdjustmentRequest.create({
       data: {
         attendanceId,
@@ -412,9 +419,23 @@ export class AttendanceService {
         proposedCheckIn: fields.checkIn ? new Date(fields.checkIn) : null,
         proposedCheckOut: fields.checkOut ? new Date(fields.checkOut) : null,
         proposedStatus: fields.status || null,
-        status: "PENDING"
+        status: isOrgAdmin ? "APPROVED" : "PENDING",
+        approvedBy: isOrgAdmin ? requestedBy : null
       }
     });
+
+    if (isOrgAdmin) {
+      const updateData: any = {};
+      if (fields.checkIn) updateData.checkIn = new Date(fields.checkIn);
+      if (fields.checkOut) updateData.checkOut = new Date(fields.checkOut);
+      if (fields.status) updateData.status = fields.status;
+      updateData.isManualEntry = true;
+
+      await prisma.attendance.update({
+        where: { id: attendanceId },
+        data: updateData
+      });
+    }
 
     await AuditService.log({
       organizationId: orgId,
@@ -475,7 +496,7 @@ export class AttendanceService {
     }
 
     const approver = await prisma.user.findUnique({ where: { id: approverId }, select: { systemRole: true } });
-    const isOrgAdmin = approver?.systemRole === "ORG_ADMIN" || approver?.systemRole === "SUPER_ADMIN";
+    const isOrgAdmin = approver?.systemRole === "ORG_ADMIN" || approver?.systemRole === "SUPER_ADMIN" || approver?.systemRole === "SYS_OWNER";
 
     if (request.requestedBy === approverId && !isOrgAdmin) {
       throw AppError.forbidden("Two-person rule violation: You cannot approve your own adjustment request");

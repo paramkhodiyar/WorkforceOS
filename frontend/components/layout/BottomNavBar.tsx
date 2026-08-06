@@ -11,6 +11,7 @@ export default function BottomNavBar() {
   const pathname = usePathname();
   const { user, features } = useAuth();
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
     function checkPending() {
@@ -37,7 +38,47 @@ export default function BottomNavBar() {
     }
   }, [user]);
 
-  if (!user) return null;
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    function handleFocusIn(e: FocusEvent) {
+      const target = e.target as HTMLElement;
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+        setIsKeyboardOpen(true);
+      }
+    }
+
+    function handleFocusOut() {
+      setTimeout(() => {
+        const active = document.activeElement as HTMLElement;
+        if (!active || !['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
+          setIsKeyboardOpen(false);
+        }
+      }, 100);
+    }
+
+    function handleResize() {
+      if (window.visualViewport) {
+        setIsKeyboardOpen(window.visualViewport.height < window.innerHeight * 0.85);
+      }
+    }
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+    }
+
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+      }
+    };
+  }, []);
+
+  if (!user || isKeyboardOpen) return null;
 
   const tabs = [
     { label: 'Home', icon: 'dashboard', href: '/dashboard', show: true },

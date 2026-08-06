@@ -107,6 +107,12 @@ export class LeaveService {
       balancesToUpdate.push({ balanceId: balance.id, year: yr, yearDays });
     }
 
+    const applicantUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { systemRole: true }
+    });
+    const isOrgAdmin = applicantUser?.systemRole === "ORG_ADMIN" || applicantUser?.systemRole === "SYS_OWNER" || applicantUser?.systemRole === "SUPER_ADMIN";
+
     const request = await prisma.leaveRequest.create({
       data: {
         userId,
@@ -115,16 +121,16 @@ export class LeaveService {
         endDate,
         days,
         reason: data.reason,
-        status: LeaveStatus.PENDING
+        status: isOrgAdmin ? LeaveStatus.HR_APPROVED : LeaveStatus.PENDING
       }
     });
 
     for (const b of balancesToUpdate) {
       await prisma.leaveBalance.update({
         where: { id: b.balanceId },
-        data: {
-          pending: { increment: b.yearDays }
-        }
+        data: isOrgAdmin
+          ? { used: { increment: b.yearDays } }
+          : { pending: { increment: b.yearDays } }
       });
     }
 

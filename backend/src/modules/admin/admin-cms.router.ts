@@ -1,9 +1,12 @@
 import { Router } from "express";
-import { listCustomers, mintKey, updateCustomerStatus, listInvoices, verifyInvoice } from "./admin-cms.controller";
+import { listCustomers, mintKey, updateCustomerStatus, listInvoices, verifyInvoice, createLead, listLeads, updateLeadStatus } from "./admin-cms.controller";
 import { authenticate } from "../../middleware/auth.middleware";
 import { AppError } from "../../utils/errors.util";
 
 const router = Router();
+
+// Public website lead inquiry submission route
+router.post("/public/leads", createLead);
 
 // Protect Platform Admin CMS routes: Require SYS_OWNER or SUPER_ADMIN systemRole
 router.use(authenticate, (req, res, next) => {
@@ -20,5 +23,7 @@ router.post("/keys/mint", mintKey);
 router.patch("/customers/:orgId/status", updateCustomerStatus);
 router.get("/invoices", listInvoices);
 router.post("/invoices/:invoiceId/verify", verifyInvoice);
+router.get("/inquiries", listLeads);
+router.patch("/inquiries/:id/status", updateLeadStatus);
 
 export const adminCmsRouter = router;

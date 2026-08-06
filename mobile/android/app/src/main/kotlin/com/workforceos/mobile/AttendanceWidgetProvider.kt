@@ -266,13 +266,15 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
                 views.setTextViewText(R.id.widget_action_text, "CLOCK OUT")
                 views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_btn_clock_out)
 
-                if (lastTime > 0) {
-                    val diffMs = System.currentTimeMillis() - lastTime
-                    val hours = diffMs / (1000 * 60 * 60)
-                    val mins = (diffMs / (1000 * 60)) % 60
-                    views.setTextViewText(R.id.widget_duration, String.format("%dh %02dm", hours, mins))
-                } else {
-                    views.setTextViewText(R.id.widget_duration, "Active")
+                if (layoutResId != R.layout.widget_compact_layout) {
+                    if (lastTime > 0) {
+                        val diffMs = System.currentTimeMillis() - lastTime
+                        val hours = diffMs / (1000 * 60 * 60)
+                        val mins = (diffMs / (1000 * 60)) % 60
+                        views.setTextViewText(R.id.widget_duration, String.format("%dh %02dm", hours, mins))
+                    } else {
+                        views.setTextViewText(R.id.widget_duration, "Active")
+                    }
                 }
 
                 // Clock out action pending intent
@@ -288,9 +290,12 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
                 views.setInt(R.id.widget_status_pill, "setBackgroundResource", R.drawable.bg_status_out)
                 views.setTextColor(R.id.widget_status_pill, 0xFF475569.toInt()) // Slate Text
 
-                views.setTextViewText(R.id.widget_action_text, "CLOCK IN ($workMode)")
+                views.setTextViewText(R.id.widget_action_text, if (layoutResId == R.layout.widget_compact_layout) "CLOCK IN" else "CLOCK IN ($workMode)")
                 views.setInt(R.id.widget_action_button, "setBackgroundResource", R.drawable.bg_btn_clock_in)
-                views.setTextViewText(R.id.widget_duration, "-- : --")
+
+                if (layoutResId != R.layout.widget_compact_layout) {
+                    views.setTextViewText(R.id.widget_duration, "-- : --")
+                }
 
                 // Clock in action pending intent (uses selected workMode)
                 val inAction = if (workMode == "WFH") ACTION_CLOCK_IN_WFH else ACTION_CLOCK_IN_WFO

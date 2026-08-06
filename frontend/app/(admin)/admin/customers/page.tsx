@@ -6,7 +6,7 @@ import { api } from '../../../../lib/api/client';
 import { useToast } from '../../../../lib/toast/ToastProvider';
 import Link from 'next/link';
 
-type TabId = 'CUSTOMERS' | 'TRIALS' | 'INVOICES' | 'MINT_KEY';
+type TabId = 'CUSTOMERS' | 'TRIALS' | 'INVOICES' | 'INQUIRIES' | 'MINT_KEY';
 
 export default function PlatformAdminCmsPage() {
   const { user, switchRole } = useAuth();
@@ -16,6 +16,7 @@ export default function PlatformAdminCmsPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [trials, setTrials] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [inquiries, setInquiries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
@@ -41,9 +42,10 @@ export default function PlatformAdminCmsPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [custRes, invRes] = await Promise.allSettled([
+      const [custRes, invRes, inqRes] = await Promise.allSettled([
         api.adminCms.listCustomers({ limit: 200 }),
-        api.adminCms.listInvoices()
+        api.adminCms.listInvoices(),
+        api.adminCms.listInquiries()
       ]);
 
       let allOrgs: any[] = [];
@@ -61,6 +63,11 @@ export default function PlatformAdminCmsPage() {
       if (invRes.status === 'fulfilled') {
         const res = invRes.value;
         setInvoices(Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : []);
+      }
+
+      if (inqRes.status === 'fulfilled') {
+        const res = inqRes.value;
+        setInquiries(Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : []);
       }
 
       if (!initialLoaded) {
@@ -174,6 +181,7 @@ export default function PlatformAdminCmsPage() {
     { id: 'CUSTOMERS', label: 'Customer Orgs', icon: 'corporate_fare', count: customers.length },
     { id: 'TRIALS', label: 'Trial Registrations', icon: 'science', count: trials.length },
     { id: 'INVOICES', label: 'Payment Invoices', icon: 'receipt_long', count: invoices.length },
+    { id: 'INQUIRIES', label: 'Website Inquiries', icon: 'contact_mail', count: inquiries.length },
     { id: 'MINT_KEY', label: 'Mint License Key', icon: 'key' },
   ];
 
@@ -561,20 +569,100 @@ export default function PlatformAdminCmsPage() {
               {minting && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
               <span>Mint License Key</span>
             </button>
-          </form>
-
-          {generatedKeyResult && (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2 select-all">
-              <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Generated Personalized License Key:</p>
-              <div className="flex items-center justify-between bg-white px-3.5 py-2 rounded-xl border border-emerald-200">
-                <span className="font-mono text-sm font-black text-slate-900">{generatedKeyResult}</span>
-                <button
-                  onClick={() => handleCopyKey(generatedKeyResult)}
-                  className="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors"
-                >
-                  Copy
-                </button>
+            {generatedKeyResult && (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2">
+                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Generated Enterprise Key</span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono font-extrabold text-slate-900 text-sm select-all">{generatedKeyResult}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyKey(generatedKeyResult)}
+                    className="px-3 py-1.5 bg-emerald-700 text-white font-bold text-xs rounded-xl hover:bg-emerald-800 transition-all cursor-pointer"
+                  >
+                    Copy Key
+                  </button>
+                </div>
               </div>
+            )}
+          </form>
+        </div>
+      )}
+
+      {/* Website Lead Inquiries Tab */}
+      {activeTab === 'INQUIRIES' && (
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl space-y-4 shadow-sm">
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">Website Lead Inquiries</h2>
+              <p className="text-xs text-slate-500 font-medium">Inbound contact & sales demo inquiry submissions from the main website.</p>
+            </div>
+          </div>
+
+          {inquiries.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 text-xs font-semibold">
+              No website lead inquiries submitted yet.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {inquiries.map((inq: any) => (
+                <div key={inq.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-sm">{inq.name}</h4>
+                      <p className="text-xs text-blue-600 font-mono font-semibold">{inq.email}</p>
+                      {inq.phone && <p className="text-[11px] text-slate-500 font-mono">{inq.phone}</p>}
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase border ${
+                      inq.status === 'NEW'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : inq.status === 'CONTACTED'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : inq.status === 'CONVERTED'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                      {inq.status}
+                    </span>
+                  </div>
+
+                  {(inq.companyName || inq.employeeCount) && (
+                    <div className="text-xs text-slate-600 font-medium pt-1 border-t border-slate-200/60 flex items-center justify-between">
+                      <span>Company: <strong>{inq.companyName || 'N/A'}</strong></span>
+                      <span>Employees: <strong>{inq.employeeCount || 'N/A'}</strong></span>
+                    </div>
+                  )}
+
+                  {inq.message && (
+                    <div className="text-xs text-slate-700 italic bg-white p-3 rounded-xl border border-slate-200">
+                      "{inq.message}"
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px]">
+                    <span className="text-slate-400 font-mono">
+                      {new Date(inq.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </span>
+                    <select
+                      value={inq.status}
+                      onChange={async (e) => {
+                        try {
+                          await api.adminCms.updateInquiryStatus(inq.id, e.target.value);
+                          toast.success('Inquiry status updated!');
+                          loadData();
+                        } catch (err: any) {
+                          toast.error(err.message || 'Failed to update status');
+                        }
+                      }}
+                      className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer"
+                    >
+                      <option value="NEW">Mark NEW</option>
+                      <option value="CONTACTED">Mark CONTACTED</option>
+                      <option value="CONVERTED">Mark CONVERTED</option>
+                      <option value="CLOSED">Mark CLOSED</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

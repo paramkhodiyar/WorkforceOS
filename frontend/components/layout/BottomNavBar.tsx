@@ -90,9 +90,9 @@ export default function BottomNavBar() {
   const activeIndex = Math.max(0, tabs.findIndex(t => pathname === t.href || pathname.startsWith(t.href + '/')));
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-[90] md:hidden select-none">
-      {/* Translucent Glassmorphic Capsule */}
-      <div className="relative bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-full p-1.5 flex items-center justify-around shadow-sm">
+    <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 w-fit max-w-[94vw] z-[90] md:hidden select-none">
+      {/* Translucent Glassmorphic Floating Gallery Bar */}
+      <div className="relative bg-slate-900/90 backdrop-blur-2xl border border-slate-700/60 rounded-full p-1.5 flex items-center gap-1 shadow-2xl shadow-slate-950/40">
         {tabs.map((tab, idx) => {
           const isActive = activeIndex === idx;
 
@@ -105,12 +105,12 @@ export default function BottomNavBar() {
               }}
               className={`relative z-10 flex items-center gap-2 px-3.5 py-2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] active:scale-95 cursor-pointer ${
                 isActive
-                  ? 'bg-blue-600 text-white font-extrabold shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 font-medium'
+                  ? 'bg-blue-600 text-white font-black shadow-md shadow-blue-500/30'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60 font-semibold'
               }`}
             >
               <span className={`material-symbols-outlined text-[20px] transition-transform duration-200 ${
-                isActive ? 'scale-110 text-white' : 'scale-100 text-slate-600'
+                isActive ? 'scale-105 text-white' : 'scale-100 text-slate-400'
               }`}>
                 {tab.icon}
               </span>
@@ -126,7 +126,7 @@ export default function BottomNavBar() {
 
               {/* Notification Badge for Inactive Tabs */}
               {tab.badge && !isActive && (
-                <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+                <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-rose-500 ring-2 ring-slate-900" />
               )}
             </Link>
           );

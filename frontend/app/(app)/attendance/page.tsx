@@ -91,7 +91,7 @@ export default function AttendancePage() {
 
       if (isAdmin || isHR) {
         try {
-          const adjRes = await api.attendance.listAdjustments();
+          const adjRes = await api.attendance.listAdjustments('PENDING');
           setAdjustmentRequests(adjRes.data || []);
           const excRes = await api.attendance.exceptions(currentPageExceptions, itemsPerPage);
           setExceptions(excRes.records || []);
@@ -300,12 +300,12 @@ export default function AttendancePage() {
   );
 
   const filteredAdjustments = adjustmentRequests.filter(req => {
+    if (req.status !== 'PENDING') return false;
     const emp = req.attendance?.user;
     const name = `${emp?.firstName || ''} ${emp?.lastName || ''}`.toLowerCase();
     const reason = req.reason?.toLowerCase() || '';
-    const status = req.status?.toLowerCase() || '';
     const q = searchAdjustments.toLowerCase();
-    return name.includes(q) || reason.includes(q) || status.includes(q);
+    return name.includes(q) || reason.includes(q);
   });
   const totalPagesAdjustments = Math.ceil(filteredAdjustments.length / itemsPerPage);
   const paginatedAdjustments = filteredAdjustments.slice(
@@ -341,11 +341,11 @@ export default function AttendancePage() {
         <p className="text-xs text-slate-500 font-medium mt-0.5">Record daily shifts and inspect check-in history</p>
       </div>
 
-      {/* Modern Segmented Control Tabs (Zero Shadows, Zero Gradients) */}
-      <div className="bg-slate-100/90 border border-slate-200 p-1.5 rounded-2xl grid grid-cols-2 md:grid-cols-3 gap-1.5 w-full max-w-2xl select-none">
+      {/* Modern Segmented Control Tabs (Single Line Flex Row) */}
+      <div className="bg-slate-100/90 border border-slate-200 p-1.5 rounded-2xl flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full max-w-2xl select-none whitespace-nowrap">
         <button
           onClick={() => setActiveTab('my-attendance')}
-          className={`py-2.5 px-3 rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
             activeTab === 'my-attendance'
               ? 'bg-white text-blue-600 border border-slate-200/80 font-black'
               : 'text-slate-600 hover:text-slate-900 font-bold'
@@ -358,7 +358,7 @@ export default function AttendancePage() {
         {showTeamAttendance && (
           <button
             onClick={() => setActiveTab('team-attendance')}
-            className={`py-2.5 px-3 rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'team-attendance'
                 ? 'bg-white text-blue-600 border border-slate-200/80 font-black'
                 : 'text-slate-600 hover:text-slate-900 font-bold'
@@ -372,7 +372,7 @@ export default function AttendancePage() {
         {(isAdmin || isHR) && (
           <button
             onClick={() => setActiveTab('adjustments')}
-            className={`py-2.5 px-3 rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 min-w-0 py-2.5 px-3 rounded-xl text-xs transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeTab === 'adjustments'
                 ? 'bg-white text-blue-600 border border-slate-200/80 font-black'
                 : 'text-slate-600 hover:text-slate-900 font-bold'

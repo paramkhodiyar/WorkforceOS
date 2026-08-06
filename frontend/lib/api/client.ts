@@ -549,6 +549,17 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ isApproved, notes }),
       }),
+    listInquiries: (): Promise<any> => request('/admin/cms/inquiries'),
+    updateInquiryStatus: (id: string, status: string): Promise<any> =>
+      request(`/admin/cms/inquiries/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
+    submitLeadInquiry: (data: { name: string; email: string; companyName?: string; phone?: string; employeeCount?: string; message?: string }): Promise<any> =>
+      request('/admin/cms/public/leads', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
   notifications: {
     list: (): Promise<any> => request('/notifications'),

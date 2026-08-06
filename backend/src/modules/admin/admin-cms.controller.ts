@@ -3,6 +3,7 @@ import { AdminCmsService } from "./admin-cms.service";
 import { sendSuccess } from "../../utils/response.util";
 import { asyncHandler } from "../../utils/asyncHandler.util";
 import { parsePagination } from "../../utils/pagination.util";
+import { AppError } from "../../utils/errors.util";
 import { SubscriptionTier, LicenseStatus, PaymentStatus } from "@prisma/client";
 
 export const listCustomers = asyncHandler(async (req: Request, res: Response) => {
@@ -49,4 +50,25 @@ export const verifyInvoice = asyncHandler(async (req: Request, res: Response) =>
 
   const updated = await AdminCmsService.verifyInvoice(invoiceId, Boolean(isApproved), notes, req.user?.id);
   return sendSuccess(res, updated, isApproved ? "Payment invoice verified and license activated" : "Payment invoice rejected");
+});
+
+export const createLead = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, companyName, phone, employeeCount, message } = req.body;
+  if (!name || !email) {
+    throw AppError.badRequest("Name and email are required");
+  }
+  const lead = await AdminCmsService.createLead({ name, email, companyName, phone, employeeCount, message });
+  return sendSuccess(res, lead, "Inquiry submitted successfully");
+});
+
+export const listLeads = asyncHandler(async (req: Request, res: Response) => {
+  const leads = await AdminCmsService.listLeads();
+  return sendSuccess(res, leads);
+});
+
+export const updateLeadStatus = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const updated = await AdminCmsService.updateLeadStatus(id, status);
+  return sendSuccess(res, updated, `Lead status updated to ${status}`);
 });

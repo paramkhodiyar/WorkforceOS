@@ -188,4 +188,19 @@ export class AdminCmsService {
 
     return updatedInvoice;
   }
+
+  /**
+   * Website Lead Inquiries methods
+   */
+  static async createLead(data: { name: string; email: string; companyName?: string; phone?: string; employeeCount?: string; message?: string }) {
+    return prisma.websiteLead.create({ data });
+  }
+
+  static async listLeads() {
+    return prisma.websiteLead.findMany({ orderBy: { createdAt: "desc" } });
+  }
+
+  static async updateLeadStatus(id: string, status: string) {
+    return prisma.websiteLead.update({ where: { id }, data: { status } });
+  }
 }

@@ -1096,3 +1096,16 @@ model ProfileUpdateRequest {
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
+model WebsiteLead {
+  id            String   @id @default(cuid())
+  name          String
+  email         String
+  companyName   String?
+  phone         String?
+  employeeCount String?
+  message       String?
+  status        String   @default("NEW")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+

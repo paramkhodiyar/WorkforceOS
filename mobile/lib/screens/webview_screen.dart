@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import '../services/attendance_widget_service.dart';
 
 /// WebViewScreen — the main app shell.
 ///
@@ -38,9 +39,23 @@ class _WebViewScreenState extends State<WebViewScreen> {
   void initState() {
     super.initState();
     _initController();
-    // Request location permission BEFORE loading the URL so that
-    // navigator.geolocation is already authorized when the page fires it.
+    _syncWidgetOnLaunch();
     _ensureLocationThenLoad();
+  }
+
+  Future<void> _syncWidgetOnLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = widget.injectedToken ?? prefs.getString('auth_token');
+    final userName = prefs.getString('user_name') ?? 'Param Owner';
+    if (token != null && token.isNotEmpty) {
+      await AttendanceWidgetService.updateWidgetData(
+        isLoggedIn: true,
+        status: 'CLOCKED_OUT',
+        userName: userName,
+        token: token,
+        apiBaseUrl: 'https://workforceos-backend.onrender.com/api/v1',
+      );
+    }
   }
 
   // ── Permission ────────────────────────────────────────────────────────────
@@ -189,21 +204,29 @@ class _WebViewScreenState extends State<WebViewScreen> {
         case 'save_token':
           final token = data['token'] as String?;
           final refreshToken = data['refreshToken'] as String?;
+          final userName = data['userName'] as String? ?? 'Param Owner';
           if (token != null && token.isNotEmpty) {
             await prefs.setString('auth_token', token);
-            debugPrint('Bridge: access token saved (${token.length} chars)');
-          }
-          if (refreshToken != null && refreshToken.isNotEmpty) {
-            await prefs.setString('refresh_token', refreshToken);
-            debugPrint('Bridge: refresh token saved (${refreshToken.length} chars)');
+            if (refreshToken != null && refreshToken.isNotEmpty) {
+              await prefs.setString('refresh_token', refreshToken);
+            }
+            await prefs.setString('user_name', userName);
+            await AttendanceWidgetService.updateWidgetData(
+              isLoggedIn: true,
+              status: 'CLOCKED_OUT',
+              userName: userName,
+              token: token,
+              apiBaseUrl: 'https://workforceos-backend.onrender.com/api/v1',
+            );
+            debugPrint('Bridge: access token saved & Android widget state synced for $userName');
           }
 
         case 'clear_token':
           await prefs.remove('auth_token');
           await prefs.remove('refresh_token');
-          // NOTE: we intentionally keep 'use_biometric' so the user's
-          // biometric preference survives a logout and triggers on next open.
-          debugPrint('Bridge: tokens cleared (biometric pref preserved)');
+          await prefs.remove('user_name');
+          await AttendanceWidgetService.clearWidgetData();
+          debugPrint('Bridge: tokens cleared & Android widget reset');
 
         case 'set_biometric_pref':
           final enabled = data['enabled'] as bool? ?? false;

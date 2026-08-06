@@ -109,10 +109,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           api.auth.cookieExchange(tokens.accessToken, tokens.refreshToken).catch(() => {});
         } catch (_) {}
         if (typeof window !== 'undefined' && (window as any).WorkforceOSBridge) {
+          const u = response.data?.user || response.user;
           (window as any).WorkforceOSBridge.postMessage(JSON.stringify({
             type: 'save_token',
             token: tokens.accessToken,
             refreshToken: tokens.refreshToken,
+            userName: u ? `${u.firstName} ${u.lastName}` : 'Staff Member',
           }));
         }
       }
@@ -183,6 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             type: 'save_token',
             token: tokens.accessToken,
             refreshToken: tokens.refreshToken,
+            userName: userObj ? `${userObj.firstName} ${userObj.lastName}` : 'Staff Member',
           }));
         }
       }

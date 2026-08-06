@@ -8,7 +8,7 @@ import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { TableSkeleton, ListSkeleton, FormSkeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { ReadMoreText } from '../../../components/ui/ReadMoreText';
-import { triggerHaptic } from '../../../lib/utils/haptics';
+import { triggerHaptic, notifyAttendanceAction } from '../../../lib/utils/haptics';
 import LogoLoader from '../../../components/ui/LogoLoader';
 import PaginationControls from '../../../components/ui/PaginationControls';
 
@@ -136,6 +136,7 @@ export default function AttendancePage() {
           gpsLng
         });
         triggerHaptic([60, 100, 60]);
+        notifyAttendanceAction('CLOCKED_IN', checkType as 'WFO' | 'WFH');
         toast.success('Successfully checked in!');
         await loadData();
       } catch (err: any) {
@@ -169,6 +170,7 @@ export default function AttendancePage() {
     try {
       await api.attendance.checkOut();
       triggerHaptic([40, 40]);
+      notifyAttendanceAction('CLOCKED_OUT', 'WFO');
       toast.success('Successfully checked out!');
       await loadData();
     } catch (err: any) {

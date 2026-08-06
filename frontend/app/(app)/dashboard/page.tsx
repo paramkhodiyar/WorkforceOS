@@ -7,7 +7,7 @@ import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import LiveClock from '../../../components/dashboard/LiveClock';
 import { CardSkeleton, TableSkeleton } from '../../../components/ui/Skeleton';
-import { triggerHaptic } from '../../../lib/utils/haptics';
+import { triggerHaptic, notifyAttendanceAction } from '../../../lib/utils/haptics';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -55,6 +55,8 @@ export default function DashboardPage() {
           gpsLat,
           gpsLng
         });
+        triggerHaptic([60, 100, 60]);
+        notifyAttendanceAction('CLOCKED_IN', workMode);
         toast.success('Successfully clocked in!');
         const attStatus = await api.attendance.getCurrentStatus();
         setAttendanceStatus(attStatus.data);
@@ -87,6 +89,8 @@ export default function DashboardPage() {
     setChecking(true);
     try {
       await api.attendance.checkOut();
+      triggerHaptic([60, 40]);
+      notifyAttendanceAction('CLOCKED_OUT', 'WFO');
       toast.success('Successfully clocked out!');
       const attStatus = await api.attendance.getCurrentStatus();
       setAttendanceStatus(attStatus.data);

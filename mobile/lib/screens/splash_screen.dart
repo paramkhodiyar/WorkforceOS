@@ -265,11 +265,11 @@ class _SplashScreenState extends State<SplashScreen>
             .chain(CurveTween(curve: Curves.easeOut)),
         weight: 120,
       ),
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 0),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 10),
       TweenSequenceItem(
         tween: Tween(begin: 1.0, end: 0.0)
             .chain(CurveTween(curve: Curves.easeIn)),
-        weight: 400,
+        weight: 390,
       ),
     ]).animate(_shadowCtrl);
 

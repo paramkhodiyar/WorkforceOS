@@ -18,7 +18,7 @@ import java.net.URL
 
 class AttendanceWidgetProvider : AppWidgetProvider() {
 
-    override function onUpdate(
+    override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
@@ -28,7 +28,7 @@ class AttendanceWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    override function onReceive(context: Context, intent: Intent) {
+    override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
 
         if (ACTION_TOGGLE_ATTENDANCE == intent.action) {

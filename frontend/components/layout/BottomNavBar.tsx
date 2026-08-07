@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/AuthProvider';
@@ -12,6 +12,7 @@ export default function BottomNavBar() {
   const { user, features } = useAuth();
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const initialHeightRef = useRef<number>(0);
 
   useEffect(() => {
     function checkPending() {
@@ -41,39 +42,46 @@ export default function BottomNavBar() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    initialHeightRef.current = window.innerHeight;
+
+    function checkKeyboard() {
+      const active = document.activeElement as HTMLElement;
+      const isInputFocused = active && (
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) ||
+        !!active.closest('input, textarea, select, [contenteditable="true"]')
+      );
+
+      const screenH = window.screen?.height || initialHeightRef.current;
+      const currentH = window.visualViewport?.height || window.innerHeight;
+      const isViewportShrunk = currentH < screenH * 0.78 || currentH < initialHeightRef.current * 0.78;
+
+      setIsKeyboardOpen(isInputFocused || isViewportShrunk);
+    }
+
     function handleFocusIn(e: FocusEvent) {
       const target = e.target as HTMLElement;
-      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+      if (target && (target.closest('input, textarea, select, [contenteditable="true"]') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) {
         setIsKeyboardOpen(true);
       }
     }
 
     function handleFocusOut() {
-      setTimeout(() => {
-        const active = document.activeElement as HTMLElement;
-        if (!active || !['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
-          setIsKeyboardOpen(false);
-        }
-      }, 100);
-    }
-
-    function handleResize() {
-      if (window.visualViewport) {
-        setIsKeyboardOpen(window.visualViewport.height < window.innerHeight * 0.85);
-      }
+      setTimeout(checkKeyboard, 100);
     }
 
     window.addEventListener('focusin', handleFocusIn);
     window.addEventListener('focusout', handleFocusOut);
+    window.addEventListener('resize', checkKeyboard);
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize);
+      window.visualViewport.addEventListener('resize', checkKeyboard);
     }
 
     return () => {
       window.removeEventListener('focusin', handleFocusIn);
       window.removeEventListener('focusout', handleFocusOut);
+      window.removeEventListener('resize', checkKeyboard);
       if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleResize);
+        window.visualViewport.removeEventListener('resize', checkKeyboard);
       }
     };
   }, []);
@@ -90,7 +98,7 @@ export default function BottomNavBar() {
   const activeIndex = Math.max(0, tabs.findIndex(t => pathname === t.href || pathname.startsWith(t.href + '/')));
 
   return (
-    <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 w-fit max-w-[94vw] z-[90] md:hidden select-none transform-gpu">
+    <nav className="bottom-nav-bar fixed bottom-5 left-1/2 -translate-x-1/2 w-fit max-w-[94vw] z-[90] md:hidden select-none transform-gpu">
       {/* GPU Accelerated Light Glassmorphic Capsule */}
       <div className="relative bg-white/92 backdrop-blur-md border border-slate-200/90 rounded-full p-1.5 flex items-center gap-1 shadow-lg shadow-slate-900/10 transform-gpu">
         {tabs.map((tab, idx) => {

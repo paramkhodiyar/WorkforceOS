@@ -18,6 +18,14 @@ html, body {
   will-change: transform;
 }
 
+/* Zero-latency CSS rule to instantly hide bottom nav bar whenever any input is focused */
+body:has(input:focus, textarea:focus, select:focus, [contenteditable="true"]:focus) .bottom-nav-bar,
+body:has(input:focus-within, textarea:focus-within) .bottom-nav-bar {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 @theme {
   --color-primary: #2563eb;
   --color-on-primary: #ffffff;

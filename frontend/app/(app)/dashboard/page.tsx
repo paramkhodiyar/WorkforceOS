@@ -46,7 +46,16 @@ export default function DashboardPage() {
 
   async function handleQuickCheckIn() {
     if (checking) return;
-    setChecking(true);
+    triggerHaptic([50, 50, 50]);
+
+    const prevStatus = attendanceStatus;
+    const nowIso = new Date().toISOString();
+    setAttendanceStatus({
+      checkIn: nowIso,
+      checkOut: null,
+      workMode
+    });
+    notifyAttendanceAction('CLOCKED_IN', workMode);
 
     const performCheckIn = async (gpsLat?: number, gpsLng?: number) => {
       try {
@@ -56,14 +65,12 @@ export default function DashboardPage() {
           gpsLng
         });
         triggerHaptic([60, 100, 60]);
-        notifyAttendanceAction('CLOCKED_IN', workMode);
         toast.success('Successfully clocked in!');
         const attStatus = await api.attendance.getCurrentStatus();
         setAttendanceStatus(attStatus.data);
       } catch (err: any) {
+        setAttendanceStatus(prevStatus);
         toast.error(err.message || 'Clock-in failed');
-      } finally {
-        setChecking(false);
       }
     };
 
@@ -74,10 +81,9 @@ export default function DashboardPage() {
         },
         (error) => {
           console.warn('Geolocation error:', error);
-          toast.warning('Location access denied. Clocking in without GPS verification.');
           performCheckIn();
         },
-        { enableHighAccuracy: true, timeout: 5000 }
+        { enableHighAccuracy: true, timeout: 4000 }
       );
     } else {
       performCheckIn();
@@ -86,18 +92,25 @@ export default function DashboardPage() {
 
   async function handleQuickCheckOut() {
     if (checking) return;
-    setChecking(true);
+    triggerHaptic([60, 40]);
+
+    const prevStatus = attendanceStatus;
+    const nowIso = new Date().toISOString();
+    setAttendanceStatus({
+      ...attendanceStatus,
+      checkOut: nowIso
+    });
+    notifyAttendanceAction('CLOCKED_OUT', 'WFO');
+
     try {
       await api.attendance.checkOut();
-      triggerHaptic([60, 40]);
-      notifyAttendanceAction('CLOCKED_OUT', 'WFO');
+      triggerHaptic([40, 40]);
       toast.success('Successfully clocked out!');
       const attStatus = await api.attendance.getCurrentStatus();
       setAttendanceStatus(attStatus.data);
     } catch (err: any) {
+      setAttendanceStatus(prevStatus);
       toast.error(err.message || 'Clock-out failed');
-    } finally {
-      setChecking(false);
     }
   }
 

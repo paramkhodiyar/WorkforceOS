@@ -125,7 +125,16 @@ export default function AttendancePage() {
   async function handleCheckIn() {
     if (checking) return;
     triggerHaptic([50, 50, 50]);
-    setChecking(true);
+
+    const prevStatus = currentStatus;
+    const nowIso = new Date().toISOString();
+    setCurrentStatus({
+      checkIn: nowIso,
+      checkOut: null,
+      workMode: checkType,
+      ipAddress: location || 'Verified'
+    });
+    notifyAttendanceAction('CLOCKED_IN', checkType as 'WFO' | 'WFH');
 
     const performCheckIn = async (gpsLat?: number, gpsLng?: number) => {
       try {
@@ -136,13 +145,11 @@ export default function AttendancePage() {
           gpsLng
         });
         triggerHaptic([60, 100, 60]);
-        notifyAttendanceAction('CLOCKED_IN', checkType as 'WFO' | 'WFH');
         toast.success('Successfully checked in!');
-        await loadData();
+        loadData();
       } catch (err: any) {
+        setCurrentStatus(prevStatus);
         toast.error(err.message || 'Check-in failed');
-      } finally {
-        setChecking(false);
       }
     };
 
@@ -153,10 +160,9 @@ export default function AttendancePage() {
         },
         (error) => {
           console.warn('Geolocation error:', error);
-          toast.warning('Could not retrieve precise location. Checking in without GPS verification.');
           performCheckIn();
         },
-        { enableHighAccuracy: true, timeout: 5000 }
+        { enableHighAccuracy: true, timeout: 4000 }
       );
     } else {
       performCheckIn();
@@ -166,17 +172,23 @@ export default function AttendancePage() {
   async function handleCheckOut() {
     if (checking) return;
     triggerHaptic([60, 40]);
-    setChecking(true);
+
+    const prevStatus = currentStatus;
+    const nowIso = new Date().toISOString();
+    setCurrentStatus({
+      ...currentStatus,
+      checkOut: nowIso
+    });
+    notifyAttendanceAction('CLOCKED_OUT', 'WFO');
+
     try {
       await api.attendance.checkOut();
       triggerHaptic([40, 40]);
-      notifyAttendanceAction('CLOCKED_OUT', 'WFO');
       toast.success('Successfully checked out!');
-      await loadData();
+      loadData();
     } catch (err: any) {
+      setCurrentStatus(prevStatus);
       toast.error(err.message || 'Check-out failed');
-    } finally {
-      setChecking(false);
     }
   }
 

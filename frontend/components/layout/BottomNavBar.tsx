@@ -91,8 +91,8 @@ export default function BottomNavBar() {
 
   return (
     <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 w-fit max-w-[94vw] z-[90] md:hidden select-none">
-      {/* Translucent Glassmorphic Floating Gallery Bar */}
-      <div className="relative bg-slate-900/90 backdrop-blur-2xl border border-slate-700/60 rounded-full p-1.5 flex items-center gap-1 shadow-2xl shadow-slate-950/40">
+      {/* Light Frosted Glass Capsule Bar */}
+      <div className="relative bg-white/80 backdrop-blur-xl border border-slate-200/90 rounded-full p-1.5 flex items-center gap-1 shadow-xl shadow-slate-900/10">
         {tabs.map((tab, idx) => {
           const isActive = activeIndex === idx;
 
@@ -101,21 +101,21 @@ export default function BottomNavBar() {
               key={tab.href}
               href={tab.href}
               onClick={() => {
-                triggerHaptic(35);
+                triggerHaptic(30);
               }}
               className={`relative z-10 flex items-center gap-2 px-3.5 py-2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] active:scale-95 cursor-pointer ${
                 isActive
-                  ? 'bg-blue-600 text-white font-black shadow-md shadow-blue-500/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60 font-semibold'
+                  ? 'bg-blue-600 text-white font-black shadow-md shadow-blue-500/25'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-bold'
               }`}
             >
               <span className={`material-symbols-outlined text-[20px] transition-transform duration-200 ${
-                isActive ? 'scale-105 text-white' : 'scale-100 text-slate-400'
+                isActive ? 'scale-105 text-white' : 'scale-100 text-slate-500'
               }`}>
                 {tab.icon}
               </span>
 
-              {/* Text label smoothly transitions width & opacity */}
+              {/* Text label smoothly expands on active tab */}
               <span
                 className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
                   isActive ? 'max-w-[100px] opacity-100 font-bold ml-0.5' : 'max-w-0 opacity-0'
@@ -124,9 +124,9 @@ export default function BottomNavBar() {
                 {tab.label}
               </span>
 
-              {/* Notification Badge for Inactive Tabs */}
+              {/* Notification Badge */}
               {tab.badge && !isActive && (
-                <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-rose-500 ring-2 ring-slate-900" />
+                <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
               )}
             </Link>
           );

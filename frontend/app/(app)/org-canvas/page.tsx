@@ -461,7 +461,7 @@ function OrgCanvasFlow() {
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-white">
-        <LogoLoader text="Loading interactive Org Canvas hierarchy..." />
+        <LogoLoader text="Loading..." />
       </div>
     );
   }

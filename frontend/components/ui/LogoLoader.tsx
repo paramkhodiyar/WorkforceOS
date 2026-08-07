@@ -40,7 +40,7 @@ export default function LogoLoader({
           <svg 
             viewBox="0 0 572 650" 
             xmlns="http://www.w3.org/2000/svg" 
-            className="w-full h-full drop-shadow-xl"
+            className="w-full h-full"
           >
             <polygon points="298.0,637.5 297.0,533.5 409.5,466.0 395.5,452.0 391.0,452.5 297.0,506.5 296.5,331.0 448.5,244.0 449.0,357.5 470.0,362.5 559.0,311.5 559.5,485.0" fill="#fd8902" />
             <polygon points="274.0,638.5 11.5,485.0 11.5,181.0 21.0,182.5 100.5,229.0 101.5,362.0 122.5,356.0 123.0,242.5 275.5,332.0 274.5,507.0 180.0,452.5 161.5,466.0 274.5,533.0" fill="#59cb8f" />
@@ -48,8 +48,6 @@ export default function LogoLoader({
             <polygon points="472.0,334.5 470.5,230.0 555.0,180.5 558.5,181.0 558.0,284.5" fill="#028b61" />
           </svg>
         </div>
-        
-        <div className="absolute -bottom-5 w-3/4 h-2.5 bg-black/10 rounded-[100%] blur-[4px] animate-[pulse_3.2s_ease-in-out_infinite]" />
       </div>
 
       {text && (

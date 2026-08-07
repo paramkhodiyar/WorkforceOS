@@ -4,13 +4,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-button, a, [role="button"] {
-  -webkit-touch-callout: none;
+html, body {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
 }
 
-button:active, a:active, [role="button"]:active {
-  transform: scale(0.97);
-  transition: transform 0.1s ease-in-out;
+/* GPU Hardware Acceleration Helper */
+.transform-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
 }
 
 @theme {
@@ -51,18 +56,13 @@ button:active, a:active, [role="button"]:active {
   --radius-md: 8px;
   --radius-sm: 6px;
 
-  --animate-slide-in-right: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-float-slow: float-slow 22s ease-in-out infinite;
-  --animate-float-reverse: float-reverse 26s ease-in-out infinite;
-  --animate-grid-pulse-h: grid-pulse-horizontal 8s linear infinite;
-  --animate-grid-pulse-v: grid-pulse-vertical 10s linear infinite;
-  --animate-fade-in: fade-in 0.4s ease-out forwards;
-  --animate-slide-in-up: slide-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-bounce-short: bounce-short 1s ease-in-out infinite;
+  --animate-slide-in-right: slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-in: fade-in 0.25s ease-out forwards;
+  --animate-slide-in-up: slide-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
   @keyframes slide-in-right {
     from {
-      transform: translateX(120%);
+      transform: translateX(100%);
       opacity: 0;
     }
     to {
@@ -71,61 +71,10 @@ button:active, a:active, [role="button"]:active {
     }
   }
 
-  @keyframes float-slow {
-    0% {
-      transform: translate(0px, 0px) scale(1);
-    }
-    33% {
-      transform: translate(40px, -40px) scale(1.08);
-    }
-    66% {
-      transform: translate(-20px, 20px) scale(0.96);
-    }
-    100% {
-      transform: translate(0px, 0px) scale(1);
-    }
-  }
-
-  @keyframes float-reverse {
-    0% {
-      transform: translate(0px, 0px) scale(1);
-    }
-    50% {
-      transform: translate(-50px, 30px) scale(1.05);
-    }
-    100% {
-      transform: translate(0px, 0px) scale(1);
-    }
-  }
-
-  @keyframes grid-pulse-horizontal {
-    0% {
-      top: 0%;
-    }
-    50% {
-      top: 100%;
-    }
-    100% {
-      top: 0%;
-    }
-  }
-
-  @keyframes grid-pulse-vertical {
-    0% {
-      left: 0%;
-    }
-    50% {
-      left: 100%;
-    }
-    100% {
-      left: 0%;
-    }
-  }
-
   @keyframes fade-in {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(6px);
     }
     to {
       opacity: 1;
@@ -135,21 +84,12 @@ button:active, a:active, [role="button"]:active {
 
   @keyframes slide-in-up {
     from {
-      transform: translateY(20px);
+      transform: translateY(12px);
       opacity: 0;
     }
     to {
       transform: translateY(0);
       opacity: 1;
-    }
-  }
-
-  @keyframes bounce-short {
-    0%, 100% {
-      transform: translate(-50%, 0);
-    }
-    50% {
-      transform: translate(-50%, -4px);
     }
   }
 }
@@ -167,8 +107,8 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -187,6 +127,3 @@ body {
 input:focus, select:focus, textarea:focus {
   outline: none;
 }
-
-
-

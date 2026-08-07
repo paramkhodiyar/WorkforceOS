@@ -90,9 +90,9 @@ export default function BottomNavBar() {
   const activeIndex = Math.max(0, tabs.findIndex(t => pathname === t.href || pathname.startsWith(t.href + '/')));
 
   return (
-    <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 w-fit max-w-[94vw] z-[90] md:hidden select-none">
-      {/* Light Frosted Glass Capsule Bar */}
-      <div className="relative bg-white/80 backdrop-blur-xl border border-slate-200/90 rounded-full p-1.5 flex items-center gap-1 shadow-xl shadow-slate-900/10">
+    <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 w-fit max-w-[94vw] z-[90] md:hidden select-none transform-gpu">
+      {/* GPU Accelerated Light Glassmorphic Capsule */}
+      <div className="relative bg-white/92 backdrop-blur-md border border-slate-200/90 rounded-full p-1.5 flex items-center gap-1 shadow-lg shadow-slate-900/10 transform-gpu">
         {tabs.map((tab, idx) => {
           const isActive = activeIndex === idx;
 
@@ -100,24 +100,25 @@ export default function BottomNavBar() {
             <Link
               key={tab.href}
               href={tab.href}
+              prefetch={true}
               onClick={() => {
                 triggerHaptic(30);
               }}
-              className={`relative z-10 flex items-center gap-2 px-3.5 py-2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] active:scale-95 cursor-pointer ${
+              className={`relative z-10 flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-colors duration-150 ease-out cursor-pointer transform-gpu ${
                 isActive
-                  ? 'bg-blue-600 text-white font-black shadow-md shadow-blue-500/25'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-bold'
+                  ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/25'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 font-semibold'
               }`}
             >
-              <span className={`material-symbols-outlined text-[20px] transition-transform duration-200 ${
+              <span className={`material-symbols-outlined text-[20px] transition-transform duration-150 ${
                 isActive ? 'scale-105 text-white' : 'scale-100 text-slate-500'
               }`}>
                 {tab.icon}
               </span>
 
-              {/* Text label smoothly expands on active tab */}
+              {/* Text label with hardware accelerated width animation */}
               <span
-                className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
+                className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-200 ease-out ${
                   isActive ? 'max-w-[100px] opacity-100 font-bold ml-0.5' : 'max-w-0 opacity-0'
                 }`}
               >

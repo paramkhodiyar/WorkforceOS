@@ -55,7 +55,8 @@ export class OnboardingService {
             "knowledge",
             "notifications",
             "audit",
-            "calendar"
+            "calendar",
+            "org-canvas"
           ]
         }
       });

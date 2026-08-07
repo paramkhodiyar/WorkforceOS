@@ -32,24 +32,41 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
 
         val action = intent.action ?: return
-        if (action == ACTION_CLOCK_IN_WFO || action == ACTION_CLOCK_IN_WFH || action == ACTION_CLOCK_OUT) {
-            // Debounce guard: 3 second rate limit
-            val now = System.currentTimeMillis()
-            if (now - lastActionTime < 3000) return
-            lastActionTime = now
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-            triggerHapticFeedback(context)
+        when (action) {
+            ACTION_SELECT_MODE_WFO -> {
+                triggerHapticFeedback(context, 35)
+                prefs.edit().putString("active_work_mode", "WFO").apply()
+                refreshAllWidgets(context)
+            }
+            ACTION_SELECT_MODE_WFH -> {
+                triggerHapticFeedback(context, 35)
+                prefs.edit().putString("active_work_mode", "WFH").apply()
+                refreshAllWidgets(context)
+            }
+            ACTION_CLOCK_IN_WFO, ACTION_CLOCK_IN_WFH, ACTION_CLOCK_OUT -> {
+                // Debounce guard: 1.5 second rate limit
+                val now = System.currentTimeMillis()
+                if (now - lastActionTime < 1500) return
+                lastActionTime = now
 
-            val workMode = if (action == ACTION_CLOCK_IN_WFH) "WFH" else "WFO"
-            val isClockOut = action == ACTION_CLOCK_OUT
+                triggerHapticFeedback(context, 60)
 
-            // Show immediate processing state across all widgets
-            showProcessingState(context)
+                val workMode = if (action == ACTION_CLOCK_IN_WFH) "WFH" 
+                              else if (action == ACTION_CLOCK_IN_WFO) "WFO" 
+                              else prefs.getString("active_work_mode", "WFO") ?: "WFO"
+                
+                val isClockOut = action == ACTION_CLOCK_OUT
 
-            // Fire network call on background thread
-            Thread {
-                performAttendanceAction(context, workMode, isClockOut)
-            }.start()
+                // Show immediate processing state across all widgets
+                showProcessingState(context)
+
+                // Perform network call on background thread
+                Thread {
+                    performAttendanceAction(context, workMode, isClockOut)
+                }.start()
+            }
         }
     }
 
@@ -89,21 +106,21 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
 
     // ─── Haptic Feedback ───────────────────────────────────────────────────────
 
-    private fun triggerHapticFeedback(context: Context) {
+    private fun triggerHapticFeedback(context: Context, durationMs: Long = 50) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
                 val vibrator = vm?.defaultVibrator
-                vibrator?.vibrate(VibrationEffect.createOneShot(60, VibrationEffect.DEFAULT_AMPLITUDE))
+                vibrator?.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
             } else {
                 @Suppress("DEPRECATION")
                 val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
                 if (vibrator != null && vibrator.hasVibrator()) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vibrator.vibrate(VibrationEffect.createOneShot(60, VibrationEffect.DEFAULT_AMPLITUDE))
+                        vibrator.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
                     } else {
                         @Suppress("DEPRECATION")
-                        vibrator.vibrate(60)
+                        vibrator.vibrate(durationMs)
                     }
                 }
             }
@@ -117,8 +134,16 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
     private fun performAttendanceAction(context: Context, workMode: String, isClockOut: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val token = prefs.getString("auth_token", "") ?: ""
-        val baseUrl = prefs.getString("api_base_url", "https://workforceos-backend.onrender.com/api/v1")
+        var rawBaseUrl = prefs.getString("api_base_url", "https://workforceos-backend.onrender.com/api/v1")
             ?: "https://workforceos-backend.onrender.com/api/v1"
+
+        // Sanitize and format URL endpoint cleanly
+        if (rawBaseUrl.endsWith("/")) {
+            rawBaseUrl = rawBaseUrl.substring(0, rawBaseUrl.length - 1)
+        }
+        val baseUrl = if (rawBaseUrl.endsWith("/api/v1")) rawBaseUrl
+                      else if (rawBaseUrl.endsWith("/api")) "$rawBaseUrl/v1"
+                      else "$rawBaseUrl/api/v1"
 
         val endpoint = if (isClockOut) "$baseUrl/attendance/check-out" else "$baseUrl/attendance/check-in"
         var success = false
@@ -128,30 +153,33 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
+            conn.setRequestProperty("Accept", "application/json")
             if (token.isNotEmpty()) {
                 conn.setRequestProperty("Authorization", "Bearer $token")
             }
-            conn.connectTimeout = 10000
-            conn.readTimeout = 10000
+            conn.connectTimeout = 15000
+            conn.readTimeout = 15000
             conn.doOutput = true
 
-            val jsonBody = JSONObject().apply {
-                put("source", "ANDROID_WIDGET")
-                put("workMode", workMode)
-                put("latitude", prefs.getFloat("last_lat", 12.9716f).toDouble())
-                put("longitude", prefs.getFloat("last_lng", 77.5946f).toDouble())
+            if (!isClockOut) {
+                val jsonBody = JSONObject().apply {
+                    put("workMode", workMode)
+                    put("gpsLat", prefs.getFloat("last_lat", 12.9716f).toDouble())
+                    put("gpsLng", prefs.getFloat("last_lng", 77.5946f).toDouble())
+                }
+                val writer = OutputStreamWriter(conn.outputStream)
+                writer.write(jsonBody.toString())
+                writer.flush()
+                writer.close()
+            } else {
+                conn.outputStream.close()
             }
-
-            val writer = OutputStreamWriter(conn.outputStream)
-            writer.write(jsonBody.toString())
-            writer.flush()
-            writer.close()
 
             val responseCode = conn.responseCode
             success = responseCode in 200..299
         } catch (e: Exception) {
             e.printStackTrace()
-            // Optimistic update on network failure
+            // Local optimistic state update on network failure so user isn't stuck
             success = true
         }
 
@@ -163,14 +191,15 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
                 putLong("last_clock_time", System.currentTimeMillis())
                 apply()
             }
-            // Second haptic pulse on success
-            triggerHapticFeedback(context)
+            triggerHapticFeedback(context, 70)
         }
 
         refreshAllWidgets(context)
     }
 
     companion object {
+        const val ACTION_SELECT_MODE_WFO = "com.workforceos.mobile.ACTION_SELECT_MODE_WFO"
+        const val ACTION_SELECT_MODE_WFH = "com.workforceos.mobile.ACTION_SELECT_MODE_WFH"
         const val ACTION_CLOCK_IN_WFO = "com.workforceos.mobile.ACTION_CLOCK_IN_WFO"
         const val ACTION_CLOCK_IN_WFH = "com.workforceos.mobile.ACTION_CLOCK_IN_WFH"
         const val ACTION_CLOCK_OUT = "com.workforceos.mobile.ACTION_CLOCK_OUT"
@@ -207,7 +236,7 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
             val isLoggedIn = prefs.getBoolean("is_logged_in", false)
             val token = prefs.getString("auth_token", "") ?: ""
 
-            // Show logged-out screen if not authenticated
+            // Open app intent if not authenticated
             if (!isLoggedIn || token.isEmpty()) {
                 val loggedOutViews = RemoteViews(context.packageName, R.layout.widget_logged_out_layout)
                 val openAppIntent = Intent(context, MainActivity::class.java).apply {
@@ -252,18 +281,18 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
                     views.setTextColor(R.id.widget_btn_wfh, 0xFF475569.toInt())
                 }
 
-                // WFO button pending intent
+                // WFO mode selection pending intent
                 val wfoIntent = Intent(context, AttendanceWidgetProvider::class.java).apply {
-                    action = ACTION_CLOCK_IN_WFO
+                    action = ACTION_SELECT_MODE_WFO
                 }
                 views.setOnClickPendingIntent(
                     R.id.widget_btn_wfo,
                     PendingIntent.getBroadcast(context, 101, wfoIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                 )
 
-                // WFH button pending intent
+                // WFH mode selection pending intent
                 val wfhIntent = Intent(context, AttendanceWidgetProvider::class.java).apply {
-                    action = ACTION_CLOCK_IN_WFH
+                    action = ACTION_SELECT_MODE_WFH
                 }
                 views.setOnClickPendingIntent(
                     R.id.widget_btn_wfh,

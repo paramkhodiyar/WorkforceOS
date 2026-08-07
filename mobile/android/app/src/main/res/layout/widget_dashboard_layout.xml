@@ -120,14 +120,11 @@
             android:textStyle="bold" />
 
         <TextView
-            android:layout_width="8dp"
-            android:layout_height="1dp" />
-
-        <TextView
             android:id="@+id/widget_btn_wfh"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:layout_marginStart="8dp"
             android:background="@drawable/bg_pill_inactive"
             android:gravity="center"
             android:text="WFH Mode"

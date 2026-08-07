@@ -38,6 +38,8 @@
             android:label="@string/widget_standard_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.workforceos.mobile.ACTION_SELECT_MODE_WFO" />
+                <action android:name="com.workforceos.mobile.ACTION_SELECT_MODE_WFH" />
                 <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFO" />
                 <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFH" />
                 <action android:name="com.workforceos.mobile.ACTION_CLOCK_OUT" />
@@ -54,6 +56,8 @@
             android:label="@string/widget_compact_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.workforceos.mobile.ACTION_SELECT_MODE_WFO" />
+                <action android:name="com.workforceos.mobile.ACTION_SELECT_MODE_WFH" />
                 <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFO" />
                 <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFH" />
                 <action android:name="com.workforceos.mobile.ACTION_CLOCK_OUT" />
@@ -70,6 +74,8 @@
             android:label="@string/widget_dashboard_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.workforceos.mobile.ACTION_SELECT_MODE_WFO" />
+                <action android:name="com.workforceos.mobile.ACTION_SELECT_MODE_WFH" />
                 <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFO" />
                 <action android:name="com.workforceos.mobile.ACTION_CLOCK_IN_WFH" />
                 <action android:name="com.workforceos.mobile.ACTION_CLOCK_OUT" />

@@ -43,6 +43,7 @@ export function rateLimit(limit = 100, windowSeconds = 60) {
 };
 
 export function rateLimitByUser(limit = 200, windowSeconds = 60) {
+  const effectiveLimit = process.env.NODE_ENV === "development" ? 2000 : limit;
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const identifier = req.user?.id || req.ip || req.socket.remoteAddress || "unknown";
@@ -50,7 +51,7 @@ export function rateLimitByUser(limit = 200, windowSeconds = 60) {
 
       const current = await atomicIncr(key, windowSeconds);
 
-      if (current > limit) {
+      if (current > effectiveLimit) {
         res.set("Retry-After", String(windowSeconds));
         throw new AppError(429, "TOO_MANY_REQUESTS", "Too many requests, please try again later");
       }

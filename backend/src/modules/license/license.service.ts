@@ -5,8 +5,8 @@ import { SubscriptionTier, LicenseType, LicenseStatus } from "@prisma/client";
 
 const TIER_FEATURES: Record<SubscriptionTier, string[]> = {
   STARTUP: ["employees", "attendance", "leave", "tasks", "calendar", "notifications"],
-  GROWTH: ["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "calendar", "notifications", "audit"],
-  ENTERPRISE: ["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "notifications", "audit", "calendar"]
+  GROWTH: ["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "calendar", "notifications", "audit", "org-canvas"],
+  ENTERPRISE: ["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "notifications", "audit", "calendar", "org-canvas"]
 };
 
 const TIER_DEFAULT_SEATS: Record<SubscriptionTier, number> = {

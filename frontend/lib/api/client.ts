@@ -733,4 +733,44 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
+  orgCanvas: {
+    getTree: (): Promise<any> => request('/org-canvas/tree'),
+    getTeamMembers: (teamId: string): Promise<any> => request(`/org-canvas/team/${teamId}/members`),
+    search: (q: string): Promise<any> => request(`/org-canvas/search?q=${encodeURIComponent(q)}`),
+    reassignManager: (data: { userId: string; newManagerId?: string | null }): Promise<any> =>
+      request('/org-canvas/reassign-manager', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    reassignDepartment: (data: { userId: string; newDepartmentId?: string | null; newTeamId?: string | null }): Promise<any> =>
+      request('/org-canvas/reassign-department', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    moveTeam: (data: { teamId: string; newDepartmentId: string }): Promise<any> =>
+      request('/org-canvas/move-team', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    getRoles: (): Promise<any> => request('/org-canvas/roles'),
+    createRole: (data: { name: string; permissions: Array<{ resource: string; action: string }> }): Promise<any> =>
+      request('/org-canvas/roles', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    updateRole: (roleId: string, data: { name?: string; permissions?: Array<{ resource: string; action: string }> }): Promise<any> =>
+      request(`/org-canvas/roles/${roleId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    deleteRole: (roleId: string): Promise<any> =>
+      request(`/org-canvas/roles/${roleId}`, {
+        method: 'DELETE',
+      }),
+    assignUserRole: (data: { userId: string; roleId: string; action: 'add' | 'remove' }): Promise<any> =>
+      request('/org-canvas/assign-role', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+  },
 };

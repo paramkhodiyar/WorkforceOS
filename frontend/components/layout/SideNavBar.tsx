@@ -61,7 +61,7 @@ export default function SideNavBar() {
   const isAdmin = systemRole === 'SUPER_ADMIN' || systemRole === 'ORG_ADMIN' || user.originalRole === 'SYS_OWNER';
 
   const activeFeatures = (features && features.length > 0) ? features : [
-    'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar'
+    'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar', 'org-canvas'
   ];
 
   const menuItems = [
@@ -76,6 +76,12 @@ export default function SideNavBar() {
       icon: 'analytics',
       href: '/ops-stats',
       show: isAdmin || isHR
+    },
+    {
+      label: 'Org Canvas',
+      icon: 'account_tree',
+      href: '/org-canvas',
+      show: (isAdmin || isHR || hasPermission('employee', 'read')) && activeFeatures.includes('org-canvas')
     },
     {
       label: 'My Team',

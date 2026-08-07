@@ -209,7 +209,7 @@ model Organization {
   isActive    Boolean  @default(true)
   isDeleted   Boolean  @default(false)
   deletedAt   DateTime?
-  enabledFeatures String[] @default(["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "notifications", "audit", "calendar"])
+  enabledFeatures String[] @default(["employees", "attendance", "leave", "tasks", "performance", "payroll", "expenses", "assets", "knowledge", "notifications", "audit", "calendar", "org-canvas"])
 
   // Subscription & Onboarding fields
   subscriptionStatus SubscriptionStatus @default(TRIAL)

@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const orgRes = await api.organization.get();
         const loadedFeatures = orgRes.data?.enabledFeatures;
         const finalFeatures = (loadedFeatures && loadedFeatures.length > 0) ? loadedFeatures : [
-          'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar'
+          'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar', 'org-canvas'
         ];
         setOrganization({ ...orgRes.data, enabledFeatures: finalFeatures });
         setFeatures(finalFeatures);
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const orgRes = await api.organization.get();
         const loadedFeatures = orgRes.data?.enabledFeatures;
         const finalFeatures = (loadedFeatures && loadedFeatures.length > 0) ? loadedFeatures : [
-          'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar'
+          'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'audit', 'calendar', 'org-canvas'
         ];
         setOrganization({ ...orgRes.data, enabledFeatures: finalFeatures });
         setFeatures(finalFeatures);

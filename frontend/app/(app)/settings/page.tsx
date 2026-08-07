@@ -946,7 +946,8 @@ export default function SettingsPage() {
                   { id: 'expenses', label: 'Expense Filing', desc: 'Reimbursement claims & approvals' },
                   { id: 'assets', label: 'Asset Tracker', desc: 'Hardware inventory catalog' },
                   { id: 'knowledge', label: 'Knowledge Wiki', desc: 'Handbooks and policy pages' },
-                  { id: 'calendar', label: 'Shared Calendar', desc: 'Events and holiday calendar' }
+                  { id: 'calendar', label: 'Shared Calendar', desc: 'Events and holiday calendar' },
+                  { id: 'org-canvas', label: 'Org Canvas', desc: 'Interactive reporting hierarchy & workforce map' }
                 ].map(mod => {
                   const isEnabled = features.includes(mod.id);
                   return (

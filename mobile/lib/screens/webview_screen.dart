@@ -231,17 +231,21 @@ class _WebViewScreenState extends State<WebViewScreen> {
         // Haptic feedback trigger from web app clock-in/out button press
         case 'haptic_feedback':
           final style = data['style'] as String? ?? 'medium';
-          switch (style) {
-            case 'light':
-              await HapticFeedback.lightImpact();
-            case 'heavy':
+          final duration = style == 'heavy' ? 80 : (style == 'light' ? 35 : 60);
+          try {
+            await const MethodChannel('com.workforceos.mobile/widget')
+                .invokeMethod('vibrate', {'duration': duration});
+          } catch (_) {}
+          try {
+            if (style == 'heavy') {
               await HapticFeedback.heavyImpact();
-            case 'selection':
-              await HapticFeedback.selectionClick();
-            default:
+            } else if (style == 'light') {
+              await HapticFeedback.lightImpact();
+            } else {
               await HapticFeedback.mediumImpact();
-          }
-          debugPrint('Bridge: haptic feedback → $style');
+            }
+          } catch (_) {}
+          debugPrint('Bridge: haptic feedback → $style ($duration ms)');
 
         // Attendance action completed — sync widget state
         case 'attendance_action':

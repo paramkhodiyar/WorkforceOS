@@ -106,22 +106,37 @@ open class AttendanceWidgetProvider : AppWidgetProvider() {
 
     // ─── Haptic Feedback ───────────────────────────────────────────────────────
 
-    private fun triggerHapticFeedback(context: Context, durationMs: Long = 50) {
+    private fun triggerHapticFeedback(context: Context, durationMs: Long = 60) {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                val vibrator = vm?.defaultVibrator
-                vibrator?.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
+                vm?.defaultVibrator
             } else {
                 @Suppress("DEPRECATION")
-                val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                if (vibrator != null && vibrator.hasVibrator()) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vibrator.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
+                context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            }
+
+            if (vibrator != null && vibrator.hasVibrator()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val attributes = android.media.AudioAttributes.Builder()
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .setUsage(android.media.AudioAttributes.USAGE_TOUCH)
+                        .build()
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        vibrator.vibrate(
+                            VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK),
+                            attributes
+                        )
                     } else {
-                        @Suppress("DEPRECATION")
-                        vibrator.vibrate(durationMs)
+                        vibrator.vibrate(
+                            VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE),
+                            attributes
+                        )
                     }
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(durationMs)
                 }
             }
         } catch (e: Exception) {

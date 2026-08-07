@@ -29,6 +29,7 @@ export function errorHandler(
       message: e.message
     }));
   } else if (err.code && typeof err.code === "string" && err.code.startsWith("P")) {
+    logger.error(`Database Error [${err.code}]: ${err.message}`, { meta: err.meta });
     if (err.code === "P2002") {
       statusCode = 409;
       code = "CONFLICT";
@@ -40,9 +41,9 @@ export function errorHandler(
     } else {
       statusCode = 400;
       code = `DATABASE_ERROR_${err.code}`;
-      message = "Database operation failed";
+      message = process.env.NODE_ENV === "development" ? `Database operation failed: ${err.message}` : "Database operation failed";
     }
-    details = process.env.NODE_ENV === "production" ? undefined : err.meta;
+    details = process.env.NODE_ENV === "production" ? undefined : (err.meta || err.message);
   } else {
     logger.error("Unhandled error: " + err.message, { stack: err.stack });
     if (process.env.NODE_ENV === "development") {

@@ -57,8 +57,13 @@ function getLayoutedElements(nodes: Node[], edges: Edge[]) {
 
   const layoutedNodes = nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
+    const width = node.type === 'department' ? 380 : node.type === 'team' ? 280 : 270;
+    const height = node.type === 'department' ? 320 : node.type === 'team' ? 100 : 110;
     return {
       ...node,
+      width,
+      height,
+      measured: { width, height },
       position: {
         x: nodeWithPosition ? nodeWithPosition.x - 140 : 0,
         y: nodeWithPosition ? nodeWithPosition.y - 60 : 0

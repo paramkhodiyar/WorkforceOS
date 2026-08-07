@@ -24,6 +24,17 @@ function getDepartmentColor(deptId?: string | null) {
   return PALETTE[index];
 }
 
+function getExecTag(designation: string, isRoot?: boolean) {
+  const d = designation.toUpperCase();
+  if (d.includes('CEO') || isRoot) return 'CEO';
+  if (d.includes('CTO')) return 'CTO';
+  if (d.includes('MD') || d.includes('MANAGING DIRECTOR')) return 'MD';
+  if (d.includes('CXO') || d.includes('CHIEF')) return 'CXO';
+  if (d.includes('VP') || d.includes('VICE PRESIDENT')) return 'VP';
+  if (d.includes('HEAD') || d.includes('DIRECTOR')) return 'HEAD';
+  return null;
+}
+
 interface EmployeeNodeProps {
   data: {
     id: string;
@@ -46,27 +57,36 @@ interface EmployeeNodeProps {
 export const EmployeeNode = memo(({ data }: EmployeeNodeProps) => {
   const color = getDepartmentColor(data.departmentId);
   const isInactive = data.isDeleted || data.status === 'INACTIVE' || data.status === 'SUSPENDED';
+  const execTag = getExecTag(data.designation || '', data.isRoot);
 
   return (
     <div
       onClick={() => data.onSelectNode?.(data.id, 'employee')}
-      className={`relative w-64 p-3 bg-white rounded-xl border-2 transition-all cursor-pointer select-none ${
+      className={`relative min-w-64 p-3.5 bg-white rounded-xl border-2 transition-all cursor-pointer select-none group ${
         data.isHighlighted
-          ? 'ring-2 ring-blue-600 border-blue-600 opacity-100 z-30'
+          ? 'ring-4 ring-blue-600 border-blue-600 opacity-100 z-40 scale-105'
           : data.isDimmed
           ? 'opacity-30 border-slate-200'
           : 'border-slate-200 hover:border-slate-400 opacity-100'
       } ${isInactive ? 'bg-slate-50 opacity-60' : ''}`}
       style={{
         borderLeftColor: color.border,
-        borderLeftWidth: '4px',
+        borderLeftWidth: '5px',
       }}
     >
-      {/* Top Handle for Reporting Connectors */}
+      {/* Target Handle (Top) for receiving connection line */}
       <Handle
         type="target"
         position={Position.Top}
-        className="w-2.5 h-2.5 !bg-slate-400 !border-2 !border-white"
+        className="w-3.5 h-3.5 !bg-slate-700 !border-2 !border-white group-hover:scale-125 transition-transform"
+      />
+
+      {/* Target Handle (Left) */}
+      <Handle
+        type="target"
+        id="target-left"
+        position={Position.Left}
+        className="w-3 h-3 !bg-slate-500 !border-2 !border-white opacity-0 group-hover:opacity-100 transition-opacity"
       />
 
       <div className="flex items-center gap-3">
@@ -92,11 +112,11 @@ export const EmployeeNode = memo(({ data }: EmployeeNodeProps) => {
 
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-between gap-1">
             <h4 className="text-xs font-bold text-slate-900 truncate tracking-tight">{data.name}</h4>
-            {data.isRoot && (
-              <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                CEO
+            {execTag && (
+              <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-600 text-white flex-shrink-0">
+                {execTag}
               </span>
             )}
           </div>
@@ -104,7 +124,7 @@ export const EmployeeNode = memo(({ data }: EmployeeNodeProps) => {
 
           {data.departmentName && (
             <p
-              className="text-[9px] font-bold truncate mt-0.5 uppercase tracking-wider"
+              className="text-[9px] font-extrabold truncate mt-0.5 uppercase tracking-wider"
               style={{ color: color.text }}
             >
               {data.departmentName}
@@ -132,11 +152,19 @@ export const EmployeeNode = memo(({ data }: EmployeeNodeProps) => {
         </div>
       )}
 
-      {/* Bottom Handle for Subordinate Connectors */}
+      {/* Source Handle (Bottom) for connecting to subordinates */}
       <Handle
         type="source"
         position={Position.Bottom}
-        className="w-2.5 h-2.5 !bg-slate-400 !border-2 !border-white"
+        className="w-3.5 h-3.5 !bg-slate-700 !border-2 !border-white group-hover:scale-125 transition-transform"
+      />
+
+      {/* Source Handle (Right) */}
+      <Handle
+        type="source"
+        id="source-right"
+        position={Position.Right}
+        className="w-3 h-3 !bg-slate-500 !border-2 !border-white opacity-0 group-hover:opacity-100 transition-opacity"
       />
     </div>
   );

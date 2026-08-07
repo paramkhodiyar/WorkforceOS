@@ -701,4 +701,57 @@ export class OrgCanvasService {
       return { success: true };
     });
   }
+
+  /**
+   * Promotes/updates an employee's executive designation (CEO, CTO, MD, CXO, VP, etc.) and optional systemRole.
+   */
+  static async promoteExecutive(
+    orgId: string,
+    actorId: string,
+    userId: string,
+    designation: string,
+    systemRole?: "SUPER_ADMIN" | "ORG_ADMIN" | "HR" | "MANAGER" | "EMPLOYEE"
+  ) {
+    const user = await prisma.user.findFirst({
+      where: { id: userId, organizationId: orgId }
+    });
+    if (!user) {
+      throw AppError.notFound("Employee not found");
+    }
+
+    const oldDesignation = user.designation;
+    const oldSystemRole = user.systemRole;
+
+    return prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: {
+          designation,
+          systemRole: systemRole ?? user.systemRole
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          designation: true,
+          systemRole: true
+        }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          organizationId: orgId,
+          actorId,
+          action: AuditAction.UPDATED,
+          module: "org-canvas",
+          targetId: userId,
+          targetType: "User",
+          oldValue: { designation: oldDesignation, systemRole: oldSystemRole },
+          newValue: { designation, systemRole: updatedUser.systemRole }
+        }
+      });
+
+      return updatedUser;
+    });
+  }
 }

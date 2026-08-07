@@ -772,5 +772,10 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
+    promoteExecutive: (data: { userId: string; designation: string; systemRole?: string }): Promise<any> =>
+      request('/org-canvas/promote-executive', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
   },
 };

@@ -155,14 +155,46 @@ export function OrgCanvasSidePanel({
               <span className="text-slate-500 font-medium">Work Location</span>
               <span className="font-bold text-slate-900">{node.workLocation || 'Office'}</span>
             </div>
-
-            <div className="flex justify-between py-1 border-b border-slate-100">
-              <span className="text-slate-500 font-medium">Date of Joining</span>
-              <span className="font-bold text-slate-900">
-                {node.joiningDate ? new Date(node.joiningDate).toLocaleDateString() : 'N/A'}
-              </span>
-            </div>
           </div>
+
+          {/* Executive Promotion Section */}
+          {isSuperAdmin && (
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Executive Designation & Title
+              </h4>
+              <div className="flex flex-wrap gap-1">
+                {['CEO', 'CTO', 'MD', 'CXO', 'VP', 'Department Head', 'General Manager', 'Senior Lead'].map((title) => (
+                  <button
+                    key={title}
+                    disabled={assigningRole}
+                    onClick={async () => {
+                      try {
+                        setAssigningRole(true);
+                        await api.orgCanvas.promoteExecutive({
+                          userId: node.id,
+                          designation: title
+                        });
+                        toast.success(`Updated designation for ${node.name} to ${title}`);
+                        onRefreshData?.();
+                      } catch (err: any) {
+                        toast.error(err.message || 'Failed to promote employee');
+                      } finally {
+                        setAssigningRole(false);
+                      }
+                    }}
+                    className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                      node.designation?.toUpperCase() === title
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-600 border-slate-200'
+                    }`}
+                  >
+                    {title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Assigned System & Custom Roles */}
           <div className="pt-2 border-t border-slate-100 space-y-2">

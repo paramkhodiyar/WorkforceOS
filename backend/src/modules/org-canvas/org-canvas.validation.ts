@@ -45,3 +45,9 @@ export const assignRoleSchema = z.object({
 export const searchQuerySchema = z.object({
   q: z.string().min(1, "Search query is required")
 });
+
+export const promoteExecutiveSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+  designation: z.string().min(1, "Designation is required"),
+  systemRole: z.enum(["SUPER_ADMIN", "ORG_ADMIN", "HR", "MANAGER", "EMPLOYEE"]).optional()
+});

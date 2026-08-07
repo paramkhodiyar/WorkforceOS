@@ -12,6 +12,8 @@ import {
   Node,
   Edge,
   MarkerType,
+  Connection,
+  addEdge,
   useReactFlow,
   ReactFlowProvider
 } from '@xyflow/react';
@@ -23,28 +25,27 @@ import { api } from '../../../lib/api/client';
 import { useToast } from '../../../lib/toast/ToastProvider';
 import LogoLoader from '../../../components/ui/LogoLoader';
 import { EmployeeNode } from '../../../components/org-canvas/EmployeeNode';
-import { DepartmentNode } from '../../../components/org-canvas/DepartmentNode';
+import { NestedDepartmentNode } from '../../../components/org-canvas/NestedDepartmentNode';
 import { TeamNode } from '../../../components/org-canvas/TeamNode';
 import { OrgCanvasSearch } from '../../../components/org-canvas/OrgCanvasSearch';
 import { OrgCanvasSidePanel } from '../../../components/org-canvas/OrgCanvasSidePanel';
 import { RoleManagementModal } from '../../../components/org-canvas/RoleManagementModal';
+import { EmployeeDrawerSidebar } from '../../../components/org-canvas/EmployeeDrawerSidebar';
 
 const nodeTypes = {
   employee: EmployeeNode,
-  department: DepartmentNode,
+  department: NestedDepartmentNode,
   team: TeamNode
 };
-
-const ORG_CANVAS_AUTO_EXPAND_LIMIT = 40;
 
 function getLayoutedElements(nodes: Node[], edges: Edge[]) {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: 'TB', nodesep: 45, ranksep: 75 });
+  dagreGraph.setGraph({ rankdir: 'TB', nodesep: 60, ranksep: 90 });
 
   nodes.forEach((node) => {
-    const width = node.type === 'department' ? 300 : node.type === 'team' ? 280 : 260;
-    const height = node.type === 'department' ? 120 : node.type === 'team' ? 90 : 100;
+    const width = node.type === 'department' ? 380 : node.type === 'team' ? 280 : 270;
+    const height = node.type === 'department' ? 320 : node.type === 'team' ? 100 : 110;
     dagreGraph.setNode(node.id, { width, height });
   });
 
@@ -59,8 +60,8 @@ function getLayoutedElements(nodes: Node[], edges: Edge[]) {
     return {
       ...node,
       position: {
-        x: nodeWithPosition ? nodeWithPosition.x - 130 : 0,
-        y: nodeWithPosition ? nodeWithPosition.y - 50 : 0
+        x: nodeWithPosition ? nodeWithPosition.x - 140 : 0,
+        y: nodeWithPosition ? nodeWithPosition.y - 60 : 0
       }
     };
   });
@@ -82,12 +83,11 @@ function OrgCanvasFlow() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(new Set());
   const [selectedNode, setSelectedNode] = useState<{ type: 'employee' | 'department' | 'team'; node: any } | null>(null);
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
-  // Drag & drop inline confirmation state
+  // Drag & drop confirmation state
   const [pendingDragAction, setPendingDragAction] = useState<{
     type: 'reassign_manager' | 'reassign_department';
     sourceNode: any;
@@ -107,7 +107,6 @@ function OrgCanvasFlow() {
     return () => window.removeEventListener('resize', checkViewport);
   }, []);
 
-  // Access control & feature flag guard
   const activeFeatures = features && features.length > 0 ? features : [
     'employees', 'attendance', 'leave', 'tasks', 'performance', 'payroll', 'expenses', 'assets', 'knowledge', 'calendar', 'org-canvas'
   ];
@@ -137,12 +136,6 @@ function OrgCanvasFlow() {
       const data = treeRes.data;
       setTreeData(data);
       setAllRoles(rolesRes.data || []);
-
-      // Auto collapse if total employees > threshold
-      if (data.stats.totalEmployees > ORG_CANVAS_AUTO_EXPAND_LIMIT) {
-        const teamIds = new Set<string>(data.teams.map((t: any) => t.id));
-        setCollapsedBuckets(teamIds);
-      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to load Org Canvas tree data');
     } finally {
@@ -174,18 +167,6 @@ function OrgCanvasFlow() {
     [treeData]
   );
 
-  const handleToggleExpandBucket = useCallback((bucketId: string) => {
-    setCollapsedBuckets((prev) => {
-      const next = new Set<string>(prev);
-      if (next.has(bucketId)) {
-        next.delete(bucketId);
-      } else {
-        next.add(bucketId);
-      }
-      return next;
-    });
-  }, []);
-
   // Build React Flow graph elements
   useEffect(() => {
     if (!treeData) return;
@@ -193,7 +174,33 @@ function OrgCanvasFlow() {
     const rawNodes: Node[] = [];
     const rawEdges: Edge[] = [];
 
-    // Add Department Nodes
+    // Group direct members (not in any team) and teams by department
+    const deptDirectMembersMap = new Map<string, any[]>();
+    const deptTeamsMap = new Map<string, any[]>();
+
+    treeData.departments.forEach((dept: any) => {
+      deptDirectMembersMap.set(dept.id, []);
+      deptTeamsMap.set(dept.id, []);
+    });
+
+    treeData.teams.forEach((team: any) => {
+      const list = deptTeamsMap.get(team.departmentId) || [];
+      list.push(team);
+      deptTeamsMap.set(team.departmentId, list);
+    });
+
+    treeData.employees.forEach((emp: any) => {
+      if (emp.departmentId) {
+        const hasTeam = emp.teams && emp.teams.length > 0;
+        if (!hasTeam) {
+          const list = deptDirectMembersMap.get(emp.departmentId) || [];
+          list.push(emp);
+          deptDirectMembersMap.set(emp.departmentId, list);
+        }
+      }
+    });
+
+    // Add Department Containers
     treeData.departments.forEach((dept: any) => {
       rawNodes.push({
         id: `dept-${dept.id}`,
@@ -205,93 +212,107 @@ function OrgCanvasFlow() {
           head: dept.head,
           userCount: dept.userCount,
           teamCount: dept.teamCount,
-          isCollapsed: collapsedBuckets.has(dept.id),
-          onToggleExpand: handleToggleExpandBucket,
+          directMembers: deptDirectMembersMap.get(dept.id) || [],
+          teams: deptTeamsMap.get(dept.id) || [],
           onSelectNode: handleSelectNode
         }
       });
     });
 
-    // Add Team Nodes
-    treeData.teams.forEach((team: any) => {
-      const isDeptCollapsed = collapsedBuckets.has(team.departmentId);
-      if (!isDeptCollapsed) {
-        rawNodes.push({
-          id: `team-${team.id}`,
-          type: 'team',
-          position: { x: 0, y: 0 },
-          data: {
-            id: team.id,
-            name: team.name,
-            departmentName: team.departmentName,
-            lead: team.lead,
-            memberCount: team.memberCount,
-            isCollapsed: collapsedBuckets.has(team.id),
-            onToggleExpand: handleToggleExpandBucket,
-            onSelectNode: handleSelectNode
-          }
-        });
-
-        // Edge from department to team
-        rawEdges.push({
-          id: `e-dept-${team.departmentId}-team-${team.id}`,
-          source: `dept-${team.departmentId}`,
-          target: `team-${team.id}`,
-          style: { stroke: '#94a3b8', strokeWidth: 1.5 },
-          markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' }
-        });
-      }
-    });
-
     // Add Employee Nodes
     const rootSet = new Set(treeData.roots);
     treeData.employees.forEach((emp: any) => {
-      const isDeptCollapsed = emp.departmentId && collapsedBuckets.has(emp.departmentId);
-      const isTeamCollapsed = emp.teams.some((t: any) => collapsedBuckets.has(t.id));
+      const isRoot = rootSet.has(emp.id);
+      const isHighlighted = emp.id === highlightedNodeId;
 
-      if (!isDeptCollapsed && !isTeamCollapsed) {
-        const isRoot = rootSet.has(emp.id);
-        const isHighlighted = emp.id === highlightedNodeId;
+      rawNodes.push({
+        id: `emp-${emp.id}`,
+        type: 'employee',
+        position: { x: 0, y: 0 },
+        data: {
+          id: emp.id,
+          name: emp.name,
+          designation: emp.designation,
+          avatarUrl: emp.avatarUrl,
+          status: emp.status,
+          departmentId: emp.departmentId,
+          departmentName: emp.departmentName,
+          roles: emp.roles,
+          isOnLeaveToday: emp.isOnLeaveToday,
+          isRoot,
+          isHighlighted,
+          isDimmed: highlightedNodeId ? emp.id !== highlightedNodeId : false,
+          isDeleted: emp.isDeleted,
+          onSelectNode: handleSelectNode
+        }
+      });
 
-        rawNodes.push({
-          id: `emp-${emp.id}`,
-          type: 'employee',
-          position: { x: 0, y: 0 },
-          data: {
-            id: emp.id,
-            name: emp.name,
-            designation: emp.designation,
-            avatarUrl: emp.avatarUrl,
-            status: emp.status,
-            departmentId: emp.departmentId,
-            departmentName: emp.departmentName,
-            roles: emp.roles,
-            isOnLeaveToday: emp.isOnLeaveToday,
-            isRoot,
-            isHighlighted,
-            isDimmed: highlightedNodeId ? emp.id !== highlightedNodeId : false,
-            isDeleted: emp.isDeleted,
-            onSelectNode: handleSelectNode
+      // High-contrast, sharp arrow edges
+      if (emp.managerId) {
+        rawEdges.push({
+          id: `e-emp-${emp.managerId}-emp-${emp.id}`,
+          source: `emp-${emp.managerId}`,
+          target: `emp-${emp.id}`,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#334155', strokeWidth: 2.5 },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: '#334155',
+            width: 20,
+            height: 20
           }
         });
-
-        // Connector line based on managerId
-        if (emp.managerId) {
-          rawEdges.push({
-            id: `e-emp-${emp.managerId}-emp-${emp.id}`,
-            source: `emp-${emp.managerId}`,
-            target: `emp-${emp.id}`,
-            style: { stroke: '#94a3b8', strokeWidth: 2 },
-            markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' }
-          });
-        }
+      } else if (emp.departmentId) {
+        // Connect Department Head or top employee to Department Container
+        rawEdges.push({
+          id: `e-dept-${emp.departmentId}-emp-${emp.id}`,
+          source: `dept-${emp.departmentId}`,
+          target: `emp-${emp.id}`,
+          type: 'smoothstep',
+          style: { stroke: '#64748b', strokeWidth: 2, strokeDasharray: '4 4' },
+          markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b', width: 16, height: 16 }
+        });
       }
     });
 
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rawNodes, rawEdges);
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
-  }, [treeData, collapsedBuckets, highlightedNodeId, handleSelectNode, handleToggleExpandBucket, setNodes, setEdges]);
+  }, [treeData, highlightedNodeId, handleSelectNode, setNodes, setEdges]);
+
+  // Interactive Connection (Drawing arrows between handles establishes hierarchy)
+  const onConnect = useCallback(
+    async (connection: Connection) => {
+      if (!isAdmin && !isHR) return;
+      if (!connection.source || !connection.target) return;
+
+      const sourceId = connection.source;
+      const targetId = connection.target;
+
+      if (sourceId.startsWith('emp-') && targetId.startsWith('emp-')) {
+        const managerEmpId = sourceId.replace('emp-', '');
+        const reportEmpId = targetId.replace('emp-', '');
+
+        const manager = treeData?.employees?.find((e: any) => e.id === managerEmpId);
+        const report = treeData?.employees?.find((e: any) => e.id === reportEmpId);
+
+        if (manager && report) {
+          try {
+            await api.orgCanvas.reassignManager({
+              userId: report.id,
+              newManagerId: manager.id
+            });
+            toast.success(`Established hierarchy: ${report.name} now reports to ${manager.name}`);
+            await loadCanvasData();
+          } catch (err: any) {
+            toast.error(err.message || 'Failed to connect reporting hierarchy');
+          }
+        }
+      }
+    },
+    [isAdmin, isHR, treeData, loadCanvasData, toast]
+  );
 
   // Focus & center search result
   const handleFocusSearchResult = useCallback(
@@ -301,16 +322,6 @@ function OrgCanvasFlow() {
       if (result.type === 'employee') {
         const emp = treeData.employees.find((e: any) => e.id === result.id);
         if (emp) {
-          // Uncollapse department and team buckets if needed
-          if (emp.departmentId) {
-            setCollapsedBuckets((prev) => {
-              const next = new Set<string>(prev);
-              next.delete(emp.departmentId);
-              emp.teams?.forEach((t: any) => next.delete(t.id));
-              return next;
-            });
-          }
-
           setHighlightedNodeId(emp.id);
           setSelectedNode({ type: 'employee', node: emp });
 
@@ -322,41 +333,20 @@ function OrgCanvasFlow() {
       } else if (result.type === 'department') {
         const dept = treeData.departments.find((d: any) => d.id === result.id);
         if (dept) {
-          setCollapsedBuckets((prev) => {
-            const next = new Set<string>(prev);
-            next.delete(dept.id);
-            return next;
-          });
           setSelectedNode({ type: 'department', node: dept });
           const targetNode = nodes.find((n) => n.id === `dept-${dept.id}`);
           if (targetNode) {
-            setCenter(targetNode.position.x + 150, targetNode.position.y + 60, { zoom: 1.1, duration: 800 });
-          }
-        }
-      } else if (result.type === 'team') {
-        const team = treeData.teams.find((t: any) => t.id === result.id);
-        if (team) {
-          setCollapsedBuckets((prev) => {
-            const next = new Set<string>(prev);
-            next.delete(team.departmentId);
-            next.delete(team.id);
-            return next;
-          });
-          setSelectedNode({ type: 'team', node: team });
-          const targetNode = nodes.find((n) => n.id === `team-${team.id}`);
-          if (targetNode) {
-            setCenter(targetNode.position.x + 140, targetNode.position.y + 45, { zoom: 1.1, duration: 800 });
+            setCenter(targetNode.position.x + 190, targetNode.position.y + 160, { zoom: 1.1, duration: 800 });
           }
         }
       }
 
-      // Auto reset highlight after 3 seconds
       setTimeout(() => setHighlightedNodeId(null), 3000);
     },
     [treeData, nodes, setCenter]
   );
 
-  // Handle Drag & Drop Node Reassignments
+  // Drag & drop handlers
   const handleNodeDragStop = useCallback(
     (event: any, node: Node) => {
       if (!isAdmin && !isHR) return;
@@ -366,7 +356,6 @@ function OrgCanvasFlow() {
       const draggedEmp = treeData?.employees?.find((e: any) => e.id === draggedEmpId);
       if (!draggedEmp) return;
 
-      // Find drop target under cursor position
       const clientX = event.clientX;
       const clientY = event.clientY;
 
@@ -402,7 +391,6 @@ function OrgCanvasFlow() {
     [isAdmin, isHR, treeData]
   );
 
-  // Execute confirmed drag mutation
   async function confirmPendingDragAction() {
     if (!pendingDragAction) return;
     const { type, sourceNode, targetNode } = pendingDragAction;
@@ -420,7 +408,7 @@ function OrgCanvasFlow() {
           userId: sourceNode.id,
           newDepartmentId: targetNode.id
         });
-        toast.success(`Moved ${sourceNode.name} to ${targetNode.name} Department`);
+        toast.success(`Moved ${sourceNode.name} to ${targetNode.name} Department & Task Board`);
       }
       await loadCanvasData();
     } catch (err: any) {
@@ -435,7 +423,7 @@ function OrgCanvasFlow() {
   if (!isDesktop) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center">
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 max-w-md space-y-4">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 max-w-md space-y-4 shadow-sm">
           <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto text-blue-600">
             <span className="material-symbols-outlined text-[28px]">desktop_windows</span>
           </div>
@@ -443,7 +431,7 @@ function OrgCanvasFlow() {
             Laptop or Desktop Required
           </h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            The interactive Org Canvas features an expansive workforce hierarchy, node drag-and-drop management, and dynamic access matrices designed specifically for larger desktop viewports.
+            The interactive Org Canvas features an expansive workforce hierarchy, nested department containers, handle connections, and dynamic access matrices designed for desktop viewports.
           </p>
           <div className="pt-2">
             <Link
@@ -473,7 +461,7 @@ function OrgCanvasFlow() {
         <div className="pointer-events-auto flex items-center gap-3">
           <OrgCanvasSearch onSelectResult={handleFocusSearchResult} />
           {treeData?.stats && (
-            <div className="hidden xl:flex items-center gap-3 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
+            <div className="hidden xl:flex items-center gap-3 bg-white px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 shadow-xs">
               <span>{treeData.stats.totalEmployees} Employees</span>
               <span className="w-1 h-1 rounded-full bg-slate-300" />
               <span>{treeData.stats.totalDepartments} Departments</span>
@@ -487,7 +475,7 @@ function OrgCanvasFlow() {
           {isAdmin && (
             <button
               onClick={() => setIsRoleModalOpen(true)}
-              className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 shadow-xs font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px] text-blue-600">
                 admin_panel_settings
@@ -498,7 +486,7 @@ function OrgCanvasFlow() {
 
           <button
             onClick={() => fitView({ duration: 600 })}
-            className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs rounded-xl transition-all cursor-pointer"
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-xs font-bold text-xs rounded-xl transition-all cursor-pointer"
           >
             Auto Fit
           </button>
@@ -512,16 +500,27 @@ function OrgCanvasFlow() {
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
         onNodeDragStop={handleNodeDragStop}
         fitView
-        minZoom={0.2}
+        minZoom={0.15}
         maxZoom={1.5}
-        defaultEdgeOptions={{ style: { strokeWidth: 2, stroke: '#94a3b8' } }}
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          style: { strokeWidth: 2.5, stroke: '#334155' }
+        }}
         className="bg-slate-50"
       >
         <Background color="#cbd5e1" gap={24} size={1} />
         <Controls className="!bg-white !border !border-slate-200 !rounded-xl !shadow-none !m-4" />
       </ReactFlow>
+
+      {/* Right-Hand Draggable Employee Directory Drawer */}
+      <EmployeeDrawerSidebar
+        employees={treeData?.employees || []}
+        onSelectEmployee={(id) => handleFocusSearchResult({ id, type: 'employee' })}
+        onPromoteClick={(emp) => setSelectedNode({ type: 'employee', node: emp })}
+      />
 
       {/* Sliding Side Panel */}
       <OrgCanvasSidePanel
@@ -544,7 +543,7 @@ function OrgCanvasFlow() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 max-w-sm w-full space-y-4 animate-slide-in-up">
             <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
-              Confirm Hierarchy Change
+              Confirm Structure Change
             </h3>
             <p className="text-xs text-slate-600 leading-normal">
               {pendingDragAction.type === 'reassign_manager' ? (
@@ -553,7 +552,7 @@ function OrgCanvasFlow() {
                 </>
               ) : (
                 <>
-                  Are you sure you want to move <strong>{pendingDragAction.sourceNode.name}</strong> into the <strong>{pendingDragAction.targetNode.name}</strong> department?
+                  Are you sure you want to move <strong>{pendingDragAction.sourceNode.name}</strong> into the <strong>{pendingDragAction.targetNode.name}</strong> department and grant them access to that department's task board?
                 </>
               )}
             </p>

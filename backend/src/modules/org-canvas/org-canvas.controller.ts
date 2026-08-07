@@ -7,7 +7,8 @@ import {
   createRoleSchema,
   updateRoleSchema,
   assignRoleSchema,
-  searchQuerySchema
+  searchQuerySchema,
+  promoteExecutiveSchema
 } from "./org-canvas.validation";
 
 export class OrgCanvasController {
@@ -90,6 +91,24 @@ export class OrgCanvasController {
         body.newDepartmentId
       );
       res.json({ success: true, data: result, message: "Team moved successfully" });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async promoteExecutive(req: Request, res: Response, next: NextFunction) {
+    try {
+      const orgId = req.org!.id;
+      const actorId = req.user!.id;
+      const body = promoteExecutiveSchema.parse(req.body);
+      const result = await OrgCanvasService.promoteExecutive(
+        orgId,
+        actorId,
+        body.userId,
+        body.designation,
+        body.systemRole
+      );
+      res.json({ success: true, data: result, message: "Executive designation updated successfully" });
     } catch (err) {
       next(err);
     }

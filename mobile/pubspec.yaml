@@ -36,7 +36,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   webview_flutter: ^4.8.0
   webview_flutter_android: ^4.13.0
-  webview_flutter_wkwebview: ^3.26.0
   local_auth: ^2.2.0
   permission_handler: ^11.3.1
   shared_preferences: ^2.2.3

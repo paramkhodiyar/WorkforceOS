@@ -75,7 +75,7 @@ class MainActivity : FlutterFragmentActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     val attributes = AudioAttributes.Builder()
                         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .setUsage(AudioAttributes.USAGE_TOUCH)
+                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
                         .build()
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
